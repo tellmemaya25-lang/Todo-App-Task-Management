@@ -33,6 +33,8 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.tween
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
@@ -41,6 +43,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -100,7 +103,14 @@ fun TaskDetailScreen(
             uiState.task?.let { task ->
                 val totalSubs = task.subTasks.size
                 val doneSubs = task.subTasks.count { it.isDone }
-                val progress = if (totalSubs > 0) doneSubs.toFloat() / totalSubs else if (task.isCompleted) 1f else 0f
+                val rawProgress = if (totalSubs > 0) doneSubs.toFloat() / totalSubs else if (task.isCompleted) 1f else 0f
+                var targetProgress by remember { mutableFloatStateOf(0f) }
+                LaunchedEffect(rawProgress) { targetProgress = rawProgress }
+                val progress by animateFloatAsState(
+                    targetValue = targetProgress,
+                    animationSpec = tween(durationMillis = 800),
+                    label = "progressAnim"
+                )
 
                 Column(
                     modifier = Modifier
