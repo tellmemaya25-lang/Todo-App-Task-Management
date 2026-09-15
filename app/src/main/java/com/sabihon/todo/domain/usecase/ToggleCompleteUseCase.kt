@@ -19,12 +19,11 @@ class ToggleCompleteUseCase @Inject constructor(
                 if (flowResult is Result.Success) {
                     val task = flowResult.data
                     if (task.subTasks.isNotEmpty() && task.subTasks.any { !it.isDone }) {
-                        // Don't mark as complete when all tasks are not done
-                        return Result.Error("Complete all ${task.subTasks.size} sub-tasks first (${task.subTasks.count { it.isDone }}/${task.subTasks.size} done)")
+                        return Result.Error(Exception("Complete all ${task.subTasks.size} sub-tasks first (${task.subTasks.count { it.isDone }}/${task.subTasks.size} done)"))
                     }
                 }
             } catch (e: Exception) {
-                // If we can't fetch, allow toggle to proceed – fallback
+                // fallback allow
             }
         }
         return repository.toggleComplete(taskId, isCompleted)
