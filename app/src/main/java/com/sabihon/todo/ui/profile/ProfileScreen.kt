@@ -62,16 +62,28 @@ fun ProfileScreen(
     val uiState by viewModel.uiState.collectAsState()
     val snackbarHostState = remember { SnackbarHostState() }
 
+    val context = androidx.compose.ui.platform.LocalContext.current
     val photoPickerLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.PickVisualMedia()
     ) { uri: Uri? ->
-        if (uri != null) viewModel.onPhotoPicked(uri)
+        if (uri != null) {
+            try {
+                // Take persistable permission for content URI to avoid Object does not exist after process death
+                context.contentResolver.takePersistableUriPermission(uri, android.content.Intent.FLAG_GRANT_READ_URI_PERMISSION)
+            } catch (_: Exception) {}
+            viewModel.onPhotoPicked(uri)
+        }
     }
 
     val fallbackPickerLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.GetContent()
     ) { uri: Uri? ->
-        if (uri != null) viewModel.onPhotoPicked(uri)
+        if (uri != null) {
+            try {
+                context.contentResolver.takePersistableUriPermission(uri, android.content.Intent.FLAG_GRANT_READ_URI_PERMISSION)
+            } catch (_: Exception) {}
+            viewModel.onPhotoPicked(uri)
+        }
     }
 
     LaunchedEffect(uiState.error, uiState.successMessage) {

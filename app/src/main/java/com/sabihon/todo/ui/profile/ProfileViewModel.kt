@@ -116,9 +116,28 @@ class ProfileViewModel @Inject constructor(
             _uiState.update { it.copy(isUploadingPhoto = true, error = null) }
             try {
                 val uid = auth.currentUser?.uid ?: throw IllegalStateException("Not authenticated")
+                // Validate URI exists locally first to give clearer error
+                // Use timestamp to avoid overwrite
                 val storageRef = storage.reference.child("users/$uid/profile_${System.currentTimeMillis()}.jpg")
-                storageRef.putFile(uri).await()
-                val downloadUrl = storageRef.downloadUrl.await().toString()
+                // putFile with await – ensure upload completes
+                val uploadTask = storageRef.putFile(uri).await()
+                if (uploadTask.task.isSuccessful.not() && uploadTask.error != null) {
+                    throw uploadTask.error ?: Exception("Upload failed")
+                }
+                // Small delay to ensure object is available (eventual consistency)
+                // Then get download URL with retry
+                var downloadUrl: String? = null
+                var lastError: Exception? = null
+                repeat(3) { attempt ->
+                    try {
+                        downloadUrl = storageRef.downloadUrl.await().toString()
+                        return@repeat
+                    } catch (e: Exception) {
+                        lastError = e
+                        if (attempt < 2) kotlinx.coroutines.delay(500)
+                    }
+                }
+                if (downloadUrl == null) throw lastError ?: Exception("Failed to get download URL: Object does not exist at location")
 
                 val user = auth.currentUser
                 val profileUpdate = UserProfileChangeRequest.Builder()
@@ -139,10 +158,17 @@ class ProfileViewModel @Inject constructor(
                     )
                 }
             } catch (e: Exception) {
+                val msg = e.message ?: "Unknown error"
+                val friendly = when {
+                    msg.contains("Object does not exist", true) -> "Photo upload failed: Storage file not found. Please enable Firebase Storage in Firebase Console and check rules. Original: $msg"
+                    msg.contains("not authorized", true) || msg.contains("permission", true) -> "Photo upload failed: Not authorized. Check Storage security rules."
+                    msg.contains("bucket", true) -> "Photo upload failed: Storage bucket not configured."
+                    else -> "Photo upload failed: $msg"
+                }
                 _uiState.update {
                     it.copy(
                         isUploadingPhoto = false,
-                        error = "Photo upload failed: ${e.message}"
+                        error = friendly
                     )
                 }
             }
