@@ -152,17 +152,12 @@ fun TaskDetailScreen(
                         .padding(horizontal = 16.dp, vertical = 12.dp),
                     verticalArrangement = Arrangement.spacedBy(16.dp)
                 ) {
-                    // Header – fix color contrast dark mode per image-1.png screenshot – outer dark, inner light gray, percentage white, chips light
+                    // Header – use image1 for bg color per request – image1 Webinar 33% 1/3 All Integration In Progress 1/3 light blue #e3f5ff
                     val isDark = isSystemInDarkTheme()
-                    // Use #e3f5ff for bg of task per earlier request – but for detail outer dark in dark mode for contrast
-                    val outerCardBg = if (isDark) Color(0xFF1E2A44) else Color(0xFFE3F5FF)
-                    // Inner description should be light even in dark mode for contrast – White / #E3F5FF light
+                    // Use #e3f5ff for bg of task always per image1 for consistency light theme and dark mode contrast
+                    val outerCardBg = Color(0xFFE3F5FF)
                     val innerWhiteBg = Color.White
                     val innerWhiteBg2 = Color.White
-                    val textPrimary = if (isDark) Color(0xFF101114) else MaterialTheme.colorScheme.onSurface
-                    val textPrimaryDarkMode = Color(0xFF101114) // dark text on light inner for contrast
-                    val textSecondary = if (isDark) Color(0xFF6B7280) else MaterialTheme.colorScheme.onSurfaceVariant
-                    val dividerColor = if (isDark) Color(0xFF2E2F38) else MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.6f)
 
                     Card(
                         modifier = Modifier.fillMaxWidth(),
@@ -171,25 +166,24 @@ fun TaskDetailScreen(
                         elevation = CardDefaults.cardElevation(0.dp)
                     ) {
                         Column(modifier = Modifier.fillMaxWidth().padding(16.dp), verticalArrangement = Arrangement.spacedBy(16.dp)) {
-                            // Title on top – Webinar – dark text for contrast on #e3f5ff
+                            // Title on top – Webinar – dark text for contrast on #e3f5ff per image1
                             Text(
                                 text = task.title,
                                 style = MaterialTheme.typography.titleMedium.copy(
                                     fontWeight = FontWeight.Bold,
                                     fontSize = 16.sp
                                 ),
-                                color = if (isDark) Color.White else Color(0xFF101114),
+                                color = Color(0xFF101114),
                                 maxLines = 2,
                                 overflow = TextOverflow.Ellipsis,
                                 modifier = Modifier.fillMaxWidth().padding(end = 72.dp)
                             )
 
-                            // Box with description white card + percentage overlapping right side 30% per image-2.png request – fix contrast dark mode
+                            // Box with description white card + percentage overlapping right side 30% – image1 bg #e3f5ff
                             Box(
                                 modifier = Modifier
                                     .fillMaxWidth()
                             ) {
-                                // White description box – always White for contrast, dark text
                                 Box(
                                     modifier = Modifier
                                         .fillMaxWidth()
@@ -209,7 +203,6 @@ fun TaskDetailScreen(
                                     )
                                 }
 
-                                // Percentage overlapping right side 30% – always White bg for contrast, dark text
                                 Box(
                                     modifier = Modifier
                                         .align(Alignment.CenterEnd)
@@ -254,12 +247,11 @@ fun TaskDetailScreen(
                                 }
                             }
 
-                            // Date and Priority below – chips White bg for contrast in both light/dark per screenshot
                             Column(
                                 modifier = Modifier.fillMaxWidth(),
                                 verticalArrangement = Arrangement.spacedBy(12.dp)
                             ) {
-                                HorizontalDivider(thickness = 0.5.dp, color = dividerColor)
+                                HorizontalDivider(thickness = 0.5.dp, color = Color(0xFFE5E7EB))
                                 Row(
                                     horizontalArrangement = Arrangement.spacedBy(8.dp),
                                     modifier = Modifier.fillMaxWidth()
@@ -314,14 +306,13 @@ fun TaskDetailScreen(
                         }
                     }
 
-                    // Sub-tasks – fix color contrast dark mode per screenshot – dark bg #1E2A44 with blue checkboxes, light text, Add task blue CTA
+                    // Sub-tasks – use image1 for bg color #e3f5ff for consistency
                     var editingSubId by remember { mutableStateOf<String?>(null) }
                     var editingSubText by remember { mutableStateOf("") }
                     var isSubTasksExpanded by remember { mutableStateOf(false) }
-                    // Use #e3f5ff for light, dark navy for dark mode – good contrast
-                    val subCardBg = if (isDark) Color(0xFF1E2A44) else Color(0xFFE3F5FF)
-                    val subTextPrimary = if (isDark) Color.White else Color(0xFF101114)
-                    val subTextSecondary = if (isDark) Color(0xFF9CA3AF) else Color(0xFF6B7280)
+                    val subCardBg = Color(0xFFE3F5FF)
+                    val subTextPrimary = Color(0xFF101114)
+                    val subTextSecondary = Color(0xFF6B7280)
                     Card(
                         modifier = Modifier.fillMaxWidth(),
                         shape = RoundedCornerShape(24.dp),
