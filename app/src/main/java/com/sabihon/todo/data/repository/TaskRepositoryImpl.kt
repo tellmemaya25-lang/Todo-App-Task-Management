@@ -64,14 +64,12 @@ class TaskRepositoryImpl @Inject constructor(
                     tasksCollection()
                 }
 
-                val queryWithOrder = try {
-                    baseQuery.orderBy("dueAt", Query.Direction.ASCENDING)
-                } catch (e: Exception) {
-                    android.util.Log.w("TaskRepo", "orderBy failed, unordered", e)
-                    baseQuery
-                }
+                // IMPORTANT: Do NOT use orderBy here – it requires composite index (deleted + dueAt)
+                // Sorting is done in-memory in applyInMemoryFilters to avoid FAILED_PRECONDITION
+                // If you want server-side ordering, create index via link in logcat or firestore.indexes.json
+                val queryForListener: Query = baseQuery
 
-                listener = queryWithOrder.addSnapshotListener { snapshot, error ->
+                listener = queryForListener.addSnapshotListener { snapshot, error ->
                     if (error != null) {
                         android.util.Log.e("TaskRepo", "Snapshot error: ${error.message}", error)
                         val msg = error.message ?: ""
@@ -265,11 +263,8 @@ class TaskRepositoryImpl @Inject constructor(
         try {
             if (query.isBlank()) { emit(Result.Success(emptyList())); return@flow }
             val lower = query.lowercase()
-            val snapshot = try {
-                tasksCollection().whereEqualTo("deleted", false).whereArrayContains("searchKeywords", lower).get().await()
-            } catch (e: Exception) {
-                tasksCollection().whereEqualTo("deleted", false).get().await()
-            }
+            // Avoid composite index: only filter deleted in Firestore, search filtering in-memory
+            val snapshot = tasksCollection().whereEqualTo("deleted", false).get().await()
             val tasks = snapshot.documents.mapNotNull {
                 try { it.toObject(TaskDto::class.java)?.toDomain() } catch (_: Exception) { null }
             }.filter { it.title.lowercase().contains(lower) || it.description.lowercase().contains(lower) }
