@@ -29,6 +29,7 @@ import androidx.compose.material.icons.filled.CalendarToday
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.Flag
 import androidx.compose.material.icons.filled.KeyboardArrowDown
+import androidx.compose.material.icons.filled.KeyboardArrowUp
 import androidx.compose.material3.AssistChip
 import androidx.compose.material3.AssistChipDefaults
 import androidx.compose.material3.Button
@@ -290,6 +291,7 @@ fun TaskDetailScreen(
                     // Sub-tasks with edit – scrollable within container per request – corner radius 24.dp per request – consistent like All Tasks
                     var editingSubId by remember { mutableStateOf<String?>(null) }
                     var editingSubText by remember { mutableStateOf("") }
+                    var isSubTasksExpanded by remember { mutableStateOf(false) }
                     Card(
                         modifier = Modifier.fillMaxWidth(),
                         shape = RoundedCornerShape(24.dp),
@@ -297,6 +299,8 @@ fun TaskDetailScreen(
                         elevation = CardDefaults.cardElevation(0.dp)
                     ) {
                         Column {
+                            // Show first 5 tasks before showing down arrow if list exceeds 5 items per request
+                            val displaySubs = if (task.subTasks.size > 5 && !isSubTasksExpanded) task.subTasks.take(5) else task.subTasks
                             // Scrollable container for sub-tasks – max height 320dp – consistent with All Tasks cards #E3F5FF
                             Column(
                                 modifier = Modifier
@@ -304,7 +308,7 @@ fun TaskDetailScreen(
                                     .heightIn(max = 320.dp)
                                     .verticalScroll(rememberScrollState())
                             ) {
-                            task.subTasks.forEach { sub ->
+                            displaySubs.forEach { sub ->
                                 Row(
                                     verticalAlignment = Alignment.CenterVertically,
                                     horizontalArrangement = Arrangement.spacedBy(12.dp),
@@ -399,7 +403,7 @@ fun TaskDetailScreen(
                             }
                             }
 
-                            // CTA with overlapping arrow down btn per request – corner radius 24.dp
+                            // CTA with overlapping arrow down btn per request – corner radius 24.dp – show arrow only if exceeds 5
                             Box(modifier = Modifier.fillMaxWidth()) {
                                 Box(
                                     modifier = Modifier.fillMaxWidth()
@@ -424,24 +428,26 @@ fun TaskDetailScreen(
                                         )
                                     }
                                 }
-                                // Arrow down btn overlapping CTA
-                                Box(
-                                    modifier = Modifier
-                                        .align(Alignment.TopCenter)
-                                        .offset(y = (-12).dp)
-                                        .size(32.dp)
-                                        .clip(CircleShape)
-                                        .background(Color.White)
-                                        .clickable { /* could collapse */ }
-                                        .padding(4.dp),
-                                    contentAlignment = Alignment.Center
-                                ) {
-                                    Icon(
-                                        imageVector = Icons.Filled.KeyboardArrowDown,
-                                        contentDescription = "Expand",
-                                        tint = AccentBlue,
-                                        modifier = Modifier.size(20.dp)
-                                    )
+                                // Arrow down btn overlapping CTA – only show if list exceeds 5 items per request
+                                if (task.subTasks.size > 5) {
+                                    Box(
+                                        modifier = Modifier
+                                            .align(Alignment.TopCenter)
+                                            .offset(y = (-12).dp)
+                                            .size(32.dp)
+                                            .clip(CircleShape)
+                                            .background(Color.White)
+                                            .clickable { isSubTasksExpanded = !isSubTasksExpanded }
+                                            .padding(4.dp),
+                                        contentAlignment = Alignment.Center
+                                    ) {
+                                        Icon(
+                                            imageVector = if (isSubTasksExpanded) Icons.Filled.KeyboardArrowUp else Icons.Filled.KeyboardArrowDown,
+                                            contentDescription = if (isSubTasksExpanded) "Collapse" else "Expand",
+                                            tint = AccentBlue,
+                                            modifier = Modifier.size(20.dp)
+                                        )
+                                    }
                                 }
                             }
                         }
