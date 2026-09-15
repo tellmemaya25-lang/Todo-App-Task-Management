@@ -154,11 +154,11 @@ fun TaskDetailScreen(
                         .padding(horizontal = 16.dp, vertical = 12.dp),
                     verticalArrangement = Arrangement.spacedBy(16.dp)
                 ) {
-                    // Header – use image1 for bg color per request – image1 Webinar 33% 1/3 All Integration In Progress 1/3 light blue #e3f5ff
+                    // Header – use color combo from setting for overall dark mode theme, leave light mode as is per request – image1 bg #e3f5ff light, dark uses Settings dark combo
                     val isDark = isSystemInDarkTheme()
-                    // Use #e3f5ff for bg of task always per image1 for consistency light theme and dark mode contrast
-                    val outerCardBg = Color(0xFFE3F5FF)
-                    val innerWhiteBg = Color.White
+                    // Light mode #e3f5ff per image1, dark mode uses Settings dark combo #1E2A44 for overall dark theme
+                    val outerCardBg = if (isDark) Color(0xFF1E2A44) else Color(0xFFE3F5FF)
+                    val innerWhiteBg = if (isDark) Color(0xFF2A2B33) else Color.White
                     val innerWhiteBg2 = Color.White
 
                     Card(
@@ -168,23 +168,22 @@ fun TaskDetailScreen(
                         elevation = CardDefaults.cardElevation(0.dp)
                     ) {
                         Column(modifier = Modifier.fillMaxWidth().padding(16.dp), verticalArrangement = Arrangement.spacedBy(16.dp)) {
-                            // Title on top – Webinar – dark text for contrast on #e3f5ff per image1
+                            // Title on top – Webinar – light mode dark text on #e3f5ff, dark mode white text on #1E2A44 per Settings combo
                             Text(
                                 text = task.title,
                                 style = MaterialTheme.typography.titleMedium.copy(
                                     fontWeight = FontWeight.Bold,
                                     fontSize = 16.sp
                                 ),
-                                color = Color(0xFF101114),
+                                color = if (isDark) Color.White else Color(0xFF101114),
                                 maxLines = 2,
                                 overflow = TextOverflow.Ellipsis,
                                 modifier = Modifier.fillMaxWidth().padding(end = 72.dp)
                             )
 
-                            // Box with description white card + percentage overlapping right side 30% – image1 bg #e3f5ff
+                            // Box with description + percentage overlapping right side 30% – light #e3f5ff White inner, dark #1E2A44 with #2A2B33 inner per Settings
                             Box(
-                                modifier = Modifier
-                                    .fillMaxWidth()
+                                modifier = Modifier.fillMaxWidth()
                             ) {
                                 Box(
                                     modifier = Modifier
@@ -201,7 +200,7 @@ fun TaskDetailScreen(
                                             fontSize = 13.sp,
                                             lineHeight = 18.sp
                                         ),
-                                        color = Color(0xFF374151)
+                                        color = if (isDark) Color(0xFFF5F5F5) else Color(0xFF374151)
                                     )
                                 }
 
@@ -218,7 +217,7 @@ fun TaskDetailScreen(
                                     Canvas(modifier = Modifier.size(56.dp)) {
                                         val stroke = 3.5.dp.toPx()
                                         drawCircle(
-                                            color = Color(0xFFE5E7EB),
+                                            color = if (isDark) Color(0xFF3A3B44) else Color(0xFFE5E7EB),
                                             style = Stroke(width = stroke)
                                         )
                                         if (progress > 0f) {
@@ -253,7 +252,7 @@ fun TaskDetailScreen(
                                 modifier = Modifier.fillMaxWidth(),
                                 verticalArrangement = Arrangement.spacedBy(12.dp)
                             ) {
-                                HorizontalDivider(thickness = 0.5.dp, color = Color(0xFFE5E7EB))
+                                HorizontalDivider(thickness = 0.5.dp, color = if (isDark) Color(0xFF2E2F38) else Color(0xFFE5E7EB))
                                 Row(
                                     horizontalArrangement = Arrangement.spacedBy(8.dp),
                                     modifier = Modifier.fillMaxWidth()
@@ -308,13 +307,13 @@ fun TaskDetailScreen(
                         }
                     }
 
-                    // Sub-tasks – use image1 for bg color #e3f5ff for consistency
+                    // Sub-tasks – use color combo from setting for overall dark mode theme, leave light mode as is
                     var editingSubId by remember { mutableStateOf<String?>(null) }
                     var editingSubText by remember { mutableStateOf("") }
                     var isSubTasksExpanded by remember { mutableStateOf(false) }
-                    val subCardBg = Color(0xFFE3F5FF)
-                    val subTextPrimary = Color(0xFF101114)
-                    val subTextSecondary = Color(0xFF6B7280)
+                    val subCardBg = if (isDark) Color(0xFF1E2A44) else Color(0xFFE3F5FF)
+                    val subTextPrimary = if (isDark) Color.White else Color(0xFF101114)
+                    val subTextSecondary = if (isDark) Color(0xFF9CA3AF) else Color(0xFF6B7280)
                     Card(
                         modifier = Modifier.fillMaxWidth(),
                         shape = RoundedCornerShape(24.dp),

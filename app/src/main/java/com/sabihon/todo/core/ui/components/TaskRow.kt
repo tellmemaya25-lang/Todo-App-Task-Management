@@ -105,10 +105,11 @@ fun TaskRow(
         else -> Color(0xFF6B7280)
     }
 
-    // Background #e3f5ff for bg of task – make all task in light theme consistent bg color use 1st image
-    // This ensures task cards are #e3f5ff light blue on both light and dark, with dark text for contrast
-    val baseBackground = Color(0xFFE3F5FF)
-    val completedBackground = Color(0xFFE3F5FF)
+    // Background – use color combo from setting for overall dark mode theme, leave light mode as is per request
+    // Light mode #E3F5FF as in image-1, dark mode uses Settings dark combo #1E2A44 for contrast
+    val isDark = isSystemInDarkTheme()
+    val baseBackground = if (isDark) Color(0xFF1E2A44) else Color(0xFFE3F5FF)
+    val completedBackground = if (isDark) Color(0xFF24324F) else Color(0xFFE3F5FF)
 
     val containerColor by animateColorAsState(
         targetValue = if (effectiveCompleted) completedBackground else baseBackground,
@@ -210,12 +211,12 @@ fun TaskRow(
                                             fontWeight = FontWeight.Bold,
                                             fontSize = 13.sp
                                         ),
-                                        color = Color(0xFF101114)
+                                        color = if (isDark) Color.White else Color(0xFF101114)
                                     )
                                     Text(
                                         text = "$doneSubs/$totalSubs",
                                         style = MaterialTheme.typography.labelSmall.copy(fontSize = 9.sp),
-                                        color = Color(0xFF6B7280)
+                                        color = if (isDark) Color(0xFF9CA3AF) else Color(0xFF6B7280)
                                     )
                                 }
                             }
@@ -265,7 +266,11 @@ fun TaskRow(
                                 lineHeight = 20.sp,
                                 textDecoration = if (effectiveCompleted) TextDecoration.LineThrough else null
                             ),
-                            color = if (effectiveCompleted) Color(0xFF6B7280).copy(alpha = 0.6f) else Color(0xFF101114),
+                            color = if (effectiveCompleted) {
+                                if (isDark) Color(0xFF9CA3AF).copy(alpha = 0.6f) else Color(0xFF6B7280).copy(alpha = 0.6f)
+                            } else {
+                                if (isDark) Color.White else Color(0xFF101114)
+                            },
                             maxLines = 1,
                             overflow = TextOverflow.Ellipsis
                         )
@@ -285,7 +290,7 @@ fun TaskRow(
                                     fontWeight = FontWeight.Normal,
                                     lineHeight = 16.sp
                                 ),
-                                color = Color(0xFF6B7280).copy(alpha = 0.9f),
+                                color = if (isDark) Color(0xFF9CA3AF).copy(alpha = 0.9f) else Color(0xFF6B7280).copy(alpha = 0.9f),
                                 maxLines = 2,
                                 overflow = TextOverflow.Ellipsis
                             )
