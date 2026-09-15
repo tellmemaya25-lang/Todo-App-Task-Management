@@ -4,15 +4,12 @@ import androidx.compose.foundation.Image
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.ExperimentalLayoutApi
-import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -25,7 +22,6 @@ import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FilterChip
-import androidx.compose.material3.FilterChipDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.ListItem
@@ -40,7 +36,6 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -49,11 +44,8 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import com.sabihon.todo.R
 import com.sabihon.todo.core.ui.components.TaskRow
 import com.sabihon.todo.core.ui.theme.AccentBlue
-import com.sabihon.todo.domain.model.Priority
-import com.sabihon.todo.domain.model.SortBy
-import com.sabihon.todo.domain.model.TaskStatusFilter
 
-@OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun SearchScreen(
     onBack: () -> Unit = {},
@@ -145,99 +137,7 @@ fun SearchScreen(
                 }
             }
 
-            // Filter chips – align horizontal per request (single FlowRow)
-            Text("Filters", style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold))
-            Spacer(Modifier.height(8.dp))
-            FlowRow(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(8.dp),
-                verticalArrangement = Arrangement.spacedBy(8.dp)
-            ) {
-                // Status
-                FilterChip(
-                    selected = uiState.filter.status == TaskStatusFilter.ALL,
-                    onClick = { viewModel.onStatusFilterChange(TaskStatusFilter.ALL) },
-                    label = { Text("All") },
-                    colors = FilterChipDefaults.filterChipColors(
-                        selectedContainerColor = AccentBlue,
-                        selectedLabelColor = Color.White
-                    )
-                )
-                FilterChip(
-                    selected = uiState.filter.status == TaskStatusFilter.PENDING,
-                    onClick = { viewModel.onStatusFilterChange(TaskStatusFilter.PENDING) },
-                    label = { Text("Pending") },
-                    colors = FilterChipDefaults.filterChipColors(
-                        selectedContainerColor = AccentBlue,
-                        selectedLabelColor = Color.White
-                    )
-                )
-                FilterChip(
-                    selected = uiState.filter.status == TaskStatusFilter.COMPLETED,
-                    onClick = { viewModel.onStatusFilterChange(TaskStatusFilter.COMPLETED) },
-                    label = { Text("Completed") },
-                    colors = FilterChipDefaults.filterChipColors(
-                        selectedContainerColor = AccentBlue,
-                        selectedLabelColor = Color.White
-                    )
-                )
-                // Priority
-                Priority.values().forEach { pri ->
-                    FilterChip(
-                        selected = uiState.filter.priority == pri,
-                        onClick = {
-                            if (uiState.filter.priority == pri) viewModel.onPriorityFilterChange(null)
-                            else viewModel.onPriorityFilterChange(pri)
-                        },
-                        label = { Text(pri.name) },
-                        colors = FilterChipDefaults.filterChipColors(
-                            selectedContainerColor = AccentBlue,
-                            selectedLabelColor = Color.White
-                        )
-                    )
-                }
-                // Category
-                FilterChip(
-                    selected = uiState.filter.categoryId == null,
-                    onClick = { viewModel.onCategoryFilterChange(null) },
-                    label = { Text("All Categories") },
-                    colors = FilterChipDefaults.filterChipColors(
-                        selectedContainerColor = AccentBlue,
-                        selectedLabelColor = Color.White
-                    )
-                )
-                uiState.categories.forEach { cat ->
-                    FilterChip(
-                        selected = uiState.filter.categoryId == cat.id,
-                        onClick = { viewModel.onCategoryFilterChange(cat.id) },
-                        label = { Text(cat.name) },
-                        colors = FilterChipDefaults.filterChipColors(
-                            selectedContainerColor = AccentBlue,
-                            selectedLabelColor = Color.White
-                        )
-                    )
-                }
-                // Sort
-                FilterChip(
-                    selected = uiState.filter.sortBy == SortBy.DUE_DATE,
-                    onClick = { viewModel.onSortChange(SortBy.DUE_DATE, true) },
-                    label = { Text("Sort by Due Date") },
-                    colors = FilterChipDefaults.filterChipColors(
-                        selectedContainerColor = AccentBlue,
-                        selectedLabelColor = Color.White
-                    )
-                )
-                FilterChip(
-                    selected = uiState.filter.sortBy == SortBy.PRIORITY,
-                    onClick = { viewModel.onSortChange(SortBy.PRIORITY, false) },
-                    label = { Text("Sort by Priority") },
-                    colors = FilterChipDefaults.filterChipColors(
-                        selectedContainerColor = AccentBlue,
-                        selectedLabelColor = Color.White
-                    )
-                )
-            }
-
+            // Filters removed per request – search tab should not show filter chips (screenshot All/Pending/Completed/LOW/MEDIUM/HIGH etc removed)
             Spacer(Modifier.height(12.dp))
             Text("${uiState.tasks.size} results", style = MaterialTheme.typography.labelMedium)
 
