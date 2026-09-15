@@ -74,6 +74,7 @@ fun HomeScreen(
     onNavigateToAllTasks: () -> Unit = {},
     onNavigateToCategories: () -> Unit = {},
     onNavigateToTaskDetail: (String) -> Unit = {},
+    onNavigateToEditTask: (String) -> Unit = {},
     onNavigateToAddTask: () -> Unit = {},
     onNavigateToSearch: () -> Unit = {},
     onNavigateToHistory: () -> Unit = {},
@@ -230,7 +231,10 @@ fun HomeScreen(
                                 selectedTask = task
                                 showActionSheet = true
                             },
-                            onEdit = { onNavigateToTaskDetail(task.id) },
+                            onEdit = {
+                                // Edit should go to edit tasks per request – image pencil blue + trash red
+                                if (onNavigateToEditTask != {}) onNavigateToEditTask(task.id) else onNavigateToTaskDetail(task.id)
+                            },
                             onDelete = { viewModel.onAction(HomeAction.DeleteTask(task)) },
                             onToggleComplete = { checked ->
                                 viewModel.onAction(HomeAction.ToggleComplete(task.id, checked))
@@ -298,13 +302,15 @@ fun HomeScreen(
                         thickness = 0.5.dp
                     )
 
-                    // Edit – pencil icon
+                    // Edit – pencil icon – should go to edit tasks per request
                     Row(
                         modifier = Modifier
                             .fillMaxWidth()
                             .clickable {
                                 showActionSheet = false
-                                selectedTask?.let { onNavigateToTaskDetail(it.id) }
+                                selectedTask?.let {
+                                    if (onNavigateToEditTask != {}) onNavigateToEditTask(it.id) else onNavigateToTaskDetail(it.id)
+                                }
                             }
                             .padding(horizontal = 20.dp, vertical = 16.dp),
                         verticalAlignment = Alignment.CenterVertically,

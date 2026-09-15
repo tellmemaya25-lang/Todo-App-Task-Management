@@ -79,6 +79,7 @@ fun SabihonNavHost(
                     onNavigateToAllTasks = { navController.navigate(Route.AllTasks) },
                     onNavigateToCategories = { navController.navigate(Route.Categories) },
                     onNavigateToTaskDetail = { taskId -> navController.navigate(Route.TaskDetail(taskId)) },
+                    onNavigateToEditTask = { taskId -> navController.navigate(Route.AddEditTask(taskId)) },
                     onNavigateToAddTask = { navController.navigate(Route.AddEditTask()) },
                     onNavigateToSearch = { navController.navigate(Route.Search) },
                     onNavigateToHistory = { navController.navigate(Route.History) },
