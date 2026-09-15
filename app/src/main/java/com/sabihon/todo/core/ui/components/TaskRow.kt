@@ -134,7 +134,7 @@ fun TaskRow(
             modifier = Modifier.size(24.dp)
         ) {
             Icon(
-                imageVector = Icons.Default.MoreHoriz,
+                imageVector = Icons.Filled.MoreHoriz,
                 contentDescription = "More options",
                 tint = MaterialTheme.colorScheme.onSurfaceVariant
             )

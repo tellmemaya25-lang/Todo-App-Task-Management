@@ -54,17 +54,17 @@ fun SabihonTopBar(
         actions = {
             if (showSearch) {
                 IconButton(onClick = { onSearchClick?.invoke() }) {
-                    Icon(Icons.Default.Search, contentDescription = "Search")
+                    Icon(Icons.Filled.Search, contentDescription = "Search")
                 }
             }
             if (showNotifications) {
                 IconButton(onClick = { onNotificationClick?.invoke() }) {
-                    Icon(Icons.Default.Notifications, contentDescription = "Notifications")
+                    Icon(Icons.Filled.Notifications, contentDescription = "Notifications")
                 }
             }
             if (showMore) {
                 IconButton(onClick = { onMoreClick?.invoke() }) {
-                    Icon(Icons.Default.MoreVert, contentDescription = "More")
+                    Icon(Icons.Filled.MoreVert, contentDescription = "More")
                 }
             }
         },

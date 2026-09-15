@@ -106,7 +106,7 @@ fun CategoryCard(
                     )
             ) {
                 Icon(
-                    imageVector = Icons.Default.ArrowOutward,
+                    imageVector = Icons.Filled.ArrowOutward,
                     contentDescription = "Open category",
                     tint = contentColor,
                     modifier = Modifier.size(18.dp)

@@ -68,11 +68,11 @@ fun SearchScreen(
                 value = uiState.query,
                 onValueChange = viewModel::onQueryChange,
                 label = { Text("Search tasks…") },
-                leadingIcon = { Icon(Icons.Default.Search, contentDescription = null) },
+                leadingIcon = { Icon(Icons.Filled.Search, contentDescription = null) },
                 trailingIcon = {
                     if (uiState.query.isNotBlank()) {
                         IconButton(onClick = { viewModel.onQueryChange("") }) {
-                            Icon(Icons.Default.Clear, contentDescription = "Clear")
+                            Icon(Icons.Filled.Clear, contentDescription = "Clear")
                         }
                     }
                 },

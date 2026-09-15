@@ -35,7 +35,7 @@ fun EmptyState(
         verticalArrangement = Arrangement.Center
     ) {
         Icon(
-            imageVector = Icons.Default.TaskAlt,
+            imageVector = Icons.Filled.TaskAlt,
             contentDescription = null,
             modifier = Modifier.size(80.dp),
             tint = MaterialTheme.colorScheme.surfaceVariant

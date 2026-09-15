@@ -80,13 +80,13 @@ fun AddEditTaskScreen(
                 title = { Text(if (uiState.isEditMode) "Edit Task" else "Add Task") },
                 navigationIcon = {
                     IconButton(onClick = onBack) {
-                        Icon(Icons.Default.Close, contentDescription = "Close")
+                        Icon(Icons.Filled.Close, contentDescription = "Close")
                     }
                 },
                 actions = {
                     if (uiState.isEditMode) {
                         IconButton(onClick = { viewModel.setShowDeleteConfirm(true) }) {
-                            Icon(Icons.Default.Delete, contentDescription = "Delete")
+                            Icon(Icons.Filled.Delete, contentDescription = "Delete")
                         }
                     }
                 }
@@ -179,7 +179,7 @@ fun AddEditTaskScreen(
                     Checkbox(checked = sub.isDone, onCheckedChange = { viewModel.toggleSubTask(sub.id) })
                     Text(text = sub.title, modifier = Modifier.weight(1f))
                     IconButton(onClick = { viewModel.removeSubTask(sub.id) }) {
-                        Icon(Icons.Default.Close, contentDescription = "Remove", modifier = Modifier.size(16.dp))
+                        Icon(Icons.Filled.Close, contentDescription = "Remove", modifier = Modifier.size(16.dp))
                     }
                 }
             }

@@ -136,7 +136,7 @@ fun HomeScreen(
                         }
                         Row {
                             IconButton(onClick = onNavigateToHistory) {
-                                Icon(Icons.Default.Notifications, contentDescription = "Notifications")
+                                Icon(Icons.Filled.Notifications, contentDescription = "Notifications")
                             }
                             Box(
                                 modifier = Modifier
@@ -146,7 +146,7 @@ fun HomeScreen(
                                 contentAlignment = Alignment.Center
                             ) {
                                 IconButton(onClick = onNavigateToProfile) {
-                                    Icon(Icons.Default.Person, contentDescription = "Avatar")
+                                    Icon(Icons.Filled.Person, contentDescription = "Avatar")
                                 }
                             }
                         }

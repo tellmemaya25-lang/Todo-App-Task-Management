@@ -31,7 +31,7 @@ fun SabihonFab(
         elevation = FloatingActionButtonDefaults.elevation(defaultElevation = 6.dp)
     ) {
         Icon(
-            imageVector = Icons.Default.Add,
+            imageVector = Icons.Filled.Add,
             contentDescription = contentDescription
         )
     }

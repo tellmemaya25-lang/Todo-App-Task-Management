@@ -69,7 +69,7 @@ fun CircleCheckbox(
     ) {
         if (checked) {
             Icon(
-                imageVector = Icons.Default.Check,
+                imageVector = Icons.Filled.Check,
                 contentDescription = null,
                 tint = Color.White,
                 modifier = Modifier.size(16.dp)

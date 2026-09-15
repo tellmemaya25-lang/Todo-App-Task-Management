@@ -59,7 +59,7 @@ fun TaskDetailScreen(
                 },
                 actions = {
                     IconButton(onClick = { onEdit(taskId) }) {
-                        Icon(Icons.Default.Edit, contentDescription = "Edit")
+                        Icon(Icons.Filled.Edit, contentDescription = "Edit")
                     }
                 }
             )

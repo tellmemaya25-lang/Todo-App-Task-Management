@@ -103,10 +103,10 @@ fun StatTileByType(
     onClick: (() -> Unit)? = null
 ) {
     val (bg, icon, label) = when (type) {
-        StatType.TODAY -> Triple(SoftBlue, Icons.Default.AccessTime, "Today")
-        StatType.SCHEDULED -> Triple(SoftYellow, Icons.Default.CalendarMonth, "Scheduled")
-        StatType.ALL -> Triple(SoftMint, Icons.Default.Layers, "All")
-        StatType.OVERDUE -> Triple(SoftPink, Icons.Default.Warning, "Overdue")
+        StatType.TODAY -> Triple(SoftBlue, Icons.Filled.AccessTime, "Today")
+        StatType.SCHEDULED -> Triple(SoftYellow, Icons.Filled.CalendarMonth, "Scheduled")
+        StatType.ALL -> Triple(SoftMint, Icons.Filled.Layers, "All")
+        StatType.OVERDUE -> Triple(SoftPink, Icons.Filled.Warning, "Overdue")
     }
     PastelStatTile(
         label = label,

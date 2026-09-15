@@ -77,7 +77,7 @@ fun ProfileScreen(
                 contentAlignment = Alignment.Center
             ) {
                 if (uiState.photoUrl != null) {
-                    Icon(Icons.Default.Person, contentDescription = "Avatar", modifier = Modifier.size(40.dp))
+                    Icon(Icons.Filled.Person, contentDescription = "Avatar", modifier = Modifier.size(40.dp))
                 } else {
                     Text(
                         text = uiState.displayName.take(2).uppercase().ifBlank { "U" },

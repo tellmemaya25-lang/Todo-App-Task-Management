@@ -176,8 +176,8 @@ fun StatTilePreview() {
                 .padding(16.dp),
             horizontalArrangement = Arrangement.spacedBy(12.dp)
         ) {
-            PastelStatTile(label = "Today", count = 5, backgroundColor = SoftBlue, icon = androidx.compose.material.icons.Icons.Default.AccessTime, modifier = Modifier.weight(1f))
-            PastelStatTile(label = "Scheduled", count = 12, backgroundColor = SoftYellow, icon = androidx.compose.material.icons.Icons.Default.CalendarMonth, modifier = Modifier.weight(1f))
+            PastelStatTile(label = "Today", count = 5, backgroundColor = SoftBlue, icon = androidx.compose.material.icons.Icons.Filled.AccessTime, modifier = Modifier.weight(1f))
+            PastelStatTile(label = "Scheduled", count = 12, backgroundColor = SoftYellow, icon = androidx.compose.material.icons.Icons.Filled.CalendarMonth, modifier = Modifier.weight(1f))
         }
     }
 }
