@@ -43,7 +43,9 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.sabihon.todo.core.ui.components.EmptyState
+import com.sabihon.todo.core.ui.components.FilterEmptyState
 import com.sabihon.todo.core.ui.components.LoadingShimmer
+import com.sabihon.todo.core.ui.components.NotelyEmptyState
 import com.sabihon.todo.core.ui.components.SectionHeader
 import com.sabihon.todo.core.ui.components.TaskRow
 import java.text.SimpleDateFormat
@@ -168,16 +170,19 @@ fun HomeScreen(
 
                 if (uiState.filteredTasks.isEmpty()) {
                     item {
-                        EmptyState(
-                            title = "No tasks yet",
-                            description = when (uiState.selectedFilter) {
-                                HomeFilter.TODAY -> "No tasks for today. Tap + to create!"
-                                HomeFilter.COMPLETED -> "No completed tasks yet"
-                                HomeFilter.PENDING -> "No pending tasks – you're all caught up!"
-                                HomeFilter.ALL -> "Tap + to create your first task and stay organized!"
-                                HomeFilter.OVERDUE -> "No overdue tasks – great job!"
+                        when (uiState.selectedFilter) {
+                            HomeFilter.ALL -> {
+                                // Notely-style empty for All tasks – matches screenshot
+                                NotelyEmptyState(
+                                    title = "Get started with Notely",
+                                    subtitle = "Add notes, calendar events, tasks files and more with the action bar"
+                                )
                             }
-                        )
+                            HomeFilter.TODAY -> FilterEmptyState(filterName = "Today")
+                            HomeFilter.PENDING -> FilterEmptyState(filterName = "Pending")
+                            HomeFilter.COMPLETED -> FilterEmptyState(filterName = "Completed")
+                            HomeFilter.OVERDUE -> FilterEmptyState(filterName = "Overdue")
+                        }
                     }
                 } else {
                     items(uiState.filteredTasks, key = { it.id }) { task ->
