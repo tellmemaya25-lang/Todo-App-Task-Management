@@ -289,12 +289,12 @@ fun TaskDetailScreen(
                         }
                     }
 
-                    // Sub-tasks with edit – scrollable within container per request
+                    // Sub-tasks with edit – scrollable within container per request – corner radius 24.dp per request
                     var editingSubId by remember { mutableStateOf<String?>(null) }
                     var editingSubText by remember { mutableStateOf("") }
                     Card(
                         modifier = Modifier.fillMaxWidth(),
-                        shape = RoundedCornerShape(20.dp),
+                        shape = RoundedCornerShape(24.dp),
                         colors = CardDefaults.cardColors(containerColor = Color(0xFFF0EBFF)),
                         elevation = CardDefaults.cardElevation(0.dp)
                     ) {
@@ -373,12 +373,12 @@ fun TaskDetailScreen(
                             }
                             }
 
-                            // CTA with overlapping arrow down btn per request
+                            // CTA with overlapping arrow down btn per request – corner radius 24.dp
                             Box(modifier = Modifier.fillMaxWidth()) {
                                 Box(
                                     modifier = Modifier.fillMaxWidth()
                                         .padding(top = 12.dp)
-                                        .clip(RoundedCornerShape(bottomStart = 20.dp, bottomEnd = 20.dp))
+                                        .clip(RoundedCornerShape(bottomStart = 24.dp, bottomEnd = 24.dp))
                                         .background(AccentBlue)
                                         .clickable { showAddSheet = true }
                                         .padding(horizontal = 16.dp, vertical = 14.dp),

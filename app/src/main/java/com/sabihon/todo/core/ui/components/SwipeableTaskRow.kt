@@ -41,10 +41,11 @@ import kotlinx.coroutines.launch
 import kotlin.math.roundToInt
 
 /**
- * Swipeable task row – centered swipe right icons + remove swipe left per request
- * - Remove swipe left (mark done) and its icon – only swipe left reveals edit/delete centered
- * - Background edit/delete icons centered in container, fill vertical height, no bg/corner radius
- * - Second screenshot shows light blue container with blue edit + red delete centered
+ * Swipeable task row – fix swipe right missing edit/delete + corner radius 24.dp
+ * - Allow both swipe left and right to reveal edit/delete centered (was only left)
+ * - Remove mark done swipe per earlier request, now both directions show edit/delete
+ * - Background icons centered, fill vertical height, no bg/corner radius
+ * - Outer clip 24.dp per request
  */
 @Composable
 fun SwipeableTaskRow(
@@ -65,10 +66,10 @@ fun SwipeableTaskRow(
     onToggleComplete: ((Boolean) -> Unit)? = null
 ) {
     val density = LocalDensity.current
-    // Only left swipe (negative) – remove right swipe (mark done) per request
+    val startThreshold = with(density) { 80.dp.toPx() }
     val endThreshold = with(density) { -80.dp.toPx() }
+    val maxStart = with(density) { 140.dp.toPx() }
     val maxEnd = with(density) { -140.dp.toPx() }
-    val maxStart = 0f
 
     val offsetX = remember { Animatable(0f) }
     val scope = rememberCoroutineScope()
@@ -89,10 +90,11 @@ fun SwipeableTaskRow(
             .clip(RoundedCornerShape(24.dp))
             .background(Color(0xFFE3F5FF))
     ) {
-        // Background – centered edit/delete icons per request, remove swipe left icon
+        // Background – centered edit/delete for both swipe directions, corner radius 24.dp
         Row(
             modifier = Modifier
                 .fillMaxSize()
+                .clip(RoundedCornerShape(24.dp))
                 .background(Color(0xFFE3F5FF))
                 .padding(horizontal = 24.dp, vertical = 8.dp),
             horizontalArrangement = Arrangement.Center,
@@ -152,6 +154,9 @@ fun SwipeableTaskRow(
                         isDragging = false
                         scope.launch {
                             when {
+                                offsetX.value > startThreshold -> {
+                                    offsetX.animateTo(maxStart, spring(dampingRatio = Spring.DampingRatioMediumBouncy))
+                                }
                                 offsetX.value < endThreshold -> {
                                     offsetX.animateTo(maxEnd, spring(dampingRatio = Spring.DampingRatioMediumBouncy))
                                 }
