@@ -1,18 +1,15 @@
 package com.sabihon.todo.core.ui.components
 
+import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.spring
-import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
-import androidx.compose.foundation.gestures.AnchoredDraggableState
-import androidx.compose.foundation.gestures.DraggableAnchors
 import androidx.compose.foundation.gestures.Orientation
-import androidx.compose.foundation.gestures.anchoredDraggable
+import androidx.compose.foundation.gestures.draggable
+import androidx.compose.foundation.gestures.rememberDraggableState
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.fillMaxHeight
-import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
@@ -27,8 +24,11 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -41,13 +41,12 @@ import com.sabihon.todo.domain.model.SubTask
 import kotlinx.coroutines.launch
 import kotlin.math.roundToInt
 
-enum class DragAnchors {
-    Center,
-    Start, // swipe right -> mark done
-    End // swipe left -> edit/delete
-}
-
-@OptIn(ExperimentalFoundationApi::class)
+/**
+ * Swipeable task row – stable implementation using draggable + Animatable
+ * - Swipe right (positive offset) -> Mark as Done (blue)
+ * - Swipe left (negative offset) -> Edit (blue) + Delete (red)
+ * - Works with LazyColumn vertical scroll
+ */
 @Composable
 fun SwipeableTaskRow(
     title: String,
@@ -67,45 +66,22 @@ fun SwipeableTaskRow(
     onToggleComplete: ((Boolean) -> Unit)? = null
 ) {
     val density = LocalDensity.current
-    val actionWidth = 80.dp
-    val startActionWidth = 100.dp
-    val endActionWidth = 160.dp
+    val startThreshold = with(density) { 100.dp.toPx() } // swipe right threshold
+    val endThreshold = with(density) { -160.dp.toPx() } // swipe left threshold
+    val maxStart = with(density) { 100.dp.toPx() }
+    val maxEnd = with(density) { -160.dp.toPx() }
 
-    val startPx = with(density) { startActionWidth.toPx() }
-    val endPx = with(density) { -endActionWidth.toPx() }
-
-    val state = remember {
-        AnchoredDraggableState(
-            initialValue = DragAnchors.Center,
-            anchors = DraggableAnchors {
-                DragAnchors.Start at startPx
-                DragAnchors.Center at 0f
-                DragAnchors.End at endPx
-            },
-            positionalThreshold = { distance: Float -> distance * 0.5f },
-            velocityThreshold = { with(density) { 100.dp.toPx() } },
-            animationSpec = spring(
-                dampingRatio = Spring.DampingRatioMediumBouncy,
-                stiffness = Spring.StiffnessMedium
-            )
-        )
-    }
-
+    val offsetX = remember { Animatable(0f) }
     val scope = rememberCoroutineScope()
+    var isDragging by remember { androidx.compose.runtime.mutableStateOf(false) }
 
-    // Auto-trigger actions when swiped beyond threshold and released
-    LaunchedEffect(state.currentValue) {
-        when (state.currentValue) {
-            DragAnchors.Start -> {
-                // Swipe right -> mark as done/pending
-                onToggleComplete?.invoke(!isCompleted)
-                // Snap back
-                state.animateTo(DragAnchors.Center)
+    // Auto snap back after action if needed
+    LaunchedEffect(isCompleted) {
+        // When task toggled, snap back to center
+        if (offsetX.value != 0f) {
+            scope.launch {
+                offsetX.animateTo(0f, animationSpec = spring(dampingRatio = Spring.DampingRatioMediumBouncy))
             }
-            DragAnchors.End -> {
-                // Keep open to show edit/delete – don't auto trigger, let user tap action
-            }
-            DragAnchors.Center -> {}
         }
     }
 
@@ -114,24 +90,20 @@ fun SwipeableTaskRow(
             .fillMaxWidth()
             .padding(horizontal = 16.dp, vertical = 6.dp)
             .clip(RoundedCornerShape(24.dp))
+            .background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.8f))
     ) {
         // Background actions
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .clip(RoundedCornerShape(24.dp))
-                .background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.8f))
-                .padding(horizontal = 8.dp),
+                .padding(horizontal = 8.dp, vertical = 8.dp),
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically
         ) {
-            // Left action – Mark as Done (when swiped right)
+            // Left – Mark Done (visible when swiped right)
             Row(
-                modifier = Modifier
-                    .fillMaxHeight()
-                    .padding(vertical = 8.dp),
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(8.dp)
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                verticalAlignment = Alignment.CenterVertically
             ) {
                 Box(
                     modifier = Modifier
@@ -149,15 +121,16 @@ fun SwipeableTaskRow(
                 }
             }
 
-            // Right actions – Edit + Delete (when swiped left)
+            // Right – Edit + Delete (visible when swiped left)
             Row(
                 horizontalArrangement = Arrangement.spacedBy(8.dp),
-                verticalAlignment = Alignment.CenterVertically,
-                modifier = Modifier.padding(vertical = 8.dp)
+                verticalAlignment = Alignment.CenterVertically
             ) {
                 IconButton(
                     onClick = {
-                        scope.launch { state.animateTo(DragAnchors.Center) }
+                        scope.launch {
+                            offsetX.animateTo(0f, spring(dampingRatio = Spring.DampingRatioMediumBouncy))
+                        }
                         onEdit?.invoke()
                     },
                     modifier = Modifier
@@ -174,7 +147,9 @@ fun SwipeableTaskRow(
                 }
                 IconButton(
                     onClick = {
-                        scope.launch { state.animateTo(DragAnchors.Center) }
+                        scope.launch {
+                            offsetX.animateTo(0f, spring(dampingRatio = Spring.DampingRatioMediumBouncy))
+                        }
                         onDelete?.invoke()
                     },
                     modifier = Modifier
@@ -192,14 +167,41 @@ fun SwipeableTaskRow(
             }
         }
 
-        // Foreground task card – draggable
+        // Foreground draggable card
         Box(
             modifier = Modifier
                 .fillMaxWidth()
-                .offset { IntOffset(x = state.requireOffset().roundToInt(), y = 0) }
-                .anchoredDraggable(
-                    state = state,
-                    orientation = Orientation.Horizontal
+                .offset { IntOffset(offsetX.value.roundToInt(), 0) }
+                .draggable(
+                    state = rememberDraggableState { delta ->
+                        // Only allow horizontal drag, clamp
+                        val newValue = (offsetX.value + delta).coerceIn(maxEnd, maxStart)
+                        scope.launch {
+                            offsetX.snapTo(newValue)
+                        }
+                    },
+                    orientation = Orientation.Horizontal,
+                    onDragStarted = { isDragging = true },
+                    onDragStopped = { velocity ->
+                        isDragging = false
+                        scope.launch {
+                            when {
+                                offsetX.value > startThreshold / 2 -> {
+                                    // Swipe right -> mark done
+                                    onToggleComplete?.invoke(!isCompleted)
+                                    offsetX.animateTo(0f, spring(dampingRatio = Spring.DampingRatioMediumBouncy))
+                                }
+                                offsetX.value < endThreshold / 2 -> {
+                                    // Swipe left -> reveal edit/delete, stay open
+                                    offsetX.animateTo(maxEnd, spring(dampingRatio = Spring.DampingRatioMediumBouncy))
+                                }
+                                else -> {
+                                    // Snap back to center
+                                    offsetX.animateTo(0f, spring(dampingRatio = Spring.DampingRatioMediumBouncy))
+                                }
+                            }
+                        }
+                    }
                 )
         ) {
             TaskRow(
@@ -212,8 +214,21 @@ fun SwipeableTaskRow(
                 onCheckedChange = onCheckedChange,
                 onAddSubTask = onAddSubTask,
                 onSubTaskChecked = onSubTaskChecked,
-                onClick = onClick,
-                onLongClick = onLongClick,
+                onClick = {
+                    // If swiped open, close first, else click
+                    if (offsetX.value != 0f) {
+                        scope.launch {
+                            offsetX.animateTo(0f, spring(dampingRatio = Spring.DampingRatioMediumBouncy))
+                        }
+                    } else {
+                        onClick?.invoke()
+                    }
+                },
+                onLongClick = {
+                    if (offsetX.value == 0f) {
+                        onLongClick?.invoke()
+                    }
+                },
                 modifier = Modifier.fillMaxWidth()
             )
         }
