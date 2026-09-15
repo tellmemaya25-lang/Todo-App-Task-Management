@@ -28,7 +28,8 @@ import javax.inject.Inject
 import javax.inject.Singleton
 
 /**
- * Firestore implementation – with detailed logging and fallback for permission/index errors.
+ * Firestore implementation – fixed field name mapping (completed/deleted not isCompleted/isDeleted)
+ * and robust query handling without composite index requirement.
  */
 @Singleton
 class TaskRepositoryImpl @Inject constructor(
@@ -55,55 +56,48 @@ class TaskRepositoryImpl @Inject constructor(
                 close()
                 return@callbackFlow
             }
-            android.util.Log.d("TaskRepo", "observeTasks for uid=$uid filter=$filter")
+            android.util.Log.d("TaskRepo", "observeTasks uid=$uid filter=$filter")
 
-            var query: Query = tasksCollection()
-
-            if (!filter.includeDeleted) {
-                query = query.whereEqualTo("isDeleted", false)
-            }
-            when (filter.status) {
-                TaskStatusFilter.PENDING -> query = query.whereEqualTo("isCompleted", false)
-                TaskStatusFilter.COMPLETED -> query = query.whereEqualTo("isCompleted", true)
-                else -> {}
-            }
-            filter.priority?.let {
-                query = query.whereEqualTo("priority", it.name)
-            }
-            filter.categoryId?.let {
-                query = query.whereEqualTo("categoryId", it)
+            // Robust approach: only filter by deleted in Firestore to avoid composite index requirement.
+            // All other filtering (status, priority, category, search) done in-memory.
+            // This ensures tasks show even if indexes missing.
+            val baseQuery: Query = if (!filter.includeDeleted) {
+                tasksCollection().whereEqualTo("deleted", false)
+            } else {
+                tasksCollection()
             }
 
+            // Try with orderBy, fallback without if fails
             val queryWithOrder = try {
-                query.orderBy("dueAt", Query.Direction.ASCENDING)
+                baseQuery.orderBy("dueAt", Query.Direction.ASCENDING)
             } catch (e: Exception) {
                 android.util.Log.w("TaskRepo", "orderBy failed, using unordered", e)
-                query
+                baseQuery
             }
 
             val listener = queryWithOrder.addSnapshotListener { snapshot, error ->
                 if (error != null) {
-                    android.util.Log.e("TaskRepo", "Snapshot listener error: ${error.message}", error)
+                    android.util.Log.e("TaskRepo", "Snapshot error: ${error.message}", error)
                     val msg = error.message ?: ""
                     if (msg.contains("PERMISSION_DENIED", ignoreCase = true)) {
-                        trySend(Result.Error(error, "Firestore permission denied. Deploy firestore.rules from repo. See FIRESTORE_FIX.md"))
+                        trySend(Result.Error(error, "Firestore permission denied. Deploy firestore.rules. See FIRESTORE_FIX.md"))
                     } else if (msg.contains("index", ignoreCase = true) || msg.contains("FAILED_PRECONDITION")) {
-                        android.util.Log.w("TaskRepo", "Index missing, fallback")
+                        // Fallback to simplest query: just collection without filters
+                        android.util.Log.w("TaskRepo", "Index missing, fallback to simple collection")
                         try {
-                            val fallbackListener = tasksCollection()
-                                .whereEqualTo("isDeleted", false)
-                                .addSnapshotListener { snap2, err2 ->
-                                    if (err2 != null) {
-                                        trySend(Result.Error(err2, err2.message))
-                                        return@addSnapshotListener
-                                    }
-                                    val tasks = snap2?.documents?.mapNotNull { doc ->
-                                        try { doc.toObject(TaskDto::class.java)?.toDomain() } catch (e: Exception) {
-                                            android.util.Log.e("TaskRepo", "Parse error", e); null
-                                        }
-                                    }?.let { applyInMemoryFilters(it, filter) } ?: emptyList()
-                                    trySend(Result.Success(tasks))
+                            tasksCollection().addSnapshotListener { snap2, err2 ->
+                                if (err2 != null) {
+                                    trySend(Result.Error(err2, err2.message))
+                                    return@addSnapshotListener
                                 }
+                                val tasks = snap2?.documents?.mapNotNull { doc ->
+                                    try { doc.toObject(TaskDto::class.java)?.toDomain() } catch (e: Exception) {
+                                        android.util.Log.e("TaskRepo", "Parse error ${doc.id}", e); null
+                                    }
+                                }?.let { applyInMemoryFilters(it, filter) } ?: emptyList()
+                                android.util.Log.d("TaskRepo", "Fallback snapshot ${tasks.size} tasks")
+                                trySend(Result.Success(tasks))
+                            }
                         } catch (e: Exception) {
                             trySend(Result.Error(e))
                         }
@@ -113,27 +107,48 @@ class TaskRepositoryImpl @Inject constructor(
                     return@addSnapshotListener
                 }
                 if (snapshot != null) {
-                    android.util.Log.d("TaskRepo", "Snapshot received ${snapshot.size()} docs")
+                    android.util.Log.d("TaskRepo", "Snapshot ${snapshot.size()} docs for uid=$uid")
                     val tasks = snapshot.documents.mapNotNull { doc ->
                         try {
                             doc.toObject(TaskDto::class.java)?.toDomain()
                         } catch (e: Exception) {
-                            android.util.Log.e("TaskRepo", "Failed to parse task ${doc.id}", e)
+                            android.util.Log.e("TaskRepo", "Failed parse ${doc.id}: ${e.message}", e)
                             null
                         }
                     }.let { applyInMemoryFilters(it, filter) }
+                    android.util.Log.d("TaskRepo", "After filter ${tasks.size} tasks")
                     trySend(Result.Success(tasks))
                 }
             }
             awaitClose { listener.remove() }
         } catch (e: Exception) {
             android.util.Log.e("TaskRepo", "observeTasks crash", e)
-            trySend(Result.Error(e, e.message ?: "Failed to observe tasks"))
+            trySend(Result.Error(e, e.message ?: "Failed to observe"))
         }
     }
 
     private fun applyInMemoryFilters(tasks: List<Task>, filter: TaskFilter): List<Task> {
         var result = tasks
+
+        // IncludeDeleted already handled in query, but double-check
+        if (!filter.includeDeleted) {
+            result = result.filter { !it.isDeleted }
+        }
+
+        // Status filter in-memory to avoid composite index
+        when (filter.status) {
+            TaskStatusFilter.PENDING -> result = result.filter { !it.isCompleted }
+            TaskStatusFilter.COMPLETED -> result = result.filter { it.isCompleted }
+            else -> {}
+        }
+
+        filter.priority?.let { pri ->
+            result = result.filter { it.priority == pri }
+        }
+        filter.categoryId?.let { catId ->
+            result = result.filter { it.categoryId == catId }
+        }
+
         filter.dueDateRange?.let { range ->
             val now = System.currentTimeMillis()
             val startOfDay = getStartOfDay(now)
@@ -194,7 +209,7 @@ class TaskRepositoryImpl @Inject constructor(
     override suspend fun addTask(task: Task): Result<String> = withContext(ioDispatcher) {
         try {
             val uid = userIdOrThrow()
-            android.util.Log.d("TaskRepo", "addTask start uid=$uid title=${task.title} dueAt=${task.dueAt}")
+            android.util.Log.d("TaskRepo", "addTask uid=$uid title=${task.title}")
 
             val dto = task.copy(
                 searchKeywords = if (task.searchKeywords.isEmpty()) generateSearchKeywords(task.title) else task.searchKeywords,
@@ -205,14 +220,12 @@ class TaskRepositoryImpl @Inject constructor(
             val docRef = if (task.id.isBlank()) tasksCollection().document() else tasksCollection().document(task.id)
             val finalDto = dto.copy(id = docRef.id)
 
-            android.util.Log.d("TaskRepo", "Writing to users/$uid/tasks/${docRef.id} dto=$finalDto")
+            android.util.Log.d("TaskRepo", "Writing users/$uid/tasks/${docRef.id}")
 
-            // Try full DTO first
             try {
                 docRef.set(finalDto).await()
             } catch (e: Exception) {
-                android.util.Log.e("TaskRepo", "Full DTO write failed, trying minimal map fallback", e)
-                // Fallback: minimal map without complex fields
+                android.util.Log.e("TaskRepo", "Full DTO failed, fallback minimal", e)
                 val minimal = hashMapOf(
                     "title" to task.title,
                     "description" to task.description,
@@ -220,8 +233,8 @@ class TaskRepositoryImpl @Inject constructor(
                     "priority" to task.priority.name,
                     "dueAt" to task.dueAt?.let { Timestamp(Date(it)) },
                     "reminderAt" to task.reminderAt?.let { Timestamp(Date(it)) },
-                    "isCompleted" to false,
-                    "isDeleted" to false,
+                    "completed" to false,
+                    "deleted" to false,
                     "searchKeywords" to generateSearchKeywords(task.title),
                     "createdAt" to Timestamp(Date()),
                     "updatedAt" to Timestamp(Date()),
@@ -230,34 +243,23 @@ class TaskRepositoryImpl @Inject constructor(
                 docRef.set(minimal).await()
             }
 
-            android.util.Log.d("TaskRepo", "Task written successfully ${docRef.id}")
+            android.util.Log.d("TaskRepo", "Task written ${docRef.id}")
 
-            // Activity log – ignore failures
-            try {
-                logActivity(taskId = docRef.id, taskTitle = task.title, action = "CREATED")
-            } catch (e: Exception) {
+            try { logActivity(taskId = docRef.id, taskTitle = task.title, action = "CREATED") } catch (e: Exception) {
                 android.util.Log.w("TaskRepo", "logActivity failed", e)
             }
-
-            try {
-                task.reminderAt?.let {
-                    reminderScheduler.scheduleReminder(docRef.id, task.title, task.description, it)
-                }
-            } catch (e: Exception) {
-                android.util.Log.e("TaskRepo", "Reminder schedule failed", e)
+            try { task.reminderAt?.let { reminderScheduler.scheduleReminder(docRef.id, task.title, task.description, it) } } catch (e: Exception) {
+                android.util.Log.e("TaskRepo", "Reminder failed", e)
             }
 
             Result.Success(docRef.id)
         } catch (e: Exception) {
-            android.util.Log.e("TaskRepo", "addTask FAILED: ${e.message}", e)
-            val msg = e.message ?: "Failed to add task"
+            android.util.Log.e("TaskRepo", "addTask FAILED ${e.message}", e)
+            val msg = e.message ?: "Failed"
             val friendly = when {
-                msg.contains("PERMISSION_DENIED", ignoreCase = true) ->
-                    "Firestore permission denied. Deploy firestore.rules: firebase deploy --only firestore:rules (or paste rules in Console). See FIRESTORE_FIX.md"
-                msg.contains("UNAUTHENTICATED", ignoreCase = true) || msg.contains("not authenticated", ignoreCase = true) ->
-                    "Not authenticated. Please sign out and sign in again."
-                msg.contains("UNAVAILABLE", ignoreCase = true) ->
-                    "Firestore unavailable – check internet. Task will sync when online."
+                msg.contains("PERMISSION_DENIED", true) -> "Firestore permission denied. Deploy firestore.rules"
+                msg.contains("UNAUTHENTICATED", true) || msg.contains("not authenticated", true) -> "Not authenticated. Logout/login."
+                msg.contains("UNAVAILABLE", true) -> "Firestore unavailable – check internet"
                 else -> msg
             }
             Result.Error(e, friendly)
@@ -275,21 +277,17 @@ class TaskRepositoryImpl @Inject constructor(
             try {
                 if (task.reminderAt != null) reminderScheduler.scheduleReminder(task.id, task.title, task.description, task.reminderAt)
                 else reminderScheduler.cancelReminder(task.id)
-            } catch (e: Exception) {
-                android.util.Log.e("TaskRepo", "Reminder reschedule failed", e)
-            }
+            } catch (e: Exception) { android.util.Log.e("TaskRepo", "Reminder reschedule failed", e) }
             Result.Success(Unit)
         } catch (e: Exception) {
-            Result.Error(e, e.message ?: "Failed to update")
+            Result.Error(e, e.message ?: "Failed update")
         }
     }
 
     override suspend fun deleteTask(taskId: String, softDelete: Boolean): Result<Unit> = withContext(ioDispatcher) {
         try {
             if (softDelete) {
-                tasksCollection().document(taskId).update(
-                    mapOf("isDeleted" to true, "updatedAt" to Timestamp(Date()))
-                ).await()
+                tasksCollection().document(taskId).update(mapOf("deleted" to true, "updatedAt" to Timestamp(Date()))).await()
             } else {
                 tasksCollection().document(taskId).delete().await()
             }
@@ -303,54 +301,38 @@ class TaskRepositoryImpl @Inject constructor(
 
     override suspend fun restoreTask(taskId: String): Result<Unit> = withContext(ioDispatcher) {
         try {
-            tasksCollection().document(taskId).update(
-                mapOf("isDeleted" to false, "updatedAt" to Timestamp(Date()))
-            ).await()
+            tasksCollection().document(taskId).update(mapOf("deleted" to false, "updatedAt" to Timestamp(Date()))).await()
             Result.Success(Unit)
-        } catch (e: Exception) {
-            Result.Error(e)
-        }
+        } catch (e: Exception) { Result.Error(e) }
     }
 
     override suspend fun toggleComplete(taskId: String, isCompleted: Boolean): Result<Unit> = withContext(ioDispatcher) {
         try {
-            val updates = mutableMapOf<String, Any?>(
-                "isCompleted" to isCompleted,
-                "updatedAt" to Timestamp(Date())
-            )
+            val updates = mutableMapOf<String, Any?>("completed" to isCompleted, "updatedAt" to Timestamp(Date()))
             if (isCompleted) updates["completedAt"] = Timestamp(Date()) else updates["completedAt"] = null
             tasksCollection().document(taskId).update(updates).await()
             logActivity(taskId = taskId, taskTitle = "", action = if (isCompleted) "COMPLETED" else "REOPENED")
             if (isCompleted) try { reminderScheduler.cancelReminder(taskId) } catch (_: Exception) {}
             Result.Success(Unit)
-        } catch (e: Exception) {
-            Result.Error(e)
-        }
+        } catch (e: Exception) { Result.Error(e) }
     }
 
     override suspend fun searchTasks(query: String): Flow<Result<List<Task>>> = flow {
         emit(Result.Loading)
         try {
-            if (query.isBlank()) {
-                emit(Result.Success(emptyList()))
-                return@flow
-            }
+            if (query.isBlank()) { emit(Result.Success(emptyList())); return@flow }
             val lower = query.lowercase()
             val snapshot = try {
-                tasksCollection().whereEqualTo("isDeleted", false).whereArrayContains("searchKeywords", lower).get().await()
+                tasksCollection().whereEqualTo("deleted", false).whereArrayContains("searchKeywords", lower).get().await()
             } catch (e: Exception) {
                 android.util.Log.w("TaskRepo", "search index missing, fallback", e)
-                tasksCollection().whereEqualTo("isDeleted", false).get().await()
+                tasksCollection().whereEqualTo("deleted", false).get().await()
             }
             val tasks = snapshot.documents.mapNotNull {
                 try { it.toObject(TaskDto::class.java)?.toDomain() } catch (_: Exception) { null }
-            }.filter {
-                it.title.lowercase().contains(lower) || it.description.lowercase().contains(lower)
-            }
+            }.filter { it.title.lowercase().contains(lower) || it.description.lowercase().contains(lower) }
             emit(Result.Success(tasks))
-        } catch (e: Exception) {
-            emit(Result.Error(e))
-        }
+        } catch (e: Exception) { emit(Result.Error(e)) }
     }
 
     private suspend fun logActivity(taskId: String, taskTitle: String, action: String) {
