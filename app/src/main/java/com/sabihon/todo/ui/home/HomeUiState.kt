@@ -4,7 +4,7 @@ import com.sabihon.todo.domain.model.Task
 import com.sabihon.todo.domain.usecase.DashboardCounts
 
 enum class HomeFilter {
-    TODAY, COMPLETED, PENDING, ALL
+    TODAY, COMPLETED, PENDING, ALL, OVERDUE
 }
 
 /**

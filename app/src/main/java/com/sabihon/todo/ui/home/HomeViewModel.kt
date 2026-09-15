@@ -88,6 +88,7 @@ class HomeViewModel @Inject constructor(
             HomeFilter.COMPLETED -> tasks.filter { it.isCompleted }
             HomeFilter.PENDING -> tasks.filter { !it.isCompleted }
             HomeFilter.ALL -> tasks
+            HomeFilter.OVERDUE -> tasks.filter { it.dueAt != null && it.dueAt < now && !it.isCompleted }
         }
     }
 

@@ -129,6 +129,10 @@ fun HomeScreen(
                                 viewModel.onAction(HomeAction.SetFilter(HomeFilter.ALL))
                                 showFilterMenu = false
                             })
+                            DropdownMenuItem(text = { Text("Overdue") }, onClick = {
+                                viewModel.onAction(HomeAction.SetFilter(HomeFilter.OVERDUE))
+                                showFilterMenu = false
+                            })
                         }
                     }
                     IconButton(onClick = onNavigateToSearch) {
@@ -153,7 +157,7 @@ fun HomeScreen(
                     .padding(innerPadding),
                 verticalArrangement = Arrangement.spacedBy(0.dp)
             ) {
-                // 4 Chips: Today, Completed, Pending, All
+                // 5 Chips: Today, Pending, Completed, All, Overdue – matching reference image + user request
                 item {
                     LazyRow(
                         modifier = Modifier
@@ -165,7 +169,8 @@ fun HomeScreen(
                             HomeFilter.TODAY to "Today",
                             HomeFilter.PENDING to "Pending",
                             HomeFilter.COMPLETED to "Completed",
-                            HomeFilter.ALL to "All"
+                            HomeFilter.ALL to "All",
+                            HomeFilter.OVERDUE to "Overdue"
                         )
                         items(chips) { (filter, label) ->
                             FilterChip(
@@ -189,6 +194,7 @@ fun HomeScreen(
                             HomeFilter.PENDING -> "Pending Tasks"
                             HomeFilter.COMPLETED -> "Completed Tasks"
                             HomeFilter.ALL -> "All Tasks"
+                            HomeFilter.OVERDUE -> "Overdue Tasks"
                         },
                         modifier = Modifier.padding(horizontal = 20.dp)
                     )
@@ -204,6 +210,7 @@ fun HomeScreen(
                                 HomeFilter.COMPLETED -> "No completed tasks yet"
                                 HomeFilter.PENDING -> "No pending tasks – you're all caught up!"
                                 HomeFilter.ALL -> "Tap + to create your first task and stay organized!"
+                                HomeFilter.OVERDUE -> "No overdue tasks – great job staying on track!"
                             }
                         )
                     }
