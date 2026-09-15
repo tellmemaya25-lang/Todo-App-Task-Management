@@ -61,7 +61,7 @@ import java.util.Locale
 /**
  * Add/Edit Task – crash-hardened, with Snackbar for errors and detailed logging.
  */
-@OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun AddEditTaskScreen(
     taskId: String?,
