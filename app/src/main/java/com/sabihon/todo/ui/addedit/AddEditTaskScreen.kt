@@ -2,8 +2,6 @@ package com.sabihon.todo.ui.addedit
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.ExperimentalLayoutApi
-import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
@@ -22,11 +20,14 @@ import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.DatePicker
 import androidx.compose.material3.DatePickerDialog
+import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.FilterChip
+import androidx.compose.material3.ExposedDropdownMenuBox
+import androidx.compose.material3.ExposedDropdownMenuDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.MenuAnchorType
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarHost
@@ -50,7 +51,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.sabihon.todo.core.ui.components.ConfirmDialog
-import com.sabihon.todo.core.ui.components.PriorityChip
 import com.sabihon.todo.core.ui.components.SubTaskRoundedCheckbox
 import com.sabihon.todo.domain.model.Priority
 import java.text.SimpleDateFormat
@@ -138,28 +138,86 @@ fun AddEditTaskScreen(
                 maxLines = 6
             )
 
-            Text("Category", style = MaterialTheme.typography.titleMedium)
-            FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                FilterChip(
-                    selected = uiState.categoryId == null,
-                    onClick = { viewModel.onCategorySelected(null) },
-                    label = { Text("Uncategorized") }
-                )
-                uiState.categories.forEach { cat ->
-                    FilterChip(
-                        selected = uiState.categoryId == cat.id,
-                        onClick = { viewModel.onCategorySelected(cat.id) },
-                        label = { Text(cat.name) }
+            // Category and Priority as dropdown side by side per request
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(12.dp)
+            ) {
+                // Category dropdown
+                var categoryExpanded by remember { mutableStateOf(false) }
+                val selectedCategoryName = uiState.categories.find { it.id == uiState.categoryId }?.name ?: "Uncategorized"
+                ExposedDropdownMenuBox(
+                    expanded = categoryExpanded,
+                    onExpandedChange = { categoryExpanded = !categoryExpanded },
+                    modifier = Modifier.weight(1f)
+                ) {
+                    OutlinedTextField(
+                        value = selectedCategoryName,
+                        onValueChange = {},
+                        readOnly = true,
+                        label = { Text("Category") },
+                        trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = categoryExpanded) },
+                        modifier = Modifier.menuAnchor(MenuAnchorType.PrimaryNotEditable).fillMaxWidth(),
+                        shape = RoundedCornerShape(16.dp),
+                        singleLine = true
                     )
+                    ExposedDropdownMenu(
+                        expanded = categoryExpanded,
+                        onDismissRequest = { categoryExpanded = false },
+                        shape = RoundedCornerShape(16.dp)
+                    ) {
+                        DropdownMenuItem(
+                            text = { Text("Uncategorized") },
+                            onClick = {
+                                viewModel.onCategorySelected(null)
+                                categoryExpanded = false
+                            }
+                        )
+                        uiState.categories.forEach { cat ->
+                            DropdownMenuItem(
+                                text = { Text(cat.name) },
+                                onClick = {
+                                    viewModel.onCategorySelected(cat.id)
+                                    categoryExpanded = false
+                                }
+                            )
+                        }
+                    }
                 }
-            }
 
-            Text("Priority", style = MaterialTheme.typography.titleMedium)
-            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                PriorityChip(priority = Priority.LOW, selected = uiState.priority == Priority.LOW, onClick = { viewModel.onPrioritySelected(Priority.LOW) })
-                PriorityChip(priority = Priority.MEDIUM, selected = uiState.priority == Priority.MEDIUM, onClick = { viewModel.onPrioritySelected(Priority.MEDIUM) })
-                PriorityChip(priority = Priority.HIGH, selected = uiState.priority == Priority.HIGH, onClick = { viewModel.onPrioritySelected(Priority.HIGH) })
-                PriorityChip(priority = Priority.URGENT, selected = uiState.priority == Priority.URGENT, onClick = { viewModel.onPrioritySelected(Priority.URGENT) })
+                // Priority dropdown
+                var priorityExpanded by remember { mutableStateOf(false) }
+                ExposedDropdownMenuBox(
+                    expanded = priorityExpanded,
+                    onExpandedChange = { priorityExpanded = !priorityExpanded },
+                    modifier = Modifier.weight(1f)
+                ) {
+                    OutlinedTextField(
+                        value = uiState.priority.name.lowercase().replaceFirstChar { it.uppercase() },
+                        onValueChange = {},
+                        readOnly = true,
+                        label = { Text("Priority") },
+                        trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = priorityExpanded) },
+                        modifier = Modifier.menuAnchor(MenuAnchorType.PrimaryNotEditable).fillMaxWidth(),
+                        shape = RoundedCornerShape(16.dp),
+                        singleLine = true
+                    )
+                    ExposedDropdownMenu(
+                        expanded = priorityExpanded,
+                        onDismissRequest = { priorityExpanded = false },
+                        shape = RoundedCornerShape(16.dp)
+                    ) {
+                        Priority.values().forEach { pri ->
+                            DropdownMenuItem(
+                                text = { Text(pri.name.lowercase().replaceFirstChar { it.uppercase() }) },
+                                onClick = {
+                                    viewModel.onPrioritySelected(pri)
+                                    priorityExpanded = false
+                                }
+                            )
+                        }
+                    }
+                }
             }
 
             Text("Due Date & Time", style = MaterialTheme.typography.titleMedium)
