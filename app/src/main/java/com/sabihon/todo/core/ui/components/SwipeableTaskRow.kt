@@ -10,7 +10,6 @@ import androidx.compose.foundation.gestures.rememberDraggableState
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.offset
@@ -18,7 +17,6 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material3.Icon
@@ -43,11 +41,10 @@ import kotlinx.coroutines.launch
 import kotlin.math.roundToInt
 
 /**
- * Swipeable task row – centered icons + fill vertical height per request
- * - Outer Box padding 16dp/6dp clip 24dp bg #E3F5FF
- * - Background Row now matchParentSize + fillMaxHeight centered vertically, so icons fill container height
- * - Icons 56dp (was 48dp) centered, with 12dp horizontal padding, vertical fill
- * - Left swipe Edit/Delete blue #3B82F6 + red #E57373 centered and fill height, right swipe Mark Done
+ * Swipeable task row – centered swipe right icons + remove swipe left per request
+ * - Remove swipe left (mark done) and its icon – only swipe left reveals edit/delete centered
+ * - Background edit/delete icons centered in container, fill vertical height, no bg/corner radius
+ * - Second screenshot shows light blue container with blue edit + red delete centered
  */
 @Composable
 fun SwipeableTaskRow(
@@ -68,14 +65,14 @@ fun SwipeableTaskRow(
     onToggleComplete: ((Boolean) -> Unit)? = null
 ) {
     val density = LocalDensity.current
-    val startThreshold = with(density) { 100.dp.toPx() }
-    val endThreshold = with(density) { -160.dp.toPx() }
-    val maxStart = with(density) { 100.dp.toPx() }
-    val maxEnd = with(density) { -160.dp.toPx() }
+    // Only left swipe (negative) – remove right swipe (mark done) per request
+    val endThreshold = with(density) { -80.dp.toPx() }
+    val maxEnd = with(density) { -140.dp.toPx() }
+    val maxStart = 0f
 
     val offsetX = remember { Animatable(0f) }
     val scope = rememberCoroutineScope()
-    var isDragging by remember { androidx.compose.runtime.mutableStateOf(false) }
+    var isDragging by remember { mutableStateOf(false) }
 
     LaunchedEffect(isCompleted) {
         if (offsetX.value != 0f) {
@@ -92,33 +89,17 @@ fun SwipeableTaskRow(
             .clip(RoundedCornerShape(24.dp))
             .background(Color(0xFFE3F5FF))
     ) {
-        // Background actions – fill vertical height + centered per request – use fillMaxSize instead of matchParentSize for compatibility
+        // Background – centered edit/delete icons per request, remove swipe left icon
         Row(
             modifier = Modifier
                 .fillMaxSize()
                 .background(Color(0xFFE3F5FF))
-                .padding(horizontal = 12.dp, vertical = 8.dp),
-            horizontalArrangement = Arrangement.SpaceBetween,
+                .padding(horizontal = 24.dp, vertical = 8.dp),
+            horizontalArrangement = Arrangement.Center,
             verticalAlignment = Alignment.CenterVertically
         ) {
-            // Left – Mark Done, centered, fills height – no bg/corner radius per request
-            Box(
-                modifier = Modifier
-                    .fillMaxHeight()
-                    .size(56.dp),
-                contentAlignment = Alignment.Center
-            ) {
-                Icon(
-                    Icons.Filled.CheckCircle,
-                    contentDescription = "Mark Done",
-                    tint = AccentBlue,
-                    modifier = Modifier.size(28.dp)
-                )
-            }
-            // Right – Edit + Delete, centered, fills height – no bg/corner radius per request
             Row(
-                modifier = Modifier.fillMaxHeight(),
-                horizontalArrangement = Arrangement.spacedBy(16.dp),
+                horizontalArrangement = Arrangement.spacedBy(24.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 IconButton(
@@ -128,7 +109,7 @@ fun SwipeableTaskRow(
                         }
                         onEdit?.invoke()
                     },
-                    modifier = Modifier.size(56.dp)
+                    modifier = Modifier.size(48.dp)
                 ) {
                     Icon(
                         Icons.Filled.Edit,
@@ -144,7 +125,7 @@ fun SwipeableTaskRow(
                         }
                         onDelete?.invoke()
                     },
-                    modifier = Modifier.size(56.dp)
+                    modifier = Modifier.size(48.dp)
                 ) {
                     Icon(
                         Icons.Filled.Delete,
@@ -171,15 +152,7 @@ fun SwipeableTaskRow(
                         isDragging = false
                         scope.launch {
                             when {
-                                offsetX.value > startThreshold / 2 -> {
-                                    // Dont mark as complete when all task are not done
-                                    val hasIncomplete = subTasks.isNotEmpty() && subTasks.any { !it.isDone }
-                                    if (!isCompleted && !hasIncomplete) {
-                                        onToggleComplete?.invoke(true)
-                                    }
-                                    offsetX.animateTo(0f, spring(dampingRatio = Spring.DampingRatioMediumBouncy))
-                                }
-                                offsetX.value < endThreshold / 2 -> {
+                                offsetX.value < endThreshold -> {
                                     offsetX.animateTo(maxEnd, spring(dampingRatio = Spring.DampingRatioMediumBouncy))
                                 }
                                 else -> {

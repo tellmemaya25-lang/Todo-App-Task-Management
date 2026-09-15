@@ -14,10 +14,13 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
@@ -285,7 +288,7 @@ fun TaskDetailScreen(
                         }
                     }
 
-                    // Sub-tasks with edit
+                    // Sub-tasks with edit – scrollable within container per request
                     var editingSubId by remember { mutableStateOf<String?>(null) }
                     var editingSubText by remember { mutableStateOf("") }
                     Card(
@@ -295,69 +298,77 @@ fun TaskDetailScreen(
                         elevation = CardDefaults.cardElevation(0.dp)
                     ) {
                         Column {
-                            task.subTasks.forEach { sub ->
-                                Row(
-                                    verticalAlignment = Alignment.CenterVertically,
-                                    horizontalArrangement = Arrangement.spacedBy(8.dp),
-                                    modifier = Modifier.fillMaxWidth()
-                                        .combinedClickable(onClick = { viewModel.toggleSubTask(sub.id) })
-                                        .padding(horizontal = 16.dp, vertical = 14.dp)
-                                ) {
-                                    SubTaskRoundedCheckbox(
-                                        checked = sub.isDone,
-                                        onCheckedChange = { viewModel.toggleSubTask(sub.id) }
-                                    )
-                                    if (editingSubId == sub.id) {
-                                        OutlinedTextField(
-                                            value = editingSubText,
-                                            onValueChange = { editingSubText = it },
-                                            modifier = Modifier.weight(1f),
-                                            singleLine = true,
-                                            shape = RoundedCornerShape(12.dp)
+                            // Scrollable container for sub-tasks – max height 300dp
+                            Column(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .heightIn(max = 320.dp)
+                                    .verticalScroll(rememberScrollState())
+                            ) {
+                                task.subTasks.forEach { sub ->
+                                    Row(
+                                        verticalAlignment = Alignment.CenterVertically,
+                                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                                        modifier = Modifier.fillMaxWidth()
+                                            .combinedClickable(onClick = { viewModel.toggleSubTask(sub.id) })
+                                            .padding(horizontal = 16.dp, vertical = 14.dp)
+                                    ) {
+                                        SubTaskRoundedCheckbox(
+                                            checked = sub.isDone,
+                                            onCheckedChange = { viewModel.toggleSubTask(sub.id) }
                                         )
-                                        IconButton(onClick = {
-                                            viewModel.editSubTask(sub.id, editingSubText)
-                                            editingSubId = null
-                                        }) {
-                                            Text("✓", color = AccentBlue, fontWeight = FontWeight.Bold)
-                                        }
-                                        IconButton(onClick = { editingSubId = null }) {
-                                            Text("×")
-                                        }
-                                    } else {
-                                        Column(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
-                                            Text(
-                                                text = sub.title,
-                                                style = MaterialTheme.typography.bodyMedium.copy(
-                                                    textDecoration = if (sub.isDone) TextDecoration.LineThrough else null
-                                                ),
-                                                color = if (sub.isDone) Color.Gray.copy(alpha = 0.5f) else Color(0xFF101114),
-                                                maxLines = 1,
-                                                overflow = TextOverflow.Ellipsis
+                                        if (editingSubId == sub.id) {
+                                            OutlinedTextField(
+                                                value = editingSubText,
+                                                onValueChange = { editingSubText = it },
+                                                modifier = Modifier.weight(1f),
+                                                singleLine = true,
+                                                shape = RoundedCornerShape(12.dp)
                                             )
-                                            Text(
-                                                text = "from: ${task.title}",
-                                                style = MaterialTheme.typography.labelSmall,
-                                                color = Color.Gray.copy(alpha = 0.7f),
-                                                maxLines = 1
-                                            )
-                                        }
-                                        IconButton(onClick = {
-                                            editingSubId = sub.id
-                                            editingSubText = sub.title
-                                        }) {
-                                            Icon(Icons.Filled.Edit, null, modifier = Modifier.size(16.dp), tint = Color.Gray)
-                                        }
-                                        IconButton(onClick = { viewModel.deleteSubTask(sub.id) }) {
-                                            Text("×", color = Color.Gray)
+                                            IconButton(onClick = {
+                                                viewModel.editSubTask(sub.id, editingSubText)
+                                                editingSubId = null
+                                            }) {
+                                                Text("✓", color = AccentBlue, fontWeight = FontWeight.Bold)
+                                            }
+                                            IconButton(onClick = { editingSubId = null }) {
+                                                Text("×")
+                                            }
+                                        } else {
+                                            Column(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
+                                                Text(
+                                                    text = sub.title,
+                                                    style = MaterialTheme.typography.bodyMedium.copy(
+                                                        textDecoration = if (sub.isDone) TextDecoration.LineThrough else null
+                                                    ),
+                                                    color = if (sub.isDone) Color.Gray.copy(alpha = 0.5f) else Color(0xFF101114),
+                                                    maxLines = 1,
+                                                    overflow = TextOverflow.Ellipsis
+                                                )
+                                                Text(
+                                                    text = "from: ${task.title}",
+                                                    style = MaterialTheme.typography.labelSmall,
+                                                    color = Color.Gray.copy(alpha = 0.7f),
+                                                    maxLines = 1
+                                                )
+                                            }
+                                            IconButton(onClick = {
+                                                editingSubId = sub.id
+                                                editingSubText = sub.title
+                                            }) {
+                                                Icon(Icons.Filled.Edit, null, modifier = Modifier.size(16.dp), tint = Color.Gray)
+                                            }
+                                            IconButton(onClick = { viewModel.deleteSubTask(sub.id) }) {
+                                                Text("×", color = Color.Gray)
+                                            }
                                         }
                                     }
+                                    HorizontalDivider(
+                                        modifier = Modifier.padding(horizontal = 16.dp),
+                                        thickness = 1.dp,
+                                        color = Color(0xFFE5E7EB)
+                                    )
                                 }
-                                HorizontalDivider(
-                                    modifier = Modifier.padding(horizontal = 16.dp),
-                                    thickness = 1.dp,
-                                    color = Color(0xFFE5E7EB)
-                                )
                             }
 
                             Box(
