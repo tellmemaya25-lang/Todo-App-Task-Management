@@ -18,11 +18,13 @@ import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.Settings
-import androidx.compose.material.icons.filled.TaskAlt
+import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.FilterChipDefaults
@@ -31,12 +33,14 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
+import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarDuration
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.SnackbarResult
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.material3.rememberModalBottomSheetState
@@ -50,6 +54,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
@@ -81,7 +86,11 @@ fun HomeScreen(
     val snackbarHostState = remember { SnackbarHostState() }
     var selectedTask by remember { mutableStateOf<Task?>(null) }
     var showActionSheet by remember { mutableStateOf(false) }
+    var showAddSubTaskSheet by remember { mutableStateOf(false) }
+    var taskForNewSubTask by remember { mutableStateOf<Task?>(null) }
+    var newSubTaskTitle by remember { mutableStateOf("") }
     val bottomSheetState = rememberModalBottomSheetState()
+    val addSheetState = rememberModalBottomSheetState()
 
     LaunchedEffect(uiState.showUndo) {
         if (uiState.showUndo) {
@@ -209,7 +218,9 @@ fun HomeScreen(
                                 viewModel.onAction(HomeAction.ToggleComplete(task.id, checked))
                             },
                             onAddSubTask = {
-                                viewModel.onAction(HomeAction.AddSubTask(task.id, "New Sub-Task"))
+                                taskForNewSubTask = task
+                                newSubTaskTitle = ""
+                                showAddSubTaskSheet = true
                             },
                             onSubTaskChecked = { subId, done ->
                                 viewModel.onAction(HomeAction.ToggleSubTask(task.id, subId, done))
@@ -227,25 +238,180 @@ fun HomeScreen(
             }
         }
 
-        // Long press action sheet – Edit / Mark Done / Delete (no 3 dots) – inspired by modern task apps
+        // Bottom sheet – Edit / Mark as Done / Delete – matches screenshot Webinar bottom sheet
         if (showActionSheet && selectedTask != null) {
             ModalBottomSheet(
                 onDismissRequest = { showActionSheet = false },
                 sheetState = bottomSheetState,
                 shape = RoundedCornerShape(topStart = 24.dp, topEnd = 24.dp),
                 containerColor = MaterialTheme.colorScheme.surface,
-                tonalElevation = 0.dp
+                tonalElevation = 0.dp,
+                dragHandle = null
             ) {
                 Column(
                     modifier = Modifier
                         .fillMaxWidth()
                         .padding(bottom = 32.dp)
                 ) {
+                    // Double handle like screenshot – dark + light gray
+                    Column(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(top = 12.dp, bottom = 8.dp),
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        verticalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        Box(
+                            modifier = Modifier
+                                .width(40.dp)
+                                .height(4.dp)
+                                .background(
+                                    Color.Gray.copy(alpha = 0.4f),
+                                    RoundedCornerShape(100.dp)
+                                )
+                        )
+                        Box(
+                            modifier = Modifier
+                                .width(32.dp)
+                                .height(3.dp)
+                                .background(
+                                    Color.Gray.copy(alpha = 0.2f),
+                                    RoundedCornerShape(100.dp)
+                                )
+                        )
+                    }
+
+                    Text(
+                        text = selectedTask?.title ?: "Webinar",
+                        style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
+                        modifier = Modifier.padding(horizontal = 20.dp, vertical = 12.dp),
+                        maxLines = 2
+                    )
+
+                    HorizontalDivider(
+                        color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f),
+                        thickness = 0.5.dp
+                    )
+
+                    // Edit – pencil icon
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .clickable {
+                                showActionSheet = false
+                                selectedTask?.let { onNavigateToTaskDetail(it.id) }
+                            }
+                            .padding(horizontal = 20.dp, vertical = 16.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(16.dp)
+                    ) {
+                        Icon(
+                            Icons.Filled.Edit,
+                            contentDescription = null,
+                            modifier = Modifier.size(22.dp),
+                            tint = MaterialTheme.colorScheme.onSurface
+                        )
+                        Text("Edit", style = MaterialTheme.typography.bodyLarge)
+                    }
+
+                    // Mark as Done – check icon
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .clickable {
+                                showActionSheet = false
+                                selectedTask?.let {
+                                    viewModel.onAction(HomeAction.ToggleComplete(it.id, !it.isCompleted))
+                                }
+                            }
+                            .padding(horizontal = 20.dp, vertical = 16.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(16.dp)
+                    ) {
+                        Icon(
+                            Icons.Filled.CheckCircle,
+                            contentDescription = null,
+                            modifier = Modifier.size(22.dp),
+                            tint = MaterialTheme.colorScheme.onSurface
+                        )
+                        Text(
+                            if (selectedTask?.isCompleted == true) "Mark as Pending" else "Mark as Done",
+                            style = MaterialTheme.typography.bodyLarge
+                        )
+                    }
+
+                    // Delete – trash red like screenshot
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .clickable {
+                                showActionSheet = false
+                                selectedTask?.let {
+                                    viewModel.onAction(HomeAction.DeleteTask(it))
+                                }
+                            }
+                            .padding(horizontal = 20.dp, vertical = 16.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(16.dp)
+                    ) {
+                        Icon(
+                            Icons.Filled.Delete,
+                            contentDescription = null,
+                            tint = Color(0xFFE57373),
+                            modifier = Modifier.size(22.dp)
+                        )
+                        Text(
+                            "Delete",
+                            color = Color(0xFFE57373),
+                            style = MaterialTheme.typography.bodyLarge
+                        )
+                    }
+
+                    Spacer(Modifier.height(24.dp))
+
+                    // Bottom handle like iOS
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(bottom = 8.dp),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Box(
+                            modifier = Modifier
+                                .width(120.dp)
+                                .height(4.dp)
+                                .background(
+                                    MaterialTheme.colorScheme.onSurface.copy(alpha = 0.2f),
+                                    RoundedCornerShape(100.dp)
+                                )
+                        )
+                    }
+                }
+            }
+        }
+
+        // Bottom sheet – Add new task / Rename – like image bottom edit, for sub-task
+        if (showAddSubTaskSheet && taskForNewSubTask != null) {
+            ModalBottomSheet(
+                onDismissRequest = { showAddSubTaskSheet = false },
+                sheetState = addSheetState,
+                shape = RoundedCornerShape(topStart = 24.dp, topEnd = 24.dp),
+                containerColor = MaterialTheme.colorScheme.surface,
+                tonalElevation = 0.dp,
+                dragHandle = null
+            ) {
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 20.dp)
+                        .padding(bottom = 32.dp),
+                    verticalArrangement = Arrangement.spacedBy(16.dp)
+                ) {
                     // Handle
                     Box(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .padding(vertical = 8.dp),
+                            .padding(top = 4.dp, bottom = 8.dp),
                         contentAlignment = Alignment.Center
                     ) {
                         Box(
@@ -253,88 +419,63 @@ fun HomeScreen(
                                 .width(40.dp)
                                 .height(4.dp)
                                 .background(
-                                    MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.3f),
+                                    Color.Gray.copy(alpha = 0.4f),
                                     RoundedCornerShape(100.dp)
                                 )
                         )
                     }
 
                     Text(
-                        text = selectedTask?.title ?: "",
-                        style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
-                        modifier = Modifier.padding(horizontal = 20.dp, vertical = 8.dp),
-                        maxLines = 2
+                        text = "Add new task",
+                        style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold)
                     )
 
-                    HorizontalDivider(
-                        modifier = Modifier.padding(vertical = 8.dp),
-                        color = MaterialTheme.colorScheme.outlineVariant
+                    Text(
+                        text = "to ${taskForNewSubTask?.title ?: "Task"}",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
 
-                    // Edit
-                    Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(horizontal = 16.dp, vertical = 4.dp)
-                            .clip(RoundedCornerShape(16.dp))
-                            .clickable {
-                                showActionSheet = false
-                                selectedTask?.let { onNavigateToTaskDetail(it.id) }
-                            }
-                            .padding(horizontal = 16.dp, vertical = 14.dp),
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(16.dp)
-                    ) {
-                        Icon(Icons.Filled.Edit, contentDescription = null, modifier = Modifier.size(22.dp))
-                        Text("Edit", style = MaterialTheme.typography.bodyLarge)
-                    }
+                    OutlinedTextField(
+                        value = newSubTaskTitle,
+                        onValueChange = { newSubTaskTitle = it },
+                        label = { Text("Task name") },
+                        placeholder = { Text("e.g. Start style guide for website") },
+                        modifier = Modifier.fillMaxWidth(),
+                        shape = RoundedCornerShape(16.dp),
+                        singleLine = true
+                    )
 
-                    // Mark Done / Pending
                     Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(horizontal = 16.dp, vertical = 4.dp)
-                            .clip(RoundedCornerShape(16.dp))
-                            .clickable {
-                                showActionSheet = false
-                                selectedTask?.let {
-                                    viewModel.onAction(HomeAction.ToggleComplete(it.id, !it.isCompleted))
-                                }
-                            }
-                            .padding(horizontal = 16.dp, vertical = 14.dp),
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(16.dp)
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(12.dp)
                     ) {
-                        Icon(Icons.Filled.TaskAlt, contentDescription = null, modifier = Modifier.size(22.dp))
-                        Text(
-                            if (selectedTask?.isCompleted == true) "Mark as Pending" else "Mark as Done",
-                            style = MaterialTheme.typography.bodyLarge
-                        )
-                    }
-
-                    // Delete
-                    Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(horizontal = 16.dp, vertical = 4.dp)
-                            .clip(RoundedCornerShape(16.dp))
-                            .clickable {
-                                showActionSheet = false
-                                selectedTask?.let {
-                                    viewModel.onAction(HomeAction.DeleteTask(it))
+                        TextButton(
+                            onClick = { showAddSubTaskSheet = false },
+                            modifier = Modifier.weight(1f),
+                            shape = RoundedCornerShape(16.dp)
+                        ) {
+                            Text("Cancel")
+                        }
+                        Button(
+                            onClick = {
+                                if (newSubTaskTitle.isNotBlank()) {
+                                    taskForNewSubTask?.let { task ->
+                                        viewModel.onAction(
+                                            HomeAction.AddSubTask(task.id, newSubTaskTitle.trim())
+                                        )
+                                    }
                                 }
-                            }
-                            .padding(horizontal = 16.dp, vertical = 14.dp),
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(16.dp)
-                    ) {
-                        Icon(
-                            Icons.Filled.Delete,
-                            contentDescription = null,
-                            tint = MaterialTheme.colorScheme.error,
-                            modifier = Modifier.size(22.dp)
-                        )
-                        Text("Delete", color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.bodyLarge)
+                                showAddSubTaskSheet = false
+                                newSubTaskTitle = ""
+                            },
+                            enabled = newSubTaskTitle.isNotBlank(),
+                            modifier = Modifier.weight(1f),
+                            shape = RoundedCornerShape(16.dp),
+                            colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary)
+                        ) {
+                            Text("Add")
+                        }
                     }
 
                     Spacer(Modifier.height(16.dp))
