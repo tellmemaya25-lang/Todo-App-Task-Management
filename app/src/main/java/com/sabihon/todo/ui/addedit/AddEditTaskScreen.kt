@@ -18,6 +18,7 @@ import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material3.Button
 import androidx.compose.material3.Checkbox
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.DatePicker
 import androidx.compose.material3.DatePickerDialog
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -27,6 +28,8 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -54,7 +57,7 @@ import java.util.Date
 import java.util.Locale
 
 /**
- * Add/Edit Task – full screen with all fields. Crash-hardened.
+ * Add/Edit Task – crash-hardened, with Snackbar for errors and detailed logging.
  */
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
 @Composable
@@ -67,12 +70,18 @@ fun AddEditTaskScreen(
     val uiState by viewModel.uiState.collectAsState()
     var showDatePicker by remember { mutableStateOf(false) }
     var showTimePicker by remember { mutableStateOf(false) }
+    val snackbarHostState = remember { SnackbarHostState() }
 
     LaunchedEffect(taskId) {
         viewModel.loadTask(taskId)
     }
 
-    // Prepare initial time picker values from existing dueAt
+    LaunchedEffect(uiState.errorMessage) {
+        uiState.errorMessage?.let {
+            snackbarHostState.showSnackbar(it)
+        }
+    }
+
     val initialCal = remember(uiState.dueAt) {
         Calendar.getInstance().apply {
             if (uiState.dueAt != null) timeInMillis = uiState.dueAt!!
@@ -96,7 +105,8 @@ fun AddEditTaskScreen(
                     }
                 }
             )
-        }
+        },
+        snackbarHost = { SnackbarHost(snackbarHostState) }
     ) { padding ->
         Column(
             modifier = Modifier
@@ -123,7 +133,6 @@ fun AddEditTaskScreen(
                 minLines = 3
             )
 
-            // Category picker
             Text("Category", style = MaterialTheme.typography.titleMedium)
             FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 FilterChip(
@@ -140,7 +149,6 @@ fun AddEditTaskScreen(
                 }
             }
 
-            // Priority
             Text("Priority", style = MaterialTheme.typography.titleMedium)
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 PriorityChip(priority = Priority.LOW, selected = uiState.priority == Priority.LOW, onClick = { viewModel.onPrioritySelected(Priority.LOW) })
@@ -149,18 +157,13 @@ fun AddEditTaskScreen(
                 PriorityChip(priority = Priority.URGENT, selected = uiState.priority == Priority.URGENT, onClick = { viewModel.onPrioritySelected(Priority.URGENT) })
             }
 
-            // Due date & time
             Text("Due Date & Time", style = MaterialTheme.typography.titleMedium)
             Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                 TextButton(onClick = { showDatePicker = true }) {
-                    Text(
-                        text = uiState.dueAt?.let { safeFormatDate(it) } ?: "Select Date"
-                    )
+                    Text(text = uiState.dueAt?.let { safeFormatDate(it) } ?: "Select Date")
                 }
                 TextButton(onClick = { showTimePicker = true }) {
-                    Text(
-                        text = if (uiState.dueAt != null) safeFormatTime(uiState.dueAt!!) else "Select Time"
-                    )
+                    Text(text = if (uiState.dueAt != null) safeFormatTime(uiState.dueAt!!) else "Select Time")
                 }
             }
             if (uiState.dueAt != null) {
@@ -169,9 +172,14 @@ fun AddEditTaskScreen(
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
+            } else {
+                Text(
+                    text = "No due date selected (optional)",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
             }
 
-            // Reminder toggle
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween,
@@ -180,8 +188,14 @@ fun AddEditTaskScreen(
                 Text("Reminder", style = MaterialTheme.typography.titleMedium)
                 Switch(checked = uiState.reminderEnabled, onCheckedChange = viewModel::onReminderToggle)
             }
+            if (uiState.reminderEnabled && uiState.dueAt == null) {
+                Text(
+                    "Reminder needs due date. Please select date/time.",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.error
+                )
+            }
 
-            // Sub-tasks
             Text("Sub-tasks", style = MaterialTheme.typography.titleMedium)
             uiState.subTasks.forEach { sub ->
                 Row(
@@ -215,11 +229,25 @@ fun AddEditTaskScreen(
                 modifier = Modifier.fillMaxWidth(),
                 enabled = !uiState.isSaving
             ) {
-                Text(if (uiState.isEditMode) "Update" else "Save")
+                if (uiState.isSaving) {
+                    CircularProgressIndicator(modifier = Modifier.size(20.dp))
+                } else {
+                    Text(if (uiState.isEditMode) "Update" else "Save")
+                }
             }
 
+            // Detailed error + debug info
             uiState.errorMessage?.let {
-                Text(text = it, color = MaterialTheme.colorScheme.error)
+                Text(text = it, color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.bodySmall)
+            }
+
+            // Debug: show current user ID for troubleshooting
+            if (uiState.debugInfo != null) {
+                Text(
+                    text = "Debug: ${uiState.debugInfo}",
+                    style = MaterialTheme.typography.labelSmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
             }
         }
 
@@ -244,7 +272,6 @@ fun AddEditTaskScreen(
         }
 
         if (showTimePicker) {
-            // Remember time picker state outside dialog recomposition
             val timePickerState = rememberTimePickerState(
                 initialHour = initialCal.get(Calendar.HOUR_OF_DAY),
                 initialMinute = initialCal.get(Calendar.MINUTE),

@@ -2,6 +2,7 @@ package com.sabihon.todo.ui.addedit
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.google.firebase.auth.FirebaseAuth
 import com.sabihon.todo.core.util.Result
 import com.sabihon.todo.domain.model.Priority
 import com.sabihon.todo.domain.model.SubTask
@@ -22,7 +23,7 @@ import java.util.Calendar
 import javax.inject.Inject
 
 /**
- * ViewModel for Add/Edit Task – crash-hardened with robust date/time handling.
+ * ViewModel for Add/Edit Task – with debug info and robust error handling for Firestore.
  */
 @HiltViewModel
 class AddEditViewModel @Inject constructor(
@@ -30,7 +31,8 @@ class AddEditViewModel @Inject constructor(
     private val updateTaskUseCase: UpdateTaskUseCase,
     private val deleteTaskUseCase: DeleteTaskUseCase,
     private val taskRepository: TaskRepository,
-    private val categoryRepository: CategoryRepository
+    private val categoryRepository: CategoryRepository,
+    private val auth: FirebaseAuth
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(AddEditUiState())
@@ -38,6 +40,8 @@ class AddEditViewModel @Inject constructor(
 
     init {
         observeCategories()
+        // Debug info
+        _uiState.update { it.copy(debugInfo = "uid=${auth.currentUser?.uid ?: "null"} email=${auth.currentUser?.email}") }
     }
 
     private fun observeCategories() {
@@ -46,10 +50,13 @@ class AddEditViewModel @Inject constructor(
                 categoryRepository.observeCategories().collectLatest { result ->
                     if (result is Result.Success) {
                         _uiState.update { it.copy(categories = result.data) }
+                    } else if (result is Result.Error) {
+                        _uiState.update { it.copy(errorMessage = "Categories load failed: ${result.message}") }
                     }
                 }
             } catch (e: Exception) {
                 _uiState.update { it.copy(errorMessage = "Failed to load categories: ${e.message}") }
+                android.util.Log.e("AddEditVM", "observeCategories error", e)
             }
         }
     }
@@ -113,7 +120,7 @@ class AddEditViewModel @Inject constructor(
         _uiState.update { current ->
             try {
                 val newDueAt = combineDateAndTime(millis, current.dueTimeMillis ?: current.dueAt)
-                current.copy(dueDateMillis = millis, dueAt = newDueAt)
+                current.copy(dueDateMillis = millis, dueAt = newDueAt, errorMessage = null)
             } catch (e: Exception) {
                 current.copy(errorMessage = "Invalid date: ${e.message}")
             }
@@ -123,18 +130,17 @@ class AddEditViewModel @Inject constructor(
     fun onDueTimeSelected(hour: Int, minute: Int) {
         _uiState.update { current ->
             try {
-                val cal = Calendar.getInstance()
-                // Use dueDateMillis as base date, fallback to dueAt, fallback to now
                 val baseMillis = current.dueDateMillis ?: current.dueAt ?: System.currentTimeMillis()
-                cal.timeInMillis = baseMillis
-                cal.set(Calendar.HOUR_OF_DAY, hour)
-                cal.set(Calendar.MINUTE, minute)
-                cal.set(Calendar.SECOND, 0)
-                cal.set(Calendar.MILLISECOND, 0)
+                val cal = Calendar.getInstance().apply {
+                    timeInMillis = baseMillis
+                    set(Calendar.HOUR_OF_DAY, hour)
+                    set(Calendar.MINUTE, minute)
+                    set(Calendar.SECOND, 0)
+                    set(Calendar.MILLISECOND, 0)
+                }
                 val timeMillis = cal.timeInMillis
-                // Combine date part from dueDateMillis/dueAt with new time
-                val combined = combineDateAndTime(current.dueDateMillis ?: current.dueAt ?: System.currentTimeMillis(), timeMillis)
-                current.copy(dueTimeMillis = timeMillis, dueAt = combined, dueDateMillis = current.dueDateMillis ?: combined)
+                val combined = combineDateAndTime(current.dueDateMillis ?: System.currentTimeMillis(), timeMillis)
+                current.copy(dueTimeMillis = timeMillis, dueAt = combined, dueDateMillis = current.dueDateMillis ?: combined, errorMessage = null)
             } catch (e: Exception) {
                 current.copy(errorMessage = "Invalid time: ${e.message}")
             }
@@ -150,13 +156,11 @@ class AddEditViewModel @Inject constructor(
             if (timeMillis != null) calTime.timeInMillis = timeMillis
 
             val result = Calendar.getInstance()
-            // Date part – if null, use today
             if (dateMillis != null) {
                 result.set(Calendar.YEAR, calDate.get(Calendar.YEAR))
                 result.set(Calendar.MONTH, calDate.get(Calendar.MONTH))
                 result.set(Calendar.DAY_OF_MONTH, calDate.get(Calendar.DAY_OF_MONTH))
             }
-            // Time part – if null, default 9 AM
             if (timeMillis != null) {
                 result.set(Calendar.HOUR_OF_DAY, calTime.get(Calendar.HOUR_OF_DAY))
                 result.set(Calendar.MINUTE, calTime.get(Calendar.MINUTE))
@@ -168,7 +172,6 @@ class AddEditViewModel @Inject constructor(
             result.set(Calendar.MILLISECOND, 0)
             result.timeInMillis
         } catch (e: Exception) {
-            // Fallback to dateMillis or timeMillis or now
             dateMillis ?: timeMillis ?: System.currentTimeMillis()
         }
     }
@@ -205,6 +208,11 @@ class AddEditViewModel @Inject constructor(
     }
 
     fun saveTask(onSuccess: () -> Unit) {
+        val currentUser = auth.currentUser
+        if (currentUser == null) {
+            _uiState.update { it.copy(errorMessage = "Not authenticated! Please login again. uid=null") }
+            return
+        }
         if (_uiState.value.title.isBlank()) {
             _uiState.update { it.copy(titleError = "Title required") }
             return
@@ -213,6 +221,8 @@ class AddEditViewModel @Inject constructor(
             _uiState.update { it.copy(isSaving = true, errorMessage = null) }
             try {
                 val state = _uiState.value
+                android.util.Log.d("AddEditVM", "Saving task: title=${state.title} uid=${currentUser.uid} dueAt=${state.dueAt} cat=${state.categoryId}")
+
                 val task = Task(
                     id = state.taskId ?: "",
                     title = state.title.trim(),
@@ -231,7 +241,10 @@ class AddEditViewModel @Inject constructor(
                     addTaskUseCase(task).let { res ->
                         when (res) {
                             is Result.Success -> Result.Success(Unit)
-                            is Result.Error -> res
+                            is Result.Error -> {
+                                android.util.Log.e("AddEditVM", "addTaskUseCase failed: ${res.message}", res.exception)
+                                res
+                            }
                             else -> Result.Error(Exception("Unknown error"))
                         }
                     }
@@ -239,17 +252,27 @@ class AddEditViewModel @Inject constructor(
 
                 when (result) {
                     is Result.Success -> {
+                        android.util.Log.d("AddEditVM", "Task saved successfully")
                         _uiState.update { it.copy(isSaving = false) }
                         onSuccess()
                     }
                     is Result.Error -> {
-                        _uiState.update { it.copy(isSaving = false, errorMessage = result.message ?: "Failed to save task") }
+                        val msg = result.message ?: "Failed to save task"
+                        android.util.Log.e("AddEditVM", "Save failed: $msg", result.exception)
+                        // Provide actionable message for common Firestore errors
+                        val friendly = when {
+                            msg.contains("PERMISSION_DENIED", ignoreCase = true) -> "Firestore permission denied. Check firestore.rules allows users/{uid}. See firestore.rules file in repo."
+                            msg.contains("unavailable", ignoreCase = true) -> "Firestore unavailable (offline?). Task will sync when online if persistence enabled."
+                            msg.contains("not authenticated", ignoreCase = true) -> "Not authenticated. Please logout and login again."
+                            else -> msg
+                        }
+                        _uiState.update { it.copy(isSaving = false, errorMessage = friendly) }
                     }
                     else -> _uiState.update { it.copy(isSaving = false) }
                 }
             } catch (e: Exception) {
-                _uiState.update { it.copy(isSaving = false, errorMessage = "Crash prevented: ${e.message}") }
-                android.util.Log.e("AddEditVM", "saveTask crash", e)
+                android.util.Log.e("AddEditVM", "saveTask crash prevented", e)
+                _uiState.update { it.copy(isSaving = false, errorMessage = "Crash prevented: ${e.message}. Check logcat.") }
             }
         }
     }

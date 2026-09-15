@@ -14,8 +14,8 @@ data class AddEditUiState(
     val categoryId: String? = null,
     val priority: Priority = Priority.MEDIUM,
     val dueDateMillis: Long? = null,
-    val dueTimeMillis: Long? = null, // separate time? We'll combine
-    val dueAt: Long? = null, // combined epoch
+    val dueTimeMillis: Long? = null,
+    val dueAt: Long? = null,
     val reminderEnabled: Boolean = false,
     val reminderAt: Long? = null,
     val subTasks: List<SubTask> = emptyList(),
@@ -26,5 +26,6 @@ data class AddEditUiState(
     val titleError: String? = null,
     val categories: List<Category> = emptyList(),
     val isEditMode: Boolean = false,
-    val showDeleteConfirm: Boolean = false
+    val showDeleteConfirm: Boolean = false,
+    val debugInfo: String? = null
 )
