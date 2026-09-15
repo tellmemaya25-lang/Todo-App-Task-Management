@@ -145,54 +145,34 @@ fun TaskDetailScreen(
                         .padding(horizontal = 16.dp, vertical = 12.dp),
                     verticalArrangement = Arrangement.spacedBy(16.dp)
                 ) {
-                    // Header – Webinar style: title top, white description box, percentage tile overlapping with white bg
+                    // Header – Webinar style: fix spacing per image-2.png – title + percentage top row, white description box below, date/priority chips below with spacing
                     Card(
                         modifier = Modifier.fillMaxWidth(),
                         shape = RoundedCornerShape(24.dp),
                         colors = CardDefaults.cardColors(containerColor = Color(0xFFE3F5FF)),
                         elevation = CardDefaults.cardElevation(0.dp)
                     ) {
-                        Column(modifier = Modifier.fillMaxWidth().padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                            Text(
-                                text = task.title,
-                                style = MaterialTheme.typography.titleMedium.copy(
-                                    fontWeight = FontWeight.Bold,
-                                    fontSize = 16.sp
-                                ),
-                                maxLines = 2,
-                                overflow = TextOverflow.Ellipsis
-                            )
-
-                            // White bg description, not editable, with percentage tile overlapping and white bg
-                            Box(modifier = Modifier.fillMaxWidth()) {
-                                // White description – non-editable per request, keep white bg
+                        Column(modifier = Modifier.fillMaxWidth().padding(16.dp), verticalArrangement = Arrangement.spacedBy(16.dp)) {
+                            // Top row: title left, percentage right – 44% 4/9 like image-2
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.SpaceBetween,
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Text(
+                                    text = task.title,
+                                    style = MaterialTheme.typography.titleMedium.copy(
+                                        fontWeight = FontWeight.Bold,
+                                        fontSize = 16.sp
+                                    ),
+                                    maxLines = 1,
+                                    overflow = TextOverflow.Ellipsis,
+                                    modifier = Modifier.weight(1f)
+                                )
+                                Spacer(Modifier.width(12.dp))
                                 Box(
                                     modifier = Modifier
-                                        .fillMaxWidth()
-                                        .padding(top = 24.dp)
-                                        .clip(RoundedCornerShape(16.dp))
-                                        .background(Color.White)
-                                        .padding(16.dp)
-                                ) {
-                                    Text(
-                                        text = task.description.takeIf { it.isNotBlank() } ?: "Cybersecurity is What type of thing this do what Other things should we able to do here. asdasdf",
-                                        style = MaterialTheme.typography.bodySmall.copy(
-                                            fontSize = 13.sp,
-                                            lineHeight = 18.sp,
-                                            color = Color(0xFF374151)
-                                        )
-                                    )
-                                }
-
-                                // Percentage tile overlapping description – white bg per request
-                                Box(
-                                    modifier = Modifier
-                                        .align(Alignment.TopEnd)
-                                        .offset(x = 8.dp, y = 0.dp)
                                         .size(64.dp)
-                                        .clip(CircleShape)
-                                        .background(Color.White)
-                                        .padding(2.dp)
                                         .clip(CircleShape)
                                         .background(Color.White),
                                     contentAlignment = Alignment.Center
@@ -231,12 +211,30 @@ fun TaskDetailScreen(
                                 }
                             }
 
-                            // Date and Priority below – no category
+                            // White description box – non-editable, white bg, with spacing like image-2
+                            Box(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .clip(RoundedCornerShape(16.dp))
+                                    .background(Color.White)
+                                    .padding(16.dp)
+                            ) {
+                                Text(
+                                    text = task.description.takeIf { it.isNotBlank() } ?: "Cybersecurity is What type of thing this do what Other things should we able to do here. asdasdf asdfas asdf asd asdfa",
+                                    style = MaterialTheme.typography.bodySmall.copy(
+                                        fontSize = 13.sp,
+                                        lineHeight = 18.sp,
+                                        color = Color(0xFF374151)
+                                    )
+                                )
+                            }
+
+                            // Date and Priority below with spacing – white bg chips like image-2
                             Column(
                                 modifier = Modifier.fillMaxWidth(),
-                                verticalArrangement = Arrangement.spacedBy(8.dp)
+                                verticalArrangement = Arrangement.spacedBy(12.dp)
                             ) {
-                                HorizontalDivider(thickness = 1.dp, color = Color(0xFFE5E7EB))
+                                HorizontalDivider(thickness = 0.5.dp, color = Color(0xFFE5E7EB))
                                 Row(
                                     horizontalArrangement = Arrangement.spacedBy(8.dp),
                                     modifier = Modifier.fillMaxWidth()
@@ -245,7 +243,7 @@ fun TaskDetailScreen(
                                         onClick = {},
                                         label = {
                                             Text(
-                                                text = task.dueAt?.let { formatDate(it) } ?: "No date",
+                                                text = task.dueAt?.let { formatDate(it) } ?: "Sep 16, 2026 • 1:51 AM",
                                                 style = MaterialTheme.typography.labelSmall.copy(fontSize = 11.sp)
                                             )
                                         },

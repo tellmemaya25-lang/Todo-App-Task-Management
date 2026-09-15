@@ -145,113 +145,97 @@ fun SearchScreen(
                 }
             }
 
-            // Filter chips – organized vertically to status, priority and category per request
+            // Filter chips – align horizontal per request (single FlowRow)
             Text("Filters", style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold))
             Spacer(Modifier.height(8.dp))
-            Column(verticalArrangement = Arrangement.spacedBy(12.dp), modifier = Modifier.fillMaxWidth()) {
+            FlowRow(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                verticalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
                 // Status
-                Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                    Text("Status", style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Bold, color = Color.Gray))
-                    FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                        FilterChip(
-                            selected = uiState.filter.status == TaskStatusFilter.ALL,
-                            onClick = { viewModel.onStatusFilterChange(TaskStatusFilter.ALL) },
-                            label = { Text("All") },
-                            colors = FilterChipDefaults.filterChipColors(
-                                selectedContainerColor = AccentBlue,
-                                selectedLabelColor = Color.White
-                            )
-                        )
-                        FilterChip(
-                            selected = uiState.filter.status == TaskStatusFilter.PENDING,
-                            onClick = { viewModel.onStatusFilterChange(TaskStatusFilter.PENDING) },
-                            label = { Text("Pending") },
-                            colors = FilterChipDefaults.filterChipColors(
-                                selectedContainerColor = AccentBlue,
-                                selectedLabelColor = Color.White
-                            )
-                        )
-                        FilterChip(
-                            selected = uiState.filter.status == TaskStatusFilter.COMPLETED,
-                            onClick = { viewModel.onStatusFilterChange(TaskStatusFilter.COMPLETED) },
-                            label = { Text("Completed") },
-                            colors = FilterChipDefaults.filterChipColors(
-                                selectedContainerColor = AccentBlue,
-                                selectedLabelColor = Color.White
-                            )
-                        )
-                    }
-                }
+                FilterChip(
+                    selected = uiState.filter.status == TaskStatusFilter.ALL,
+                    onClick = { viewModel.onStatusFilterChange(TaskStatusFilter.ALL) },
+                    label = { Text("All") },
+                    colors = FilterChipDefaults.filterChipColors(
+                        selectedContainerColor = AccentBlue,
+                        selectedLabelColor = Color.White
+                    )
+                )
+                FilterChip(
+                    selected = uiState.filter.status == TaskStatusFilter.PENDING,
+                    onClick = { viewModel.onStatusFilterChange(TaskStatusFilter.PENDING) },
+                    label = { Text("Pending") },
+                    colors = FilterChipDefaults.filterChipColors(
+                        selectedContainerColor = AccentBlue,
+                        selectedLabelColor = Color.White
+                    )
+                )
+                FilterChip(
+                    selected = uiState.filter.status == TaskStatusFilter.COMPLETED,
+                    onClick = { viewModel.onStatusFilterChange(TaskStatusFilter.COMPLETED) },
+                    label = { Text("Completed") },
+                    colors = FilterChipDefaults.filterChipColors(
+                        selectedContainerColor = AccentBlue,
+                        selectedLabelColor = Color.White
+                    )
+                )
                 // Priority
-                Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                    Text("Priority", style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Bold, color = Color.Gray))
-                    FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                        Priority.values().forEach { pri ->
-                            FilterChip(
-                                selected = uiState.filter.priority == pri,
-                                onClick = {
-                                    if (uiState.filter.priority == pri) viewModel.onPriorityFilterChange(null)
-                                    else viewModel.onPriorityFilterChange(pri)
-                                },
-                                label = { Text(pri.name) },
-                                colors = FilterChipDefaults.filterChipColors(
-                                    selectedContainerColor = AccentBlue,
-                                    selectedLabelColor = Color.White
-                                )
-                            )
-                        }
-                    }
+                Priority.values().forEach { pri ->
+                    FilterChip(
+                        selected = uiState.filter.priority == pri,
+                        onClick = {
+                            if (uiState.filter.priority == pri) viewModel.onPriorityFilterChange(null)
+                            else viewModel.onPriorityFilterChange(pri)
+                        },
+                        label = { Text(pri.name) },
+                        colors = FilterChipDefaults.filterChipColors(
+                            selectedContainerColor = AccentBlue,
+                            selectedLabelColor = Color.White
+                        )
+                    )
                 }
                 // Category
-                Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                    Text("Category", style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Bold, color = Color.Gray))
-                    FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                        FilterChip(
-                            selected = uiState.filter.categoryId == null,
-                            onClick = { viewModel.onCategoryFilterChange(null) },
-                            label = { Text("All Categories") },
-                            colors = FilterChipDefaults.filterChipColors(
-                                selectedContainerColor = AccentBlue,
-                                selectedLabelColor = Color.White
-                            )
+                FilterChip(
+                    selected = uiState.filter.categoryId == null,
+                    onClick = { viewModel.onCategoryFilterChange(null) },
+                    label = { Text("All Categories") },
+                    colors = FilterChipDefaults.filterChipColors(
+                        selectedContainerColor = AccentBlue,
+                        selectedLabelColor = Color.White
+                    )
+                )
+                uiState.categories.forEach { cat ->
+                    FilterChip(
+                        selected = uiState.filter.categoryId == cat.id,
+                        onClick = { viewModel.onCategoryFilterChange(cat.id) },
+                        label = { Text(cat.name) },
+                        colors = FilterChipDefaults.filterChipColors(
+                            selectedContainerColor = AccentBlue,
+                            selectedLabelColor = Color.White
                         )
-                        uiState.categories.forEach { cat ->
-                            FilterChip(
-                                selected = uiState.filter.categoryId == cat.id,
-                                onClick = { viewModel.onCategoryFilterChange(cat.id) },
-                                label = { Text(cat.name) },
-                                colors = FilterChipDefaults.filterChipColors(
-                                    selectedContainerColor = AccentBlue,
-                                    selectedLabelColor = Color.White
-                                )
-                            )
-                        }
-                    }
+                    )
                 }
                 // Sort
-                Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                    Text("Sort", style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Bold, color = Color.Gray))
-                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                        FilterChip(
-                            selected = uiState.filter.sortBy == SortBy.DUE_DATE,
-                            onClick = { viewModel.onSortChange(SortBy.DUE_DATE, true) },
-                            label = { Text("Sort by Due Date") },
-                            colors = FilterChipDefaults.filterChipColors(
-                                selectedContainerColor = AccentBlue,
-                                selectedLabelColor = Color.White
-                            )
-                        )
-                        FilterChip(
-                            selected = uiState.filter.sortBy == SortBy.PRIORITY,
-                            onClick = { viewModel.onSortChange(SortBy.PRIORITY, false) },
-                            label = { Text("Sort by Priority") },
-                            colors = FilterChipDefaults.filterChipColors(
-                                selectedContainerColor = AccentBlue,
-                                selectedLabelColor = Color.White
-                            )
-                        )
-                    }
-                }
+                FilterChip(
+                    selected = uiState.filter.sortBy == SortBy.DUE_DATE,
+                    onClick = { viewModel.onSortChange(SortBy.DUE_DATE, true) },
+                    label = { Text("Sort by Due Date") },
+                    colors = FilterChipDefaults.filterChipColors(
+                        selectedContainerColor = AccentBlue,
+                        selectedLabelColor = Color.White
+                    )
+                )
+                FilterChip(
+                    selected = uiState.filter.sortBy == SortBy.PRIORITY,
+                    onClick = { viewModel.onSortChange(SortBy.PRIORITY, false) },
+                    label = { Text("Sort by Priority") },
+                    colors = FilterChipDefaults.filterChipColors(
+                        selectedContainerColor = AccentBlue,
+                        selectedLabelColor = Color.White
+                    )
+                )
             }
 
             Spacer(Modifier.height(12.dp))
