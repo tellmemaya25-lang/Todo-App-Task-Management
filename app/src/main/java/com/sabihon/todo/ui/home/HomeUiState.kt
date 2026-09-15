@@ -17,7 +17,7 @@ data class HomeUiState(
     val allTasks: List<Task> = emptyList(),
     val todayTasks: List<Task> = emptyList(),
     val filteredTasks: List<Task> = emptyList(),
-    val selectedFilter: HomeFilter = HomeFilter.TODAY,
+    val selectedFilter: HomeFilter = HomeFilter.ALL,
     val errorMessage: String? = null,
     val showUndo: Boolean = false,
     val lastDeletedTask: Task? = null
