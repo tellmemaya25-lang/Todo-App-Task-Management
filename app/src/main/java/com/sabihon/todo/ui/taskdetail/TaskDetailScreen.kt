@@ -28,6 +28,7 @@ import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.CalendarToday
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.Flag
+import androidx.compose.material.icons.filled.KeyboardArrowDown
 import androidx.compose.material3.AssistChip
 import androidx.compose.material3.AssistChipDefaults
 import androidx.compose.material3.Button
@@ -372,25 +373,48 @@ fun TaskDetailScreen(
                             }
                             }
 
-                            Box(
-                                modifier = Modifier.fillMaxWidth()
-                                    .clip(RoundedCornerShape(bottomStart = 20.dp, bottomEnd = 20.dp))
-                                    .background(AccentBlue)
-                                    .clickable { showAddSheet = true }
-                                    .padding(horizontal = 16.dp, vertical = 14.dp),
-                                contentAlignment = Alignment.Center
-                            ) {
-                                Row(
-                                    verticalAlignment = Alignment.CenterVertically,
-                                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                            // CTA with overlapping arrow down btn per request
+                            Box(modifier = Modifier.fillMaxWidth()) {
+                                Box(
+                                    modifier = Modifier.fillMaxWidth()
+                                        .padding(top = 12.dp)
+                                        .clip(RoundedCornerShape(bottomStart = 20.dp, bottomEnd = 20.dp))
+                                        .background(AccentBlue)
+                                        .clickable { showAddSheet = true }
+                                        .padding(horizontal = 16.dp, vertical = 14.dp),
+                                    contentAlignment = Alignment.Center
                                 ) {
-                                    Icon(Icons.Filled.Edit, null, tint = Color.White, modifier = Modifier.size(18.dp))
-                                    Text(
-                                        text = "Add task",
-                                        style = MaterialTheme.typography.titleSmall.copy(
-                                            fontWeight = FontWeight.Bold,
-                                            color = Color.White
+                                    Row(
+                                        verticalAlignment = Alignment.CenterVertically,
+                                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                                    ) {
+                                        Icon(Icons.Filled.Edit, null, tint = Color.White, modifier = Modifier.size(18.dp))
+                                        Text(
+                                            text = "Add task",
+                                            style = MaterialTheme.typography.titleSmall.copy(
+                                                fontWeight = FontWeight.Bold,
+                                                color = Color.White
+                                            )
                                         )
+                                    }
+                                }
+                                // Arrow down btn overlapping CTA
+                                Box(
+                                    modifier = Modifier
+                                        .align(Alignment.TopCenter)
+                                        .offset(y = (-12).dp)
+                                        .size(32.dp)
+                                        .clip(CircleShape)
+                                        .background(Color.White)
+                                        .clickable { /* could collapse */ }
+                                        .padding(4.dp),
+                                    contentAlignment = Alignment.Center
+                                ) {
+                                    Icon(
+                                        imageVector = Icons.Filled.KeyboardArrowDown,
+                                        contentDescription = "Expand",
+                                        tint = AccentBlue,
+                                        modifier = Modifier.size(20.dp)
                                     )
                                 }
                             }
