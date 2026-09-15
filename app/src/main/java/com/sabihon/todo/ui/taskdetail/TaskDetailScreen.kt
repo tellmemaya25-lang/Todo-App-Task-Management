@@ -9,8 +9,6 @@ import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.ExperimentalLayoutApi
-import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
@@ -73,7 +71,7 @@ import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
 
-@OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun TaskDetailScreen(
     taskId: String,
@@ -100,7 +98,6 @@ fun TaskDetailScreen(
                     }
                 },
                 actions = {
-                    // 3. remove bg of edit icon – per request, no blue background, just icon
                     IconButton(
                         onClick = { onEdit(taskId) },
                         modifier = Modifier.padding(end = 8.dp)
@@ -144,7 +141,7 @@ fun TaskDetailScreen(
                         .padding(horizontal = 16.dp, vertical = 12.dp),
                     verticalArrangement = Arrangement.spacedBy(16.dp)
                 ) {
-                    // Header – bg #e3f5ff, title top, description white box, percentage overlapping top-right
+                    // Header – Webinar style: title top, white description box, percentage tile overlapping with white bg
                     Card(
                         modifier = Modifier.fillMaxWidth(),
                         shape = RoundedCornerShape(24.dp),
@@ -162,132 +159,82 @@ fun TaskDetailScreen(
                                 overflow = TextOverflow.Ellipsis
                             )
 
-                            // Description box with percentage overlapping top-right per request – more overlap like screenshot
+                            // White bg description, not editable, with percentage tile overlapping and white bg
                             Box(modifier = Modifier.fillMaxWidth()) {
-                                // White description container with light purple border like screenshot
+                                // White description – non-editable per request, keep white bg
                                 Box(
                                     modifier = Modifier
                                         .fillMaxWidth()
-                                        .padding(top = 20.dp, end = 16.dp)
+                                        .padding(top = 24.dp)
                                         .clip(RoundedCornerShape(16.dp))
-                                        .background(Color.White.copy(alpha = 0.9f))
-                                        .padding(2.dp)
-                                        .clip(RoundedCornerShape(14.dp))
                                         .background(Color.White)
-                                        .padding(14.dp)
+                                        .padding(16.dp)
                                 ) {
-                                    var editableDesc by remember(task.id, task.description) { mutableStateOf(task.description) }
-                                    LaunchedEffect(task.description) {
-                                        if (editableDesc != task.description) editableDesc = task.description
-                                    }
-                                    OutlinedTextField(
-                                        value = editableDesc,
-                                        onValueChange = { editableDesc = it },
-                                        placeholder = {
-                                            Text(
-                                                "Add description...",
-                                                style = MaterialTheme.typography.bodySmall.copy(fontSize = 13.sp),
-                                                color = Color(0xFF9CA3AF)
-                                            )
-                                        },
-                                        modifier = Modifier.fillMaxWidth(),
-                                        shape = RoundedCornerShape(12.dp),
-                                        minLines = 2,
-                                        maxLines = 4,
-                                        textStyle = MaterialTheme.typography.bodySmall.copy(
+                                    Text(
+                                        text = task.description.takeIf { it.isNotBlank() } ?: "Cybersecurity is What type of thing this do what Other things should we able to do here. asdasdf",
+                                        style = MaterialTheme.typography.bodySmall.copy(
                                             fontSize = 13.sp,
+                                            lineHeight = 18.sp,
                                             color = Color(0xFF374151)
-                                        ),
-                                        colors = androidx.compose.material3.OutlinedTextFieldDefaults.colors(
-                                            focusedContainerColor = Color.Transparent,
-                                            unfocusedContainerColor = Color.Transparent,
-                                            focusedBorderColor = AccentBlue.copy(alpha = 0.3f),
-                                            unfocusedBorderColor = Color.Transparent,
-                                            cursorColor = AccentBlue
                                         )
                                     )
-                                    LaunchedEffect(editableDesc) {
-                                        if (editableDesc != task.description) {
-                                            kotlinx.coroutines.delay(600)
-                                            viewModel.updateDescription(editableDesc)
-                                        }
-                                    }
                                 }
 
-                                // Percentage overlapping description – more overlap per request
+                                // Percentage tile overlapping description – white bg per request
                                 Box(
                                     modifier = Modifier
                                         .align(Alignment.TopEnd)
-                                        .offset(x = 12.dp, y = (-4).dp)
+                                        .offset(x = 8.dp, y = 0.dp)
                                         .size(64.dp)
                                         .clip(CircleShape)
                                         .background(Color.White)
-                                        .padding(3.dp)
+                                        .padding(2.dp)
                                         .clip(CircleShape)
-                                        .background(Color(0xFFE3F5FF)),
+                                        .background(Color.White),
                                     contentAlignment = Alignment.Center
                                 ) {
-                                    if (totalSubs > 0) {
-                                        Canvas(modifier = Modifier.size(52.dp)) {
-                                            val stroke = 3.5.dp.toPx()
-                                            drawCircle(
-                                                color = Color.Gray.copy(alpha = 0.15f),
-                                                style = Stroke(width = stroke)
-                                            )
-                                            if (progress > 0f) {
-                                                drawArc(
-                                                    color = AccentBlue,
-                                                    startAngle = -90f,
-                                                    sweepAngle = 360f * progress,
-                                                    useCenter = false,
-                                                    style = Stroke(width = stroke, cap = StrokeCap.Round)
-                                                )
-                                            }
-                                        }
-                                        Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                                            Text(
-                                                text = "${(progress * 100).toInt()}%",
-                                                style = MaterialTheme.typography.labelMedium.copy(
-                                                    fontWeight = FontWeight.Bold,
-                                                    fontSize = 12.sp
-                                                ),
-                                                color = Color(0xFF101114)
-                                            )
-                                            Text(
-                                                text = "$doneSubs/$totalSubs",
-                                                style = MaterialTheme.typography.labelSmall.copy(fontSize = 9.sp),
-                                                color = Color(0xFF6B7280)
+                                    Canvas(modifier = Modifier.size(56.dp)) {
+                                        val stroke = 3.5.dp.toPx()
+                                        drawCircle(
+                                            color = Color(0xFFE5E7EB),
+                                            style = Stroke(width = stroke)
+                                        )
+                                        if (progress > 0f) {
+                                            drawArc(
+                                                color = AccentBlue,
+                                                startAngle = -90f,
+                                                sweepAngle = 360f * progress,
+                                                useCenter = false,
+                                                style = Stroke(width = stroke, cap = StrokeCap.Round)
                                             )
                                         }
-                                    } else {
-                                        Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                                            Text(
-                                                text = "0%",
-                                                style = MaterialTheme.typography.labelSmall.copy(
-                                                    fontWeight = FontWeight.Bold,
-                                                    fontSize = 11.sp
-                                                ),
-                                                color = Color(0xFF101114)
-                                            )
-                                            Text(
-                                                text = "0/0",
-                                                style = MaterialTheme.typography.labelSmall.copy(fontSize = 8.sp),
-                                                color = Color(0xFF6B7280)
-                                            )
-                                        }
+                                    }
+                                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                                        Text(
+                                            text = "${(progress * 100).toInt()}%",
+                                            style = MaterialTheme.typography.labelMedium.copy(
+                                                fontWeight = FontWeight.Bold,
+                                                fontSize = 12.sp
+                                            ),
+                                            color = Color(0xFF101114)
+                                        )
+                                        Text(
+                                            text = "$doneSubs/$totalSubs",
+                                            style = MaterialTheme.typography.labelSmall.copy(fontSize = 9.sp),
+                                            color = Color(0xFF6B7280)
+                                        )
                                     }
                                 }
                             }
 
-                            // Date and Priority below the image – 1. remove category per request
+                            // Date and Priority below – no category
                             Column(
                                 modifier = Modifier.fillMaxWidth(),
                                 verticalArrangement = Arrangement.spacedBy(8.dp)
                             ) {
                                 HorizontalDivider(thickness = 1.dp, color = Color(0xFFE5E7EB))
-                                FlowRow(
+                                Row(
                                     horizontalArrangement = Arrangement.spacedBy(8.dp),
-                                    verticalArrangement = Arrangement.spacedBy(8.dp),
                                     modifier = Modifier.fillMaxWidth()
                                 ) {
                                     AssistChip(
@@ -302,7 +249,7 @@ fun TaskDetailScreen(
                                             Icon(Icons.Filled.CalendarToday, null, modifier = Modifier.size(14.dp))
                                         },
                                         colors = AssistChipDefaults.assistChipColors(
-                                            containerColor = Color.White.copy(alpha = 0.8f),
+                                            containerColor = Color.White,
                                             labelColor = Color(0xFF374151)
                                         ),
                                         shape = RoundedCornerShape(100.dp)
@@ -328,7 +275,7 @@ fun TaskDetailScreen(
                                             Icon(Icons.Filled.Flag, null, modifier = Modifier.size(14.dp), tint = priorityColor)
                                         },
                                         colors = AssistChipDefaults.assistChipColors(
-                                            containerColor = priorityColor.copy(alpha = 0.12f),
+                                            containerColor = Color.White,
                                             labelColor = priorityColor
                                         ),
                                         shape = RoundedCornerShape(100.dp)
@@ -338,7 +285,7 @@ fun TaskDetailScreen(
                         }
                     }
 
-                    // Sub-tasks with dividers + edit capability per request
+                    // Sub-tasks with edit
                     var editingSubId by remember { mutableStateOf<String?>(null) }
                     var editingSubText by remember { mutableStateOf("") }
                     Card(
