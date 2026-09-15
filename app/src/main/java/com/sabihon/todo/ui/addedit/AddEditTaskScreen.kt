@@ -266,7 +266,7 @@ fun AddEditTaskScreen(
                 Row(
                     verticalAlignment = Alignment.CenterVertically,
                     modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    horizontalArrangement = Arrangement.spacedBy(4.dp)
                 ) {
                     SubTaskRoundedCheckbox(
                         checked = sub.isDone,
@@ -278,31 +278,31 @@ fun AddEditTaskScreen(
                             onValueChange = { editingSubText = it },
                             modifier = Modifier.weight(1f),
                             singleLine = true,
-                            shape = RoundedCornerShape(12.dp)
+                            shape = RoundedCornerShape(10.dp)
                         )
                         IconButton(onClick = {
                             viewModel.editSubTask(sub.id, editingSubText)
                             editingSubId = null
-                        }) {
-                            Text("✓", style = MaterialTheme.typography.titleMedium, color = MaterialTheme.colorScheme.primary)
+                        }, modifier = Modifier.size(32.dp)) {
+                            Text("✓", style = MaterialTheme.typography.titleSmall, color = MaterialTheme.colorScheme.primary)
                         }
-                        IconButton(onClick = { editingSubId = null }) {
-                            Text("×", style = MaterialTheme.typography.titleMedium)
+                        IconButton(onClick = { editingSubId = null }, modifier = Modifier.size(32.dp)) {
+                            Text("×", style = MaterialTheme.typography.titleSmall)
                         }
                     } else {
                         Text(
                             text = sub.title,
-                            modifier = Modifier.weight(1f).padding(vertical = 4.dp),
-                            style = MaterialTheme.typography.bodyMedium
+                            modifier = Modifier.weight(1f).padding(vertical = 2.dp),
+                            style = MaterialTheme.typography.bodySmall
                         )
                         IconButton(onClick = {
                             editingSubId = sub.id
                             editingSubText = sub.title
-                        }) {
-                            Text("✎", style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                        }, modifier = Modifier.size(28.dp)) {
+                            Text("✎", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                         }
-                        IconButton(onClick = { viewModel.removeSubTask(sub.id) }) {
-                            Text("×", style = MaterialTheme.typography.titleMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                        IconButton(onClick = { viewModel.removeSubTask(sub.id) }, modifier = Modifier.size(28.dp)) {
+                            Text("×", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                         }
                     }
                 }
