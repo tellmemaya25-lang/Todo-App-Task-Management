@@ -253,12 +253,12 @@ fun TaskDetailScreen(
                                 }
                             }
 
-                            // Horizontal divider to task
-                            HorizontalDivider(thickness = 0.5.dp, color = Color.Gray.copy(alpha = 0.15f))
+                            // Horizontal divider to task – visible
+                            HorizontalDivider(thickness = 1.dp, color = Color(0xFFE5E7EB))
                         }
                     }
 
-                    // Sub-tasks with dividers – light purple bg like screenshot
+                    // Sub-tasks with dividers – light purple bg like screenshot #F0EBFF
                     Card(
                         modifier = Modifier.fillMaxWidth(),
                         shape = RoundedCornerShape(20.dp),
@@ -296,11 +296,11 @@ fun TaskDetailScreen(
                                         )
                                     }
                                 }
-                                // Horizontal divider for each sub-task
+                                // Divider between sub-tasks – visible like screenshot
                                 HorizontalDivider(
                                     modifier = Modifier.padding(horizontal = 16.dp),
-                                    thickness = 0.5.dp,
-                                    color = Color.Gray.copy(alpha = 0.15f)
+                                    thickness = 1.dp,
+                                    color = Color(0xFFE5E7EB)
                                 )
                             }
 
