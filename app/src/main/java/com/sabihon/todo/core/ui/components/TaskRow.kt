@@ -11,9 +11,13 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.MoreHoriz
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Checkbox
+import androidx.compose.material3.CheckboxDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -22,7 +26,6 @@ import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
@@ -30,15 +33,14 @@ import com.sabihon.todo.core.ui.theme.AccentBlue
 import com.sabihon.todo.domain.model.SubTask
 
 /**
- * Task row – matches screenshot:
- * left circular checkbox, top pill "Today • 4:50 PM", title, optional sub-tasks,
- * "+ Add Sub-Task" button, overflow menu.
+ * Fixed Task row – consistent UI, no breaking, 24.dp card radius, 100.dp pill,
+ * 16.dp button radius, proper spacing tokens 4/8/12/16/20/24, elevation 0.
  */
 @Composable
 fun TaskRow(
     title: String,
     isCompleted: Boolean,
-    timeLabel: String, // e.g., "Today • 4:50 PM" or "Yesterday • 2:30 PM"
+    timeLabel: String,
     modifier: Modifier = Modifier,
     description: String? = null,
     subTasks: List<SubTask> = emptyList(),
@@ -48,96 +50,132 @@ fun TaskRow(
     onMoreClick: (() -> Unit)? = null,
     onClick: (() -> Unit)? = null
 ) {
-    Row(
+    Card(
         modifier = modifier
             .fillMaxWidth()
-            .clickable(enabled = onClick != null) { onClick?.invoke() }
-            .padding(horizontal = 20.dp, vertical = 12.dp)
+            .padding(horizontal = 16.dp, vertical = 6.dp)
             .animateContentSize(),
-        verticalAlignment = Alignment.Top
+        shape = RoundedCornerShape(24.dp),
+        colors = CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.6f)
+        ),
+        elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
     ) {
-        CircleCheckbox(
-            checked = isCompleted,
-            onCheckedChange = onCheckedChange,
-            modifier = Modifier.padding(top = 2.dp)
-        )
-        Spacer(Modifier.width(12.dp))
-        Column(modifier = Modifier.weight(1f)) {
-            // Time pill
-            PillChip(
-                text = timeLabel,
-                containerColor = MaterialTheme.colorScheme.surfaceVariant,
-                contentColor = MaterialTheme.colorScheme.onSurfaceVariant
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .clickable(enabled = onClick != null) { onClick?.invoke() }
+                .padding(16.dp),
+            verticalAlignment = Alignment.Top
+        ) {
+            // Fixed circle checkbox – 48dp touch, 28dp visual
+            CircleCheckbox(
+                checked = isCompleted,
+                onCheckedChange = onCheckedChange,
+                modifier = Modifier.padding(top = 2.dp)
             )
-            Spacer(Modifier.height(6.dp))
-            Text(
-                text = title,
-                style = MaterialTheme.typography.bodyLarge.copy(
-                    textDecoration = if (isCompleted) TextDecoration.LineThrough else null,
-                    color = if (isCompleted) MaterialTheme.colorScheme.onSurfaceVariant
-                    else MaterialTheme.colorScheme.onBackground
-                ),
-                maxLines = 2,
-                overflow = TextOverflow.Ellipsis
-            )
-            if (!description.isNullOrBlank()) {
-                Spacer(Modifier.height(2.dp))
+            Spacer(Modifier.width(12.dp))
+            Column(
+                modifier = Modifier.weight(1f),
+                verticalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                // Time pill – 100.dp radius
+                PillChip(
+                    text = timeLabel,
+                    containerColor = MaterialTheme.colorScheme.surface,
+                    contentColor = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+                
+                // Title – 15sp body, consistent
                 Text(
-                    text = description,
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    text = title,
+                    style = MaterialTheme.typography.bodyLarge.copy(
+                        textDecoration = if (isCompleted) TextDecoration.LineThrough else null
+                    ),
+                    color = if (isCompleted) MaterialTheme.colorScheme.onSurfaceVariant
+                    else MaterialTheme.colorScheme.onSurface,
                     maxLines = 2,
                     overflow = TextOverflow.Ellipsis
                 )
-            }
-            if (subTasks.isNotEmpty()) {
-                Spacer(Modifier.height(8.dp))
-                subTasks.forEach { sub ->
-                    Row(
-                        verticalAlignment = Alignment.CenterVertically,
-                        modifier = Modifier.padding(vertical = 2.dp)
+                
+                // Description – consistent body 15sp
+                if (!description.isNullOrBlank()) {
+                    Text(
+                        text = description,
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        maxLines = 2,
+                        overflow = TextOverflow.Ellipsis
+                    )
+                }
+                
+                // Sub-tasks – consistent spacing, indented
+                if (subTasks.isNotEmpty()) {
+                    Column(
+                        verticalArrangement = Arrangement.spacedBy(4.dp),
+                        modifier = Modifier.padding(top = 4.dp)
                     ) {
-                        Checkbox(
-                            checked = sub.isDone,
-                            onCheckedChange = { checked ->
-                                onSubTaskChecked?.invoke(sub.id, checked)
-                            },
-                            modifier = Modifier.size(20.dp)
-                        )
-                        Spacer(Modifier.width(8.dp))
+                        subTasks.forEach { sub ->
+                            Row(
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                                modifier = Modifier.fillMaxWidth()
+                            ) {
+                                Checkbox(
+                                    checked = sub.isDone,
+                                    onCheckedChange = { checked ->
+                                        onSubTaskChecked?.invoke(sub.id, checked)
+                                    },
+                                    modifier = Modifier.size(20.dp),
+                                    colors = CheckboxDefaults.colors(
+                                        checkedColor = AccentBlue,
+                                        uncheckedColor = MaterialTheme.colorScheme.outline
+                                    )
+                                )
+                                Text(
+                                    text = sub.title,
+                                    style = MaterialTheme.typography.bodyMedium.copy(
+                                        textDecoration = if (sub.isDone) TextDecoration.LineThrough else null
+                                    ),
+                                    color = if (sub.isDone) MaterialTheme.colorScheme.onSurfaceVariant
+                                    else MaterialTheme.colorScheme.onSurface,
+                                    maxLines = 1,
+                                    overflow = TextOverflow.Ellipsis,
+                                    modifier = Modifier.weight(1f)
+                                )
+                            }
+                        }
+                    }
+                }
+                
+                // Add Sub-Task – consistent button 16.dp radius
+                if (onAddSubTask != null) {
+                    TextButton(
+                        onClick = onAddSubTask,
+                        shape = RoundedCornerShape(16.dp),
+                        modifier = Modifier.padding(top = 4.dp)
+                    ) {
                         Text(
-                            text = sub.title,
-                            style = MaterialTheme.typography.bodyMedium.copy(
-                                textDecoration = if (sub.isDone) TextDecoration.LineThrough else null
-                            ),
-                            color = if (sub.isDone) MaterialTheme.colorScheme.onSurfaceVariant
-                            else MaterialTheme.colorScheme.onBackground
+                            text = "+ Add Sub-Task",
+                            color = AccentBlue,
+                            style = MaterialTheme.typography.labelMedium
                         )
                     }
                 }
             }
-            if (onAddSubTask != null) {
-                TextButton(
-                    onClick = onAddSubTask,
-                    modifier = Modifier.padding(top = 2.dp)
-                ) {
-                    Text(
-                        text = "+ Add Sub-Task",
-                        color = AccentBlue,
-                        style = MaterialTheme.typography.labelMedium
-                    )
-                }
+            
+            // More options – fixed 48dp touch target
+            IconButton(
+                onClick = { onMoreClick?.invoke() },
+                modifier = Modifier.size(48.dp)
+            ) {
+                Icon(
+                    imageVector = Icons.Filled.MoreHoriz,
+                    contentDescription = "More options",
+                    tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.size(20.dp)
+                )
             }
-        }
-        IconButton(
-            onClick = { onMoreClick?.invoke() },
-            modifier = Modifier.size(24.dp)
-        ) {
-            Icon(
-                imageVector = Icons.Filled.MoreHoriz,
-                contentDescription = "More options",
-                tint = MaterialTheme.colorScheme.onSurfaceVariant
-            )
         }
     }
 }

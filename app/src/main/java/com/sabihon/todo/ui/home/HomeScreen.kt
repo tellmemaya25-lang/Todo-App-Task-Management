@@ -182,7 +182,11 @@ fun HomeScreen(
                 } else {
                     items(uiState.filteredTasks, key = { it.id }) { task ->
                         var showMenu by remember { mutableStateOf(false) }
-                        Box(modifier = Modifier.animateContentSize()) {
+                        androidx.compose.foundation.layout.Box(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .animateContentSize()
+                        ) {
                             TaskRow(
                                 title = task.title,
                                 isCompleted = task.isCompleted,
@@ -201,9 +205,11 @@ fun HomeScreen(
                                 onMoreClick = { showMenu = true },
                                 onClick = { onNavigateToTaskDetail(task.id) }
                             )
+                            // Fixed dropdown – consistent 16.dp radius, no breaking
                             DropdownMenu(
                                 expanded = showMenu,
-                                onDismissRequest = { showMenu = false }
+                                onDismissRequest = { showMenu = false },
+                                shape = androidx.compose.foundation.shape.RoundedCornerShape(16.dp)
                             ) {
                                 DropdownMenuItem(text = { Text("Edit") }, onClick = {
                                     showMenu = false
