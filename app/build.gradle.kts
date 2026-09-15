@@ -1,14 +1,14 @@
 plugins {
-    // Fixed: Use explicit plugin IDs with versions to avoid "Plugin was not found" error
-    // Versions are from gradle/libs.versions.toml but specified explicitly for robustness
-    id("com.android.application") version "8.7.3"
-    id("org.jetbrains.kotlin.android") version "2.1.20"
-    id("org.jetbrains.kotlin.plugin.compose") version "2.1.20"
-    id("org.jetbrains.kotlin.plugin.parcelize") version "2.1.20"
-    id("org.jetbrains.kotlin.plugin.serialization") version "2.1.20"
-    id("com.google.devtools.ksp") version "2.1.20-1.0.32"
-    id("com.google.dagger.hilt.android") version "2.55"
-    id("com.google.gms.google-services") version "4.4.2"
+    // Fixed: Do NOT specify versions here – versions are defined in root build.gradle.kts with apply false
+    // This avoids "plugin is already on the classpath with an unknown version" error
+    id("com.android.application")
+    id("org.jetbrains.kotlin.android")
+    id("org.jetbrains.kotlin.plugin.compose")
+    id("org.jetbrains.kotlin.plugin.parcelize")
+    id("org.jetbrains.kotlin.plugin.serialization")
+    id("com.google.devtools.ksp")
+    id("com.google.dagger.hilt.android")
+    id("com.google.gms.google-services")
 }
 
 android {
