@@ -122,7 +122,7 @@ fun HomeScreen(
                     .padding(innerPadding),
                 verticalArrangement = Arrangement.spacedBy(0.dp)
             ) {
-                // 5 Chips: Today, Pending, Completed, All, Overdue
+                // 5 Chips: All first as default
                 item {
                     LazyRow(
                         modifier = Modifier
@@ -131,10 +131,10 @@ fun HomeScreen(
                         horizontalArrangement = Arrangement.spacedBy(8.dp)
                     ) {
                         val chips = listOf(
+                            HomeFilter.ALL to "All",
                             HomeFilter.TODAY to "Today",
                             HomeFilter.PENDING to "Pending",
                             HomeFilter.COMPLETED to "Completed",
-                            HomeFilter.ALL to "All",
                             HomeFilter.OVERDUE to "Overdue"
                         )
                         items(chips) { (filter, label) ->
