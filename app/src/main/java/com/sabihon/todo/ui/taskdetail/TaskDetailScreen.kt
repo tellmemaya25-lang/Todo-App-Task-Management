@@ -16,6 +16,7 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -24,7 +25,6 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.CalendarToday
-import androidx.compose.material.icons.filled.Category
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.Flag
 import androidx.compose.material3.AssistChip
@@ -100,21 +100,16 @@ fun TaskDetailScreen(
                     }
                 },
                 actions = {
-                    // Edit icon aligned to topbar right per request – blue rounded square like screenshot
-                    Box(
-                        modifier = Modifier
-                            .padding(end = 8.dp)
-                            .size(40.dp)
-                            .clip(RoundedCornerShape(12.dp))
-                            .background(AccentBlue)
-                            .clickable { onEdit(taskId) },
-                        contentAlignment = Alignment.Center
+                    // 3. remove bg of edit icon – per request, no blue background, just icon
+                    IconButton(
+                        onClick = { onEdit(taskId) },
+                        modifier = Modifier.padding(end = 8.dp)
                     ) {
                         Icon(
                             Icons.Filled.Edit,
                             contentDescription = "Edit",
-                            tint = Color.White,
-                            modifier = Modifier.size(18.dp)
+                            tint = AccentBlue,
+                            modifier = Modifier.size(22.dp)
                         )
                     }
                 }
@@ -149,20 +144,82 @@ fun TaskDetailScreen(
                         .padding(horizontal = 16.dp, vertical = 12.dp),
                     verticalArrangement = Arrangement.spacedBy(16.dp)
                 ) {
-                    // Header – percentage in front of title, bg #e3f5ff, with dividers + date/category/priority below image
+                    // Header – bg #e3f5ff, title top, description white box, percentage overlapping top-right
                     Card(
                         modifier = Modifier.fillMaxWidth(),
                         shape = RoundedCornerShape(24.dp),
                         colors = CardDefaults.cardColors(containerColor = Color(0xFFE3F5FF)),
                         elevation = CardDefaults.cardElevation(0.dp)
                     ) {
-                        Column {
-                            Row(
-                                modifier = Modifier.fillMaxWidth().padding(16.dp),
-                                verticalAlignment = Alignment.Top
-                            ) {
+                        Column(modifier = Modifier.fillMaxWidth().padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                            Text(
+                                text = task.title,
+                                style = MaterialTheme.typography.titleMedium.copy(
+                                    fontWeight = FontWeight.Bold,
+                                    fontSize = 16.sp
+                                ),
+                                maxLines = 2,
+                                overflow = TextOverflow.Ellipsis
+                            )
+
+                            // Description box with percentage overlapping top-right per request
+                            Box(modifier = Modifier.fillMaxWidth()) {
+                                // White description container
                                 Box(
-                                    modifier = Modifier.size(56.dp),
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .padding(top = 12.dp, end = 12.dp)
+                                        .clip(RoundedCornerShape(12.dp))
+                                        .background(Color.White.copy(alpha = 0.85f))
+                                        .padding(12.dp)
+                                ) {
+                                    var editableDesc by remember(task.id, task.description) { mutableStateOf(task.description) }
+                                    LaunchedEffect(task.description) {
+                                        if (editableDesc != task.description) editableDesc = task.description
+                                    }
+                                    OutlinedTextField(
+                                        value = editableDesc,
+                                        onValueChange = { editableDesc = it },
+                                        placeholder = {
+                                            Text(
+                                                "Add description...",
+                                                style = MaterialTheme.typography.bodySmall.copy(fontSize = 13.sp),
+                                                color = Color(0xFF9CA3AF)
+                                            )
+                                        },
+                                        modifier = Modifier.fillMaxWidth(),
+                                        shape = RoundedCornerShape(12.dp),
+                                        minLines = 2,
+                                        maxLines = 4,
+                                        textStyle = MaterialTheme.typography.bodySmall.copy(
+                                            fontSize = 13.sp,
+                                            color = Color(0xFF374151)
+                                        ),
+                                        colors = androidx.compose.material3.OutlinedTextFieldDefaults.colors(
+                                            focusedContainerColor = Color.Transparent,
+                                            unfocusedContainerColor = Color.Transparent,
+                                            focusedBorderColor = AccentBlue.copy(alpha = 0.3f),
+                                            unfocusedBorderColor = Color.Transparent,
+                                            cursorColor = AccentBlue
+                                        )
+                                    )
+                                    LaunchedEffect(editableDesc) {
+                                        if (editableDesc != task.description) {
+                                            kotlinx.coroutines.delay(600)
+                                            viewModel.updateDescription(editableDesc)
+                                        }
+                                    }
+                                }
+
+                                // 2. Percentage to top right of description with overlap
+                                Box(
+                                    modifier = Modifier
+                                        .align(Alignment.TopEnd)
+                                        .offset(x = 8.dp, y = (-4).dp)
+                                        .size(56.dp)
+                                        .clip(CircleShape)
+                                        .background(Color.White)
+                                        .padding(2.dp),
                                     contentAlignment = Alignment.Center
                                 ) {
                                     if (totalSubs > 0) {
@@ -198,86 +255,21 @@ fun TaskDetailScreen(
                                             )
                                         }
                                     } else {
-                                        Box(
-                                            modifier = Modifier.size(48.dp).clip(CircleShape)
-                                                .background(Color.White.copy(alpha = 0.6f)),
-                                            contentAlignment = Alignment.Center
-                                        ) {
-                                            Text(
-                                                text = "0%",
-                                                style = MaterialTheme.typography.labelSmall.copy(
-                                                    fontWeight = FontWeight.Bold,
-                                                    fontSize = 11.sp
-                                                ),
-                                                color = Color(0xFF101114)
-                                            )
-                                        }
-                                    }
-                                }
-
-                                Spacer(Modifier.width(12.dp))
-
-                                Column(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                                    Text(
-                                        text = task.title,
-                                        style = MaterialTheme.typography.titleMedium.copy(
-                                            fontWeight = FontWeight.Bold,
-                                            fontSize = 16.sp
-                                        ),
-                                        maxLines = 2,
-                                        overflow = TextOverflow.Ellipsis
-                                    )
-                                    // Multiline editable description – box like screenshot
-                                    var editableDesc by remember(task.id, task.description) { mutableStateOf(task.description) }
-                                    LaunchedEffect(task.description) {
-                                        if (editableDesc != task.description) editableDesc = task.description
-                                    }
-                                    Box(
-                                        modifier = Modifier
-                                            .fillMaxWidth()
-                                            .clip(RoundedCornerShape(12.dp))
-                                            .background(Color.White.copy(alpha = 0.7f))
-                                            .padding(12.dp)
-                                    ) {
-                                        OutlinedTextField(
-                                            value = editableDesc,
-                                            onValueChange = { editableDesc = it },
-                                            placeholder = {
-                                                Text(
-                                                    "Add description...",
-                                                    style = MaterialTheme.typography.bodySmall.copy(fontSize = 13.sp),
-                                                    color = Color(0xFF9CA3AF)
-                                                )
-                                            },
-                                            modifier = Modifier.fillMaxWidth(),
-                                            shape = RoundedCornerShape(12.dp),
-                                            minLines = 2,
-                                            maxLines = 4,
-                                            textStyle = MaterialTheme.typography.bodySmall.copy(
-                                                fontSize = 13.sp,
-                                                color = Color(0xFF374151)
+                                        Text(
+                                            text = "0%",
+                                            style = MaterialTheme.typography.labelSmall.copy(
+                                                fontWeight = FontWeight.Bold,
+                                                fontSize = 11.sp
                                             ),
-                                            colors = androidx.compose.material3.OutlinedTextFieldDefaults.colors(
-                                                focusedContainerColor = Color.Transparent,
-                                                unfocusedContainerColor = Color.Transparent,
-                                                focusedBorderColor = AccentBlue.copy(alpha = 0.3f),
-                                                unfocusedBorderColor = Color.Transparent,
-                                                cursorColor = AccentBlue
-                                            )
+                                            color = Color(0xFF101114)
                                         )
-                                    }
-                                    LaunchedEffect(editableDesc) {
-                                        if (editableDesc != task.description) {
-                                            kotlinx.coroutines.delay(600)
-                                            viewModel.updateDescription(editableDesc)
-                                        }
                                     }
                                 }
                             }
 
-                            // Date, Category, Priority below the image/description per request
+                            // Date and Priority below the image – 1. remove category per request
                             Column(
-                                modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 12.dp),
+                                modifier = Modifier.fillMaxWidth(),
                                 verticalArrangement = Arrangement.spacedBy(8.dp)
                             ) {
                                 HorizontalDivider(thickness = 1.dp, color = Color(0xFFE5E7EB))
@@ -286,7 +278,6 @@ fun TaskDetailScreen(
                                     verticalArrangement = Arrangement.spacedBy(8.dp),
                                     modifier = Modifier.fillMaxWidth()
                                 ) {
-                                    // Date chip
                                     AssistChip(
                                         onClick = {},
                                         label = {
@@ -304,25 +295,6 @@ fun TaskDetailScreen(
                                         ),
                                         shape = RoundedCornerShape(100.dp)
                                     )
-                                    // Category chip
-                                    AssistChip(
-                                        onClick = {},
-                                        label = {
-                                            Text(
-                                                text = task.categoryId?.takeIf { it.isNotBlank() } ?: "Uncategorized",
-                                                style = MaterialTheme.typography.labelSmall.copy(fontSize = 11.sp)
-                                            )
-                                        },
-                                        leadingIcon = {
-                                            Icon(Icons.Filled.Category, null, modifier = Modifier.size(14.dp))
-                                        },
-                                        colors = AssistChipDefaults.assistChipColors(
-                                            containerColor = Color(0xFFF0EBFF),
-                                            labelColor = Color(0xFF6B46C1)
-                                        ),
-                                        shape = RoundedCornerShape(100.dp)
-                                    )
-                                    // Priority chip
                                     val priorityColor = when (task.priority) {
                                         Priority.LOW -> Color(0xFF6B7280)
                                         Priority.MEDIUM -> Color(0xFF3B82F6)
@@ -351,8 +323,6 @@ fun TaskDetailScreen(
                                     )
                                 }
                             }
-
-                            HorizontalDivider(thickness = 1.dp, color = Color(0xFFE5E7EB))
                         }
                     }
 
