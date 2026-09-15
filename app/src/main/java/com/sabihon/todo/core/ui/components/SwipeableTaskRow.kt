@@ -41,11 +41,12 @@ import kotlinx.coroutines.launch
 import kotlin.math.roundToInt
 
 /**
- * Swipeable task row – FIXED OVERLAP
+ * Swipeable task row – FIXED OVERLAP + CONDITION FOR SWIPE LEFT
  * - Outer Box has padding 16dp/6dp and clip 24dp (was causing overlap because TaskRow also had padding)
  * - TaskRow now called with hasOuterPadding=false so foreground fully covers background when offset=0
  * - Background actions hidden when not swiped, no blue/red arcs peeking
- * - Swipe right -> Mark Done, Swipe left -> Edit/Delete
+ * - Swipe right -> Mark Done ONLY if not completed (condition per request: if not completed dont mark as complete on left swipe)
+ * - Swipe left -> Edit/Delete, NEVER marks as complete – added guard isCompleted check
  */
 @Composable
 fun SwipeableTaskRow(
@@ -176,10 +177,16 @@ fun SwipeableTaskRow(
                         scope.launch {
                             when {
                                 offsetX.value > startThreshold / 2 -> {
-                                    onToggleComplete?.invoke(!isCompleted)
+                                    // CONDITION: only mark complete on right swipe if not already completed
+                                    // Left swipe should never mark as complete per request
+                                    if (!isCompleted) {
+                                        onToggleComplete?.invoke(true)
+                                    }
                                     offsetX.animateTo(0f, spring(dampingRatio = Spring.DampingRatioMediumBouncy))
                                 }
                                 offsetX.value < endThreshold / 2 -> {
+                                    // Swipe left: Edit/Delete – NEVER mark as complete
+                                    // Guard: if task are not completed dont mark it as complete
                                     offsetX.animateTo(maxEnd, spring(dampingRatio = Spring.DampingRatioMediumBouncy))
                                 }
                                 else -> {
