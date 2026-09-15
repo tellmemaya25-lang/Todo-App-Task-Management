@@ -344,12 +344,13 @@ fun TaskDetailScreen(
                                     horizontalArrangement = Arrangement.spacedBy(12.dp),
                                     modifier = Modifier.fillMaxWidth()
                                         .combinedClickable(onClick = { viewModel.toggleSubTask(sub.id) })
-                                        .padding(horizontal = 16.dp, vertical = 12.dp)
+                                        .padding(horizontal = 16.dp, vertical = 14.dp)
                                 ) {
-                                    // Checkbox – round, same as All Tasks percentage style but checkbox
+                                    // Checkbox – larger per request – use 1st image for consistency
                                     SubTaskRoundedCheckbox(
                                         checked = sub.isDone,
-                                        onCheckedChange = { viewModel.toggleSubTask(sub.id) }
+                                        onCheckedChange = { viewModel.toggleSubTask(sub.id) },
+                                        modifier = Modifier.size(28.dp)
                                     )
                                     if (editingSubId == sub.id) {
                                         OutlinedTextField(
@@ -362,14 +363,14 @@ fun TaskDetailScreen(
                                         IconButton(onClick = {
                                             viewModel.editSubTask(sub.id, editingSubText)
                                             editingSubId = null
-                                        }, modifier = Modifier.size(32.dp)) {
-                                            Text("✓", color = AccentBlue, fontWeight = FontWeight.Bold, fontSize = 14.sp)
+                                        }, modifier = Modifier.size(36.dp)) {
+                                            Text("✓", color = AccentBlue, fontWeight = FontWeight.Bold, fontSize = 18.sp)
                                         }
-                                        IconButton(onClick = { editingSubId = null }, modifier = Modifier.size(32.dp)) {
-                                            Text("×", fontSize = 14.sp)
+                                        IconButton(onClick = { editingSubId = null }, modifier = Modifier.size(36.dp)) {
+                                            Text("×", fontSize = 18.sp)
                                         }
                                     } else {
-                                        // Remove red lines per request – only title, no from: Webinar and no Completed dot – image-1.png red lines removed
+                                        // Remove red lines per request – only title – larger icons consistent with 1st image
                                         Text(
                                             text = sub.title,
                                             style = MaterialTheme.typography.titleMedium.copy(
@@ -383,14 +384,16 @@ fun TaskDetailScreen(
                                             overflow = TextOverflow.Ellipsis,
                                             modifier = Modifier.weight(1f)
                                         )
+                                        // Edit icon larger 20dp, consistent with 1st image
                                         IconButton(onClick = {
                                             editingSubId = sub.id
                                             editingSubText = sub.title
-                                        }, modifier = Modifier.size(28.dp)) {
-                                            Icon(Icons.Filled.Edit, null, modifier = Modifier.size(14.dp), tint = subTextSecondary)
+                                        }, modifier = Modifier.size(36.dp)) {
+                                            Icon(Icons.Filled.Edit, null, modifier = Modifier.size(20.dp), tint = subTextSecondary)
                                         }
-                                        IconButton(onClick = { viewModel.deleteSubTask(sub.id) }, modifier = Modifier.size(28.dp)) {
-                                            Text("×", color = subTextSecondary, fontSize = 14.sp)
+                                        // Delete icon larger 20sp, consistent with 1st image
+                                        IconButton(onClick = { viewModel.deleteSubTask(sub.id) }, modifier = Modifier.size(36.dp)) {
+                                            Text("×", color = subTextSecondary, fontSize = 20.sp, fontWeight = FontWeight.Bold)
                                         }
                                     }
                                 }
@@ -415,25 +418,26 @@ fun TaskDetailScreen(
                                 ) {
                                     Row(
                                         verticalAlignment = Alignment.CenterVertically,
-                                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                                        horizontalArrangement = Arrangement.spacedBy(10.dp)
                                     ) {
-                                        Icon(Icons.Filled.Edit, null, tint = Color.White, modifier = Modifier.size(18.dp))
+                                        Icon(Icons.Filled.Edit, null, tint = Color.White, modifier = Modifier.size(22.dp))
                                         Text(
                                             text = "Add task",
                                             style = MaterialTheme.typography.titleSmall.copy(
                                                 fontWeight = FontWeight.Bold,
-                                                color = Color.White
+                                                color = Color.White,
+                                                fontSize = 14.sp
                                             )
                                         )
                                     }
                                 }
-                                // Arrow down btn overlapping CTA – only show if list exceeds 5 items per request – dark mode adapted
+                                // Arrow down btn overlapping CTA – only show if list exceeds 5 items per request – dark mode adapted – larger icons per request
                                 if (task.subTasks.size > 5) {
                                     Box(
                                         modifier = Modifier
                                             .align(Alignment.TopCenter)
-                                            .offset(y = (-12).dp)
-                                            .size(32.dp)
+                                            .offset(y = (-14).dp)
+                                            .size(36.dp)
                                             .clip(CircleShape)
                                             .background(if (isDark) MaterialTheme.colorScheme.surface else Color.White)
                                             .clickable { isSubTasksExpanded = !isSubTasksExpanded }
@@ -444,7 +448,7 @@ fun TaskDetailScreen(
                                             imageVector = if (isSubTasksExpanded) Icons.Filled.KeyboardArrowUp else Icons.Filled.KeyboardArrowDown,
                                             contentDescription = if (isSubTasksExpanded) "Collapse" else "Expand",
                                             tint = AccentBlue,
-                                            modifier = Modifier.size(20.dp)
+                                            modifier = Modifier.size(24.dp)
                                         )
                                     }
                                 }

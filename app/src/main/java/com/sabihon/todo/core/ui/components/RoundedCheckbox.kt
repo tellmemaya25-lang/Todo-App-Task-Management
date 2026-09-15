@@ -67,7 +67,7 @@ fun RoundedCheckbox(
 
 /**
  * Round version for sub-tasks – matches screenshot but circular per request
- * Used in TaskDetail sub-task list
+ * Used in TaskDetail sub-task list – larger icons per request use 1st image for consistency
  */
 @Composable
 fun SubTaskRoundedCheckbox(
@@ -87,12 +87,12 @@ fun SubTaskRoundedCheckbox(
     )
     Box(
         modifier = modifier
-            .size(24.dp)
+            .size(28.dp)
             .scale(scale)
             .clip(CircleShape)
             .background(if (checked) AccentBlue.copy(alpha = bgAlpha) else Color.Transparent)
             .border(
-                width = 1.8.dp,
+                width = 2.dp,
                 color = if (checked) AccentBlue else Color.Gray.copy(alpha = 0.4f),
                 shape = CircleShape
             )
@@ -104,7 +104,7 @@ fun SubTaskRoundedCheckbox(
                 imageVector = Icons.Filled.Check,
                 contentDescription = null,
                 tint = Color.White,
-                modifier = Modifier.size(14.dp)
+                modifier = Modifier.size(16.dp)
             )
         }
     }
