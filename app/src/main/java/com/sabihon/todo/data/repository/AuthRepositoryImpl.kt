@@ -110,8 +110,15 @@ class AuthRepositoryImpl @Inject constructor(
     }
 
     private fun friendlyMessage(e: Exception): String {
-        val msg = e.message?.lowercase() ?: ""
+        val raw = e.message ?: ""
+        val msg = raw.lowercase()
         return when {
+            "configuration_not_found" in msg || "configuration-not-found" in msg -> {
+                // Most common cause: google-services.json mismatch or Auth not enabled in Firebase console
+                "Firebase config not found. Check: 1) Firebase Console > Authentication > Enable Email/Password, " +
+                    "2) google-services.json package_name is com.sabihon.todo, " +
+                    "3) Re-download google-services.json after enabling Auth. Raw: $raw"
+            }
             "network" in msg -> "No internet connection. Please check your network."
             "invalid-email" in msg || "badly formatted" in msg -> "Invalid email format."
             "user-not-found" in msg -> "No account found with this email."
@@ -119,7 +126,8 @@ class AuthRepositoryImpl @Inject constructor(
             "email-already-in-use" in msg -> "Email already in use."
             "weak-password" in msg -> "Password is too weak. Use at least 6 characters."
             "too-many-requests" in msg -> "Too many attempts. Please try again later."
-            else -> e.localizedMessage ?: "Something went wrong. Please try again."
+            "api key" in msg || "api_key" in msg -> "Firebase API key invalid. Re-download google-services.json."
+            else -> e.localizedMessage ?: "Something went wrong. Please try again. [$raw]"
         }
     }
 }
