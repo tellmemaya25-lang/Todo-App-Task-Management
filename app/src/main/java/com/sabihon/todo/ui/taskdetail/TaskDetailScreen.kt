@@ -1,5 +1,7 @@
 package com.sabihon.todo.ui.taskdetail
 
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -7,6 +9,8 @@ import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
@@ -19,7 +23,12 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.CalendarToday
+import androidx.compose.material.icons.filled.Category
 import androidx.compose.material.icons.filled.Edit
+import androidx.compose.material.icons.filled.Flag
+import androidx.compose.material3.AssistChip
+import androidx.compose.material3.AssistChipDefaults
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
@@ -33,8 +42,6 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
-import androidx.compose.animation.core.animateFloatAsState
-import androidx.compose.animation.core.tween
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
@@ -61,8 +68,12 @@ import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.sabihon.todo.core.ui.components.SubTaskRoundedCheckbox
 import com.sabihon.todo.core.ui.theme.AccentBlue
+import com.sabihon.todo.domain.model.Priority
+import java.text.SimpleDateFormat
+import java.util.Date
+import java.util.Locale
 
-@OptIn(ExperimentalMaterial3Api::class)
+@OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
 @Composable
 fun TaskDetailScreen(
     taskId: String,
@@ -119,7 +130,7 @@ fun TaskDetailScreen(
                         .padding(horizontal = 16.dp, vertical = 12.dp),
                     verticalArrangement = Arrangement.spacedBy(16.dp)
                 ) {
-                    // Header – percentage in front of title, bg #e3f5ff, with dividers
+                    // Header – percentage in front of title, bg #e3f5ff, with dividers + date/category/priority below image
                     Card(
                         modifier = Modifier.fillMaxWidth(),
                         shape = RoundedCornerShape(24.dp),
@@ -129,9 +140,8 @@ fun TaskDetailScreen(
                         Column {
                             Row(
                                 modifier = Modifier.fillMaxWidth().padding(16.dp),
-                                verticalAlignment = Alignment.CenterVertically
+                                verticalAlignment = Alignment.Top
                             ) {
-                                // Percentage in front of title – 40% 2/5 like screenshot
                                 Box(
                                     modifier = Modifier.size(56.dp),
                                     contentAlignment = Alignment.Center
@@ -170,27 +180,25 @@ fun TaskDetailScreen(
                                         }
                                     } else {
                                         Box(
-                                            modifier = Modifier.size(32.dp).clip(CircleShape)
-                                                .background(if (task.isCompleted) AccentBlue else Color.Transparent),
+                                            modifier = Modifier.size(48.dp).clip(CircleShape)
+                                                .background(Color.White.copy(alpha = 0.6f)),
                                             contentAlignment = Alignment.Center
                                         ) {
-                                            if (task.isCompleted) {
-                                                Icon(Icons.Filled.Edit, null, tint = Color.White, modifier = Modifier.size(16.dp))
-                                            } else {
-                                                Canvas(modifier = Modifier.size(24.dp)) {
-                                                    drawCircle(
-                                                        color = Color.Gray.copy(alpha = 0.3f),
-                                                        style = Stroke(width = 2.dp.toPx())
-                                                    )
-                                                }
-                                            }
+                                            Text(
+                                                text = "0%",
+                                                style = MaterialTheme.typography.labelSmall.copy(
+                                                    fontWeight = FontWeight.Bold,
+                                                    fontSize = 11.sp
+                                                ),
+                                                color = Color(0xFF101114)
+                                            )
                                         }
                                     }
                                 }
 
                                 Spacer(Modifier.width(12.dp))
 
-                                Column(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                                Column(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(8.dp)) {
                                     Text(
                                         text = task.title,
                                         style = MaterialTheme.typography.titleMedium.copy(
@@ -200,40 +208,45 @@ fun TaskDetailScreen(
                                         maxLines = 2,
                                         overflow = TextOverflow.Ellipsis
                                     )
-                                    // Multiline editable description per user request
+                                    // Multiline editable description – box like screenshot
                                     var editableDesc by remember(task.id, task.description) { mutableStateOf(task.description) }
                                     LaunchedEffect(task.description) {
                                         if (editableDesc != task.description) editableDesc = task.description
                                     }
-                                    OutlinedTextField(
-                                        value = editableDesc,
-                                        onValueChange = { newVal ->
-                                            editableDesc = newVal
-                                        },
-                                        placeholder = {
-                                            Text(
-                                                "Add description...",
-                                                style = MaterialTheme.typography.bodySmall.copy(fontSize = 13.sp),
-                                                color = Color(0xFF9CA3AF)
+                                    Box(
+                                        modifier = Modifier
+                                            .fillMaxWidth()
+                                            .clip(RoundedCornerShape(12.dp))
+                                            .background(Color.White.copy(alpha = 0.7f))
+                                            .padding(12.dp)
+                                    ) {
+                                        OutlinedTextField(
+                                            value = editableDesc,
+                                            onValueChange = { editableDesc = it },
+                                            placeholder = {
+                                                Text(
+                                                    "Add description...",
+                                                    style = MaterialTheme.typography.bodySmall.copy(fontSize = 13.sp),
+                                                    color = Color(0xFF9CA3AF)
+                                                )
+                                            },
+                                            modifier = Modifier.fillMaxWidth(),
+                                            shape = RoundedCornerShape(12.dp),
+                                            minLines = 2,
+                                            maxLines = 4,
+                                            textStyle = MaterialTheme.typography.bodySmall.copy(
+                                                fontSize = 13.sp,
+                                                color = Color(0xFF374151)
+                                            ),
+                                            colors = androidx.compose.material3.OutlinedTextFieldDefaults.colors(
+                                                focusedContainerColor = Color.Transparent,
+                                                unfocusedContainerColor = Color.Transparent,
+                                                focusedBorderColor = AccentBlue.copy(alpha = 0.3f),
+                                                unfocusedBorderColor = Color.Transparent,
+                                                cursorColor = AccentBlue
                                             )
-                                        },
-                                        modifier = Modifier.fillMaxWidth(),
-                                        shape = RoundedCornerShape(12.dp),
-                                        minLines = 2,
-                                        maxLines = 4,
-                                        textStyle = MaterialTheme.typography.bodySmall.copy(
-                                            fontSize = 13.sp,
-                                            color = Color(0xFF6B7280)
-                                        ),
-                                        colors = androidx.compose.material3.OutlinedTextFieldDefaults.colors(
-                                            focusedContainerColor = Color.White.copy(alpha = 0.6f),
-                                            unfocusedContainerColor = Color.White.copy(alpha = 0.4f),
-                                            focusedBorderColor = AccentBlue.copy(alpha = 0.4f),
-                                            unfocusedBorderColor = Color.Transparent,
-                                            cursorColor = AccentBlue
                                         )
-                                    )
-                                    // Auto-save when changed and focus lost or after typing
+                                    }
                                     LaunchedEffect(editableDesc) {
                                         if (editableDesc != task.description) {
                                             kotlinx.coroutines.delay(600)
@@ -242,7 +255,7 @@ fun TaskDetailScreen(
                                     }
                                 }
 
-                                Spacer(Modifier.width(12.dp))
+                                Spacer(Modifier.width(8.dp))
 
                                 Box(
                                     modifier = Modifier.size(40.dp).clip(RoundedCornerShape(12.dp))
@@ -253,12 +266,88 @@ fun TaskDetailScreen(
                                 }
                             }
 
-                            // Horizontal divider to task – visible
+                            // Date, Category, Priority below the image/description per request
+                            Column(
+                                modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 12.dp),
+                                verticalArrangement = Arrangement.spacedBy(8.dp)
+                            ) {
+                                HorizontalDivider(thickness = 1.dp, color = Color(0xFFE5E7EB))
+                                FlowRow(
+                                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                                    verticalArrangement = Arrangement.spacedBy(8.dp),
+                                    modifier = Modifier.fillMaxWidth()
+                                ) {
+                                    // Date chip
+                                    AssistChip(
+                                        onClick = {},
+                                        label = {
+                                            Text(
+                                                text = task.dueAt?.let { formatDate(it) } ?: "No date",
+                                                style = MaterialTheme.typography.labelSmall.copy(fontSize = 11.sp)
+                                            )
+                                        },
+                                        leadingIcon = {
+                                            Icon(Icons.Filled.CalendarToday, null, modifier = Modifier.size(14.dp))
+                                        },
+                                        colors = AssistChipDefaults.assistChipColors(
+                                            containerColor = Color.White.copy(alpha = 0.8f),
+                                            labelColor = Color(0xFF374151)
+                                        ),
+                                        shape = RoundedCornerShape(100.dp)
+                                    )
+                                    // Category chip
+                                    AssistChip(
+                                        onClick = {},
+                                        label = {
+                                            Text(
+                                                text = task.categoryId?.takeIf { it.isNotBlank() } ?: "Uncategorized",
+                                                style = MaterialTheme.typography.labelSmall.copy(fontSize = 11.sp)
+                                            )
+                                        },
+                                        leadingIcon = {
+                                            Icon(Icons.Filled.Category, null, modifier = Modifier.size(14.dp))
+                                        },
+                                        colors = AssistChipDefaults.assistChipColors(
+                                            containerColor = Color(0xFFF0EBFF),
+                                            labelColor = Color(0xFF6B46C1)
+                                        ),
+                                        shape = RoundedCornerShape(100.dp)
+                                    )
+                                    // Priority chip
+                                    val priorityColor = when (task.priority) {
+                                        Priority.LOW -> Color(0xFF6B7280)
+                                        Priority.MEDIUM -> Color(0xFF3B82F6)
+                                        Priority.HIGH -> Color(0xFFF59E0B)
+                                        Priority.URGENT -> Color(0xFFEF4444)
+                                    }
+                                    AssistChip(
+                                        onClick = {},
+                                        label = {
+                                            Text(
+                                                text = task.priority.name.lowercase().replaceFirstChar { it.uppercase() },
+                                                style = MaterialTheme.typography.labelSmall.copy(
+                                                    fontSize = 11.sp,
+                                                    fontWeight = FontWeight.Bold
+                                                )
+                                            )
+                                        },
+                                        leadingIcon = {
+                                            Icon(Icons.Filled.Flag, null, modifier = Modifier.size(14.dp), tint = priorityColor)
+                                        },
+                                        colors = AssistChipDefaults.assistChipColors(
+                                            containerColor = priorityColor.copy(alpha = 0.12f),
+                                            labelColor = priorityColor
+                                        ),
+                                        shape = RoundedCornerShape(100.dp)
+                                    )
+                                }
+                            }
+
                             HorizontalDivider(thickness = 1.dp, color = Color(0xFFE5E7EB))
                         }
                     }
 
-                    // Sub-tasks with dividers – light purple bg like screenshot #F0EBFF
+                    // Sub-tasks with dividers
                     Card(
                         modifier = Modifier.fillMaxWidth(),
                         shape = RoundedCornerShape(20.dp),
@@ -266,7 +355,7 @@ fun TaskDetailScreen(
                         elevation = CardDefaults.cardElevation(0.dp)
                     ) {
                         Column {
-                            task.subTasks.forEachIndexed { index, sub ->
+                            task.subTasks.forEach { sub ->
                                 Row(
                                     verticalAlignment = Alignment.CenterVertically,
                                     horizontalArrangement = Arrangement.spacedBy(12.dp),
@@ -296,7 +385,6 @@ fun TaskDetailScreen(
                                         )
                                     }
                                 }
-                                // Divider between sub-tasks – visible like screenshot
                                 HorizontalDivider(
                                     modifier = Modifier.padding(horizontal = 16.dp),
                                     thickness = 1.dp,
@@ -304,7 +392,6 @@ fun TaskDetailScreen(
                                 )
                             }
 
-                            // Add task CTA – blue, rounded bottom
                             Box(
                                 modifier = Modifier.fillMaxWidth()
                                     .clip(RoundedCornerShape(bottomStart = 20.dp, bottomEnd = 20.dp))
@@ -388,5 +475,14 @@ fun TaskDetailScreen(
                 }
             }
         }
+    }
+}
+
+private fun formatDate(millis: Long): String {
+    return try {
+        val fmt = SimpleDateFormat("MMM d, yyyy • h:mm a", Locale.getDefault())
+        fmt.format(Date(millis))
+    } catch (e: Exception) {
+        "Invalid date"
     }
 }
