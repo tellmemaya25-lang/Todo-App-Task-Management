@@ -162,16 +162,19 @@ fun TaskDetailScreen(
                                 overflow = TextOverflow.Ellipsis
                             )
 
-                            // Description box with percentage overlapping top-right per request
+                            // Description box with percentage overlapping top-right per request – more overlap like screenshot
                             Box(modifier = Modifier.fillMaxWidth()) {
-                                // White description container
+                                // White description container with light purple border like screenshot
                                 Box(
                                     modifier = Modifier
                                         .fillMaxWidth()
-                                        .padding(top = 12.dp, end = 12.dp)
-                                        .clip(RoundedCornerShape(12.dp))
-                                        .background(Color.White.copy(alpha = 0.85f))
-                                        .padding(12.dp)
+                                        .padding(top = 20.dp, end = 16.dp)
+                                        .clip(RoundedCornerShape(16.dp))
+                                        .background(Color.White.copy(alpha = 0.9f))
+                                        .padding(2.dp)
+                                        .clip(RoundedCornerShape(14.dp))
+                                        .background(Color.White)
+                                        .padding(14.dp)
                                 ) {
                                     var editableDesc by remember(task.id, task.description) { mutableStateOf(task.description) }
                                     LaunchedEffect(task.description) {
@@ -211,20 +214,22 @@ fun TaskDetailScreen(
                                     }
                                 }
 
-                                // 2. Percentage to top right of description with overlap
+                                // Percentage overlapping description – more overlap per request
                                 Box(
                                     modifier = Modifier
                                         .align(Alignment.TopEnd)
-                                        .offset(x = 8.dp, y = (-4).dp)
-                                        .size(56.dp)
+                                        .offset(x = 12.dp, y = (-4).dp)
+                                        .size(64.dp)
                                         .clip(CircleShape)
                                         .background(Color.White)
-                                        .padding(2.dp),
+                                        .padding(3.dp)
+                                        .clip(CircleShape)
+                                        .background(Color(0xFFE3F5FF)),
                                     contentAlignment = Alignment.Center
                                 ) {
                                     if (totalSubs > 0) {
-                                        Canvas(modifier = Modifier.size(48.dp)) {
-                                            val stroke = 3.dp.toPx()
+                                        Canvas(modifier = Modifier.size(52.dp)) {
+                                            val stroke = 3.5.dp.toPx()
                                             drawCircle(
                                                 color = Color.Gray.copy(alpha = 0.15f),
                                                 style = Stroke(width = stroke)
@@ -244,25 +249,32 @@ fun TaskDetailScreen(
                                                 text = "${(progress * 100).toInt()}%",
                                                 style = MaterialTheme.typography.labelMedium.copy(
                                                     fontWeight = FontWeight.Bold,
-                                                    fontSize = 11.sp
+                                                    fontSize = 12.sp
                                                 ),
                                                 color = Color(0xFF101114)
                                             )
                                             Text(
                                                 text = "$doneSubs/$totalSubs",
-                                                style = MaterialTheme.typography.labelSmall.copy(fontSize = 8.sp),
+                                                style = MaterialTheme.typography.labelSmall.copy(fontSize = 9.sp),
                                                 color = Color(0xFF6B7280)
                                             )
                                         }
                                     } else {
-                                        Text(
-                                            text = "0%",
-                                            style = MaterialTheme.typography.labelSmall.copy(
-                                                fontWeight = FontWeight.Bold,
-                                                fontSize = 11.sp
-                                            ),
-                                            color = Color(0xFF101114)
-                                        )
+                                        Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                                            Text(
+                                                text = "0%",
+                                                style = MaterialTheme.typography.labelSmall.copy(
+                                                    fontWeight = FontWeight.Bold,
+                                                    fontSize = 11.sp
+                                                ),
+                                                color = Color(0xFF101114)
+                                            )
+                                            Text(
+                                                text = "0/0",
+                                                style = MaterialTheme.typography.labelSmall.copy(fontSize = 8.sp),
+                                                color = Color(0xFF6B7280)
+                                            )
+                                        }
                                     }
                                 }
                             }
