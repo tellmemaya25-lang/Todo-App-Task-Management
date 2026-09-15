@@ -19,8 +19,10 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Edit
+import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -41,11 +43,12 @@ import kotlinx.coroutines.launch
 import kotlin.math.roundToInt
 
 /**
- * Swipeable task row – home page swipe right to edit/delete
+ * Swipeable task row – home page swipe right to edit/delete + dark mode adapted
  * - Supports BOTH swipe left and swipe right to reveal edit/delete per request
  * - Gesture: draggable horizontal, thresholds ±80dp, reveal 160dp
  * - Icons centered vertically fill height 56dp, no bg, AccentBlue / #E57373, 24.dp clip outer
  * - Background aligned to revealed side so icons are visible (fix center not visible with 140dp)
+ * - Dark mode: background #1E2A44 dark vs #E3F5FF light, uses MaterialTheme surfaceVariant
  * - Tap to close when opened, click closes then triggers action
  */
 @Composable
@@ -84,15 +87,18 @@ fun SwipeableTaskRow(
         }
     }
 
+    val isDark = isSystemInDarkTheme()
+    val swipeBg = if (isDark) Color(0xFF1E2A44) else Color(0xFFE3F5FF)
     Box(
         modifier = modifier
             .fillMaxWidth()
             .padding(horizontal = 16.dp, vertical = 6.dp)
             .clip(RoundedCornerShape(24.dp))
-            .background(Color(0xFFE3F5FF))
+            .background(swipeBg)
     ) {
         // Background – edit/delete, visible on swipe right (left side) and swipe left (right side)
         // Aligned to revealed edge so icons are visible even with 160dp offset, centered vertically 56dp
+        // Dark mode adapted: uses swipeBg dark #1E2A44
         val bgAlignment = when {
             offsetX.value > 10f -> Alignment.CenterStart
             offsetX.value < -10f -> Alignment.CenterEnd
@@ -102,7 +108,7 @@ fun SwipeableTaskRow(
             modifier = Modifier
                 .fillMaxSize()
                 .clip(RoundedCornerShape(24.dp))
-                .background(Color(0xFFE3F5FF))
+                .background(swipeBg)
                 .padding(horizontal = 20.dp, vertical = 4.dp),
             contentAlignment = bgAlignment
         ) {

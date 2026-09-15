@@ -57,6 +57,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
@@ -83,7 +84,6 @@ fun SearchScreen(
     val filterSheetState = rememberModalBottomSheetState()
     val isDark = androidx.compose.foundation.isSystemInDarkTheme()
 
-    // Determine if any filter is active (excluding search query)
     val hasActiveFilters = uiState.filter.status != TaskStatusFilter.ALL ||
             uiState.filter.priority != null ||
             uiState.filter.categoryId != null ||
@@ -112,23 +112,25 @@ fun SearchScreen(
                 .padding(padding)
                 .padding(16.dp)
         ) {
-            // Search bar with filter function on right side per request + dark mode adapted
-            OutlinedTextField(
-                value = uiState.query,
-                onValueChange = viewModel::onQueryChange,
-                placeholder = { Text("Search tasks...", color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f)) },
-                leadingIcon = {
-                    Icon(
-                        Icons.Filled.Search,
-                        contentDescription = null,
-                        tint = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-                },
-                trailingIcon = {
-                    Row(
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(0.dp)
-                    ) {
+            // Search bar + filter function on right side per request – image Search tasks... rounded
+            // Row: search field weight 1f + filter button outside on right side, both dark mode adapted
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(12.dp)
+            ) {
+                OutlinedTextField(
+                    value = uiState.query,
+                    onValueChange = viewModel::onQueryChange,
+                    placeholder = { Text("Search tasks...", color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f)) },
+                    leadingIcon = {
+                        Icon(
+                            Icons.Filled.Search,
+                            contentDescription = null,
+                            tint = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    },
+                    trailingIcon = {
                         if (uiState.query.isNotBlank()) {
                             IconButton(onClick = { viewModel.onQueryChange("") }) {
                                 Icon(
@@ -138,42 +140,53 @@ fun SearchScreen(
                                 )
                             }
                         }
-                        // Filter icon on right side of search bar
-                        BadgedBox(
-                            badge = {
-                                if (hasActiveFilters) {
-                                    Badge(
-                                        containerColor = AccentBlue,
-                                        contentColor = Color.White,
-                                        modifier = Modifier.size(8.dp)
-                                    )
-                                }
-                            }
-                        ) {
-                            IconButton(onClick = { showFilterSheet = true }) {
-                                Icon(
-                                    Icons.Filled.Tune,
-                                    contentDescription = "Filters",
-                                    tint = if (hasActiveFilters) AccentBlue else MaterialTheme.colorScheme.onSurfaceVariant
-                                )
-                            }
+                    },
+                    modifier = Modifier.weight(1f),
+                    singleLine = true,
+                    shape = RoundedCornerShape(24.dp),
+                    colors = OutlinedTextFieldDefaults.colors(
+                        focusedContainerColor = MaterialTheme.colorScheme.surface,
+                        unfocusedContainerColor = MaterialTheme.colorScheme.surface,
+                        disabledContainerColor = MaterialTheme.colorScheme.surface,
+                        focusedBorderColor = if (isDark) MaterialTheme.colorScheme.outline else MaterialTheme.colorScheme.outlineVariant,
+                        unfocusedBorderColor = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.6f),
+                        cursorColor = AccentBlue,
+                        focusedTextColor = MaterialTheme.colorScheme.onSurface,
+                        unfocusedTextColor = MaterialTheme.colorScheme.onSurface
+                    )
+                )
+                // Filter function on right side of search bar – external button, dark mode adapted
+                BadgedBox(
+                    badge = {
+                        if (hasActiveFilters) {
+                            Badge(
+                                containerColor = AccentBlue,
+                                contentColor = Color.White,
+                                modifier = Modifier.size(8.dp)
+                            )
                         }
                     }
-                },
-                modifier = Modifier.fillMaxWidth(),
-                singleLine = true,
-                shape = RoundedCornerShape(24.dp),
-                colors = OutlinedTextFieldDefaults.colors(
-                    focusedContainerColor = MaterialTheme.colorScheme.surface,
-                    unfocusedContainerColor = MaterialTheme.colorScheme.surface,
-                    disabledContainerColor = MaterialTheme.colorScheme.surface,
-                    focusedBorderColor = if (isDark) MaterialTheme.colorScheme.outline else MaterialTheme.colorScheme.outlineVariant,
-                    unfocusedBorderColor = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.6f),
-                    cursorColor = AccentBlue,
-                    focusedTextColor = MaterialTheme.colorScheme.onSurface,
-                    unfocusedTextColor = MaterialTheme.colorScheme.onSurface
-                )
-            )
+                ) {
+                    Box(
+                        modifier = Modifier
+                            .size(48.dp)
+                            .clip(RoundedCornerShape(12.dp))
+                            .background(
+                                if (hasActiveFilters) AccentBlue.copy(alpha = 0.15f)
+                                else MaterialTheme.colorScheme.surfaceVariant
+                            )
+                            .clickable { showFilterSheet = true },
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Icon(
+                            imageVector = Icons.Filled.Tune,
+                            contentDescription = "Filters",
+                            tint = if (hasActiveFilters) AccentBlue else MaterialTheme.colorScheme.onSurfaceVariant,
+                            modifier = Modifier.size(22.dp)
+                        )
+                    }
+                }
+            }
             Spacer(Modifier.height(12.dp))
 
             // Recent searches – dark mode adapted
@@ -321,7 +334,7 @@ fun SearchScreen(
             }
         }
 
-        // Filter bottom sheet – appears when filter icon on right side of search bar clicked
+        // Filter bottom sheet – dark mode adapted
         if (showFilterSheet) {
             ModalBottomSheet(
                 onDismissRequest = { showFilterSheet = false },
@@ -339,7 +352,6 @@ fun SearchScreen(
                         .padding(bottom = 32.dp),
                     verticalArrangement = Arrangement.spacedBy(16.dp)
                 ) {
-                    // Handle
                     Box(
                         modifier = Modifier
                             .fillMaxWidth()
@@ -367,9 +379,7 @@ fun SearchScreen(
                             style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold, fontSize = 20.sp),
                             color = MaterialTheme.colorScheme.onSurface
                         )
-                        TextButton(onClick = {
-                            viewModel.clearFilters()
-                        }) {
+                        TextButton(onClick = { viewModel.clearFilters() }) {
                             Text("Clear all", color = AccentBlue)
                         }
                     }
@@ -379,61 +389,25 @@ fun SearchScreen(
                         color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f)
                     )
 
-                    // Status
-                    Text(
-                        "Status",
-                        style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.Bold),
-                        color = MaterialTheme.colorScheme.onSurface
-                    )
-                    FlowRow(
-                        horizontalArrangement = Arrangement.spacedBy(8.dp),
-                        verticalArrangement = Arrangement.spacedBy(8.dp)
-                    ) {
-                        FilterChip(
-                            selected = uiState.filter.status == TaskStatusFilter.ALL,
-                            onClick = { viewModel.onStatusFilterChange(TaskStatusFilter.ALL) },
-                            label = { Text("All") },
-                            colors = FilterChipDefaults.filterChipColors(
-                                selectedContainerColor = AccentBlue,
-                                selectedLabelColor = Color.White,
-                                containerColor = MaterialTheme.colorScheme.surfaceVariant,
-                                labelColor = MaterialTheme.colorScheme.onSurfaceVariant
+                    Text("Status", style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.Bold), color = MaterialTheme.colorScheme.onSurface)
+                    FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                        listOf(TaskStatusFilter.ALL to "All", TaskStatusFilter.PENDING to "Pending", TaskStatusFilter.COMPLETED to "Completed").forEach { (filter, label) ->
+                            FilterChip(
+                                selected = uiState.filter.status == filter,
+                                onClick = { viewModel.onStatusFilterChange(filter) },
+                                label = { Text(label) },
+                                colors = FilterChipDefaults.filterChipColors(
+                                    selectedContainerColor = AccentBlue,
+                                    selectedLabelColor = Color.White,
+                                    containerColor = MaterialTheme.colorScheme.surfaceVariant,
+                                    labelColor = MaterialTheme.colorScheme.onSurfaceVariant
+                                )
                             )
-                        )
-                        FilterChip(
-                            selected = uiState.filter.status == TaskStatusFilter.PENDING,
-                            onClick = { viewModel.onStatusFilterChange(TaskStatusFilter.PENDING) },
-                            label = { Text("Pending") },
-                            colors = FilterChipDefaults.filterChipColors(
-                                selectedContainerColor = AccentBlue,
-                                selectedLabelColor = Color.White,
-                                containerColor = MaterialTheme.colorScheme.surfaceVariant,
-                                labelColor = MaterialTheme.colorScheme.onSurfaceVariant
-                            )
-                        )
-                        FilterChip(
-                            selected = uiState.filter.status == TaskStatusFilter.COMPLETED,
-                            onClick = { viewModel.onStatusFilterChange(TaskStatusFilter.COMPLETED) },
-                            label = { Text("Completed") },
-                            colors = FilterChipDefaults.filterChipColors(
-                                selectedContainerColor = AccentBlue,
-                                selectedLabelColor = Color.White,
-                                containerColor = MaterialTheme.colorScheme.surfaceVariant,
-                                labelColor = MaterialTheme.colorScheme.onSurfaceVariant
-                            )
-                        )
+                        }
                     }
 
-                    // Priority
-                    Text(
-                        "Priority",
-                        style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.Bold),
-                        color = MaterialTheme.colorScheme.onSurface
-                    )
-                    FlowRow(
-                        horizontalArrangement = Arrangement.spacedBy(8.dp),
-                        verticalArrangement = Arrangement.spacedBy(8.dp)
-                    ) {
+                    Text("Priority", style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.Bold), color = MaterialTheme.colorScheme.onSurface)
+                    FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
                         Priority.values().forEach { pri ->
                             FilterChip(
                                 selected = uiState.filter.priority == pri,
@@ -452,16 +426,8 @@ fun SearchScreen(
                         }
                     }
 
-                    // Category
-                    Text(
-                        "Category",
-                        style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.Bold),
-                        color = MaterialTheme.colorScheme.onSurface
-                    )
-                    FlowRow(
-                        horizontalArrangement = Arrangement.spacedBy(8.dp),
-                        verticalArrangement = Arrangement.spacedBy(8.dp)
-                    ) {
+                    Text("Category", style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.Bold), color = MaterialTheme.colorScheme.onSurface)
+                    FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
                         FilterChip(
                             selected = uiState.filter.categoryId == null,
                             onClick = { viewModel.onCategoryFilterChange(null) },
@@ -488,16 +454,8 @@ fun SearchScreen(
                         }
                     }
 
-                    // Sort
-                    Text(
-                        "Sort by",
-                        style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.Bold),
-                        color = MaterialTheme.colorScheme.onSurface
-                    )
-                    FlowRow(
-                        horizontalArrangement = Arrangement.spacedBy(8.dp),
-                        verticalArrangement = Arrangement.spacedBy(8.dp)
-                    ) {
+                    Text("Sort by", style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.Bold), color = MaterialTheme.colorScheme.onSurface)
+                    FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
                         FilterChip(
                             selected = uiState.filter.sortBy == SortBy.DUE_DATE,
                             onClick = { viewModel.onSortChange(SortBy.DUE_DATE, true) },

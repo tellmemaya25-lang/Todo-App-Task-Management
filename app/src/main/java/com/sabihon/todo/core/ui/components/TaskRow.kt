@@ -9,6 +9,7 @@ import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.combinedClickable
+import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -50,10 +51,11 @@ import com.sabihon.todo.domain.model.SubTask
 
 /**
  * TaskRow – strong hierarchy, only title + short desc + percentage + status
- * - Background #c7dcff per request
+ * - Background #c7dcff per request – dark mode adapted to #2D3D5E / #1E2A44
  * - Percentage moved to left, big as title+description (56.dp), with animation
  * - Gradient + animation when done
  * - No overlap with swipe actions (percentage left, swipe actions right)
+ * - Dark mode: text colors use onSurface, onSurfaceVariant, container surfaceVariant
  */
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
@@ -103,9 +105,10 @@ fun TaskRow(
         else -> MaterialTheme.colorScheme.onSurfaceVariant
     }
 
-    // Background #e3f5ff per request, with gradient when done
-    val baseBackground = Color(0xFFE3F5FF)
-    val completedBackground = Color(0xFFC7DCFF)
+    // Background #e3f5ff per request, with gradient when done – dark mode adapted
+    val isDark = isSystemInDarkTheme()
+    val baseBackground = if (isDark) Color(0xFF1E2A44) else Color(0xFFE3F5FF)
+    val completedBackground = if (isDark) Color(0xFF24324F) else Color(0xFFC7DCFF)
 
     val containerColor by animateColorAsState(
         targetValue = if (effectiveCompleted) completedBackground else baseBackground,
@@ -126,8 +129,8 @@ fun TaskRow(
         Brush.linearGradient(
             colors = listOf(
                 AccentBlue.copy(alpha = 0.2f),
-                Color(0xFFE3F5FF),
-                Color(0xFFC7DCFF)
+                baseBackground,
+                completedBackground
             )
         )
     } else null
@@ -207,12 +210,12 @@ fun TaskRow(
                                             fontWeight = FontWeight.Bold,
                                             fontSize = 13.sp
                                         ),
-                                        color = Color(0xFF101114)
+                                        color = MaterialTheme.colorScheme.onSurface
                                     )
                                     Text(
                                         text = "$doneSubs/$totalSubs",
                                         style = MaterialTheme.typography.labelSmall.copy(fontSize = 9.sp),
-                                        color = Color(0xFF6B7280)
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant
                                     )
                                 }
                             }
@@ -262,8 +265,8 @@ fun TaskRow(
                                 lineHeight = 20.sp,
                                 textDecoration = if (effectiveCompleted) TextDecoration.LineThrough else null
                             ),
-                            color = if (effectiveCompleted) Color(0xFF6B7280).copy(alpha = 0.6f)
-                            else Color(0xFF101114),
+                            color = if (effectiveCompleted) MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f)
+                            else MaterialTheme.colorScheme.onSurface,
                             maxLines = 1,
                             overflow = TextOverflow.Ellipsis
                         )
@@ -283,7 +286,7 @@ fun TaskRow(
                                     fontWeight = FontWeight.Normal,
                                     lineHeight = 16.sp
                                 ),
-                                color = Color(0xFF6B7280).copy(alpha = 0.9f),
+                                color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.9f),
                                 maxLines = 2,
                                 overflow = TextOverflow.Ellipsis
                             )
