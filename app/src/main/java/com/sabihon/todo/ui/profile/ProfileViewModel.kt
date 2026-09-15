@@ -1,10 +1,12 @@
 package com.sabihon.todo.ui.profile
 
+import android.net.Uri
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.auth.UserProfileChangeRequest
 import com.google.firebase.firestore.FirebaseFirestore
+import com.google.firebase.storage.FirebaseStorage
 import com.sabihon.todo.core.datastore.ThemePreferences
 import com.sabihon.todo.core.datastore.ThemePref
 import com.sabihon.todo.domain.repository.AuthRepository
@@ -22,16 +24,19 @@ data class ProfileUiState(
     val displayName: String = "",
     val email: String = "",
     val photoUrl: String? = null,
+    val localPhotoUri: Uri? = null, // For newly picked image before upload
     val theme: ThemePref = ThemePref.SYSTEM,
     val isLoading: Boolean = false,
     val error: String? = null,
-    val showDeleteConfirm: Boolean = false
+    val showDeleteConfirm: Boolean = false,
+    val isUploadingPhoto: Boolean = false
 )
 
 @HiltViewModel
 class ProfileViewModel @Inject constructor(
     private val auth: FirebaseAuth,
     private val firestore: FirebaseFirestore,
+    private val storage: FirebaseStorage,
     private val authRepository: AuthRepository,
     private val themePreferences: ThemePreferences
 ) : ViewModel() {
@@ -46,12 +51,39 @@ class ProfileViewModel @Inject constructor(
 
     private fun loadProfile() {
         val user = auth.currentUser
-        _uiState.update {
-            it.copy(
-                displayName = user?.displayName ?: "",
-                email = user?.email ?: "",
-                photoUrl = user?.photoUrl?.toString()
-            )
+        viewModelScope.launch {
+            try {
+                val uid = user?.uid
+                if (uid != null) {
+                    val doc = firestore.collection("users").document(uid).get().await()
+                    val firestorePhoto = doc.getString("photoUrl")
+                    val firestoreName = doc.getString("displayName")
+                    _uiState.update {
+                        it.copy(
+                            displayName = firestoreName ?: user?.displayName ?: "",
+                            email = user?.email ?: "",
+                            photoUrl = firestorePhoto ?: user?.photoUrl?.toString()
+                        )
+                    }
+                } else {
+                    _uiState.update {
+                        it.copy(
+                            displayName = user?.displayName ?: "",
+                            email = user?.email ?: "",
+                            photoUrl = user?.photoUrl?.toString()
+                        )
+                    }
+                }
+            } catch (e: Exception) {
+                _uiState.update {
+                    it.copy(
+                        displayName = user?.displayName ?: "",
+                        email = user?.email ?: "",
+                        photoUrl = user?.photoUrl?.toString(),
+                        error = e.message
+                    )
+                }
+            }
         }
     }
 
@@ -64,12 +96,57 @@ class ProfileViewModel @Inject constructor(
     }
 
     fun onDisplayNameChange(name: String) {
-        _uiState.update { it.copy(displayName = name) }
+        _uiState.update { it.copy(displayName = name, error = null) }
+    }
+
+    fun onPhotoPicked(uri: Uri) {
+        _uiState.update { it.copy(localPhotoUri = uri, error = null) }
+        uploadPhoto(uri)
+    }
+
+    private fun uploadPhoto(uri: Uri) {
+        viewModelScope.launch {
+            _uiState.update { it.copy(isUploadingPhoto = true, error = null) }
+            try {
+                val uid = auth.currentUser?.uid ?: throw IllegalStateException("Not authenticated")
+                val storageRef = storage.reference.child("users/$uid/profile_${System.currentTimeMillis()}.jpg")
+                storageRef.putFile(uri).await()
+                val downloadUrl = storageRef.downloadUrl.await().toString()
+
+                // Update Firebase Auth profile
+                val user = auth.currentUser
+                val profileUpdate = UserProfileChangeRequest.Builder()
+                    .setPhotoUri(Uri.parse(downloadUrl))
+                    .build()
+                user?.updateProfile(profileUpdate)?.await()
+
+                // Update Firestore
+                firestore.collection("users").document(uid).update(
+                    mapOf("photoUrl" to downloadUrl)
+                ).await()
+
+                _uiState.update {
+                    it.copy(
+                        photoUrl = downloadUrl,
+                        localPhotoUri = null,
+                        isUploadingPhoto = false
+                    )
+                }
+            } catch (e: Exception) {
+                // Fallback: keep local URI if upload fails (offline), still show image
+                _uiState.update {
+                    it.copy(
+                        isUploadingPhoto = false,
+                        error = "Photo upload failed: ${e.message}. Showing locally."
+                    )
+                }
+            }
+        }
     }
 
     fun saveDisplayName() {
         viewModelScope.launch {
-            _uiState.update { it.copy(isLoading = true) }
+            _uiState.update { it.copy(isLoading = true, error = null) }
             try {
                 val user = auth.currentUser ?: return@launch
                 val update = UserProfileChangeRequest.Builder()
@@ -88,7 +165,6 @@ class ProfileViewModel @Inject constructor(
     fun setTheme(theme: ThemePref) {
         viewModelScope.launch {
             themePreferences.setTheme(theme)
-            // Also update Firestore user doc
             try {
                 val uid = auth.currentUser?.uid ?: return@launch
                 firestore.collection("users").document(uid)
@@ -122,5 +198,9 @@ class ProfileViewModel @Inject constructor(
                 else -> {}
             }
         }
+    }
+
+    fun clearError() {
+        _uiState.update { it.copy(error = null) }
     }
 }

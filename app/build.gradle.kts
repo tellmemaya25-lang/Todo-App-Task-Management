@@ -116,6 +116,9 @@ dependencies {
     // Play Services Auth (Google Sign-In)
     implementation("com.google.android.gms:play-services-auth:21.3.0")
 
+    // Coil for profile image
+    implementation("io.coil-kt:coil-compose:2.7.0")
+
     // Coroutines + DateTime + Serialization
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.10.1")
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.10.1")

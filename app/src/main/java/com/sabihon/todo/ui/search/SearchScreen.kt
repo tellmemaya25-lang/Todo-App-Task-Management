@@ -1,5 +1,6 @@
 package com.sabihon.todo.ui.search
 
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
@@ -12,18 +13,24 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Clear
+import androidx.compose.material.icons.filled.History
 import androidx.compose.material.icons.filled.Search
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.ListItem
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
@@ -77,9 +84,62 @@ fun SearchScreen(
                     }
                 },
                 modifier = Modifier.fillMaxWidth(),
-                singleLine = true
+                singleLine = true,
+                shape = RoundedCornerShape(24.dp)
             )
             Spacer(Modifier.height(12.dp))
+
+            // Recent searches suggestions – show when query empty or as suggestions
+            if (uiState.query.isBlank() && uiState.recentSearches.isNotEmpty()) {
+                Text("Recent searches", style = MaterialTheme.typography.titleSmall)
+                Spacer(Modifier.height(8.dp))
+                Card(
+                    modifier = Modifier.fillMaxWidth(),
+                    shape = RoundedCornerShape(16.dp),
+                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f))
+                ) {
+                    Column {
+                        uiState.recentSearches.take(5).forEach { recent ->
+                            ListItem(
+                                headlineContent = { Text(recent) },
+                                leadingContent = { Icon(Icons.Filled.History, contentDescription = null) },
+                                modifier = Modifier.clickable {
+                                    viewModel.onQueryChange(recent)
+                                    viewModel.saveRecentSearch(recent)
+                                }
+                            )
+                        }
+                        if (uiState.recentSearches.size > 5) {
+                            TextButton(
+                                onClick = { /* clear recent */ },
+                                modifier = Modifier.padding(horizontal = 8.dp)
+                            ) { Text("Clear history") }
+                        }
+                    }
+                }
+                Spacer(Modifier.height(12.dp))
+            } else if (uiState.query.isNotBlank() && uiState.recentSearches.isNotEmpty()) {
+                // Show filtered suggestions based on query
+                val suggestions = uiState.recentSearches.filter { it.contains(uiState.query, ignoreCase = true) }.take(3)
+                if (suggestions.isNotEmpty()) {
+                    Text("Suggestions", style = MaterialTheme.typography.titleSmall)
+                    Spacer(Modifier.height(4.dp))
+                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        suggestions.forEach { suggestion ->
+                            FilterChip(
+                                selected = false,
+                                onClick = {
+                                    viewModel.onQueryChange(suggestion)
+                                    viewModel.saveRecentSearch(suggestion)
+                                },
+                                label = { Text(suggestion) },
+                                leadingIcon = { Icon(Icons.Filled.History, contentDescription = null) }
+                            )
+                        }
+                    }
+                    Spacer(Modifier.height(12.dp))
+                }
+            }
 
             // Filter chips
             Text("Filters", style = MaterialTheme.typography.titleSmall)
@@ -144,7 +204,7 @@ fun SearchScreen(
             Text("${uiState.tasks.size} results", style = MaterialTheme.typography.labelMedium)
 
             LazyColumn(modifier = Modifier.fillMaxSize()) {
-                if (uiState.tasks.isEmpty()) {
+                if (uiState.tasks.isEmpty() && uiState.query.isNotBlank()) {
                     item {
                         EmptyState(
                             title = "No results found",
@@ -158,7 +218,10 @@ fun SearchScreen(
                             isCompleted = task.isCompleted,
                             timeLabel = task.dueAt?.let { java.text.SimpleDateFormat("MMM d • h:mm a").format(java.util.Date(it)) } ?: "No date",
                             description = task.description,
-                            onClick = { onTaskClick(task.id) }
+                            onClick = {
+                                viewModel.saveRecentSearch(task.title)
+                                onTaskClick(task.id)
+                            }
                         )
                     }
                 }

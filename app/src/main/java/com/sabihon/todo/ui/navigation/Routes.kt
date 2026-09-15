@@ -45,6 +45,9 @@ sealed interface Route {
 
     @Serializable
     data object Categories : Route
+
+    @Serializable
+    data object Settings : Route
 }
 
 // Legacy string routes for fallback
@@ -62,4 +65,5 @@ object LegacyRoutes {
     const val HISTORY = "history"
     const val PROFILE = "profile"
     const val CATEGORIES = "categories"
+    const val SETTINGS = "settings"
 }

@@ -1,8 +1,6 @@
 package com.sabihon.todo.ui.home
 
-import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.animateContentSize
-import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -14,16 +12,19 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Notifications
-import androidx.compose.material.icons.filled.Person
+import androidx.compose.material.icons.filled.FilterList
+import androidx.compose.material.icons.filled.Search
+import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.FilterChip
+import androidx.compose.material3.FilterChipDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -32,10 +33,9 @@ import androidx.compose.material3.SnackbarDuration
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.SnackbarResult
-import androidx.compose.material3.SwipeToDismissBox
-import androidx.compose.material3.SwipeToDismissBoxValue
 import androidx.compose.material3.Text
-import androidx.compose.material3.rememberSwipeToDismissBoxState
+import androidx.compose.material3.TopAppBar
+import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
@@ -46,26 +46,18 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.sabihon.todo.core.ui.components.EmptyState
 import com.sabihon.todo.core.ui.components.LoadingShimmer
-import com.sabihon.todo.core.ui.components.SabihonFab
 import com.sabihon.todo.core.ui.components.SectionHeader
-import com.sabihon.todo.core.ui.components.StatTileByType
-import com.sabihon.todo.core.ui.components.StatType
 import com.sabihon.todo.core.ui.components.TaskRow
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
 
-/**
- * Home / Dashboard – Screen 1 from spec.
- */
-@OptIn(ExperimentalMaterial3Api::class, ExperimentalFoundationApi::class)
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun HomeScreen(
     onNavigateToAllTasks: () -> Unit = {},
@@ -75,12 +67,13 @@ fun HomeScreen(
     onNavigateToSearch: () -> Unit = {},
     onNavigateToHistory: () -> Unit = {},
     onNavigateToProfile: () -> Unit = {},
+    onNavigateToSettings: () -> Unit = {},
     onNavigateToCategory: (String) -> Unit = {},
     viewModel: HomeViewModel = hiltViewModel()
 ) {
     val uiState by viewModel.uiState.collectAsState()
     val snackbarHostState = remember { SnackbarHostState() }
-    val haptic = LocalHapticFeedback.current
+    var showFilterMenu by remember { mutableStateOf(false) }
 
     LaunchedEffect(uiState.showUndo) {
         if (uiState.showUndo) {
@@ -98,10 +91,57 @@ fun HomeScreen(
     }
 
     Scaffold(
-        snackbarHost = { SnackbarHost(snackbarHostState) },
-        floatingActionButton = {
-            SabihonFab(onClick = onNavigateToAddTask)
+        topBar = {
+            TopAppBar(
+                title = {
+                    Column {
+                        Text(
+                            text = "Hello, ${uiState.greetingName},",
+                            style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold)
+                        )
+                        Text(
+                            text = "You have work today",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
+                },
+                actions = {
+                    // Filtering Task top right
+                    Box {
+                        IconButton(onClick = { showFilterMenu = true }) {
+                            Icon(Icons.Filled.FilterList, contentDescription = "Filter tasks")
+                        }
+                        DropdownMenu(expanded = showFilterMenu, onDismissRequest = { showFilterMenu = false }) {
+                            DropdownMenuItem(text = { Text("Today") }, onClick = {
+                                viewModel.onAction(HomeAction.SetFilter(HomeFilter.TODAY))
+                                showFilterMenu = false
+                            })
+                            DropdownMenuItem(text = { Text("Pending") }, onClick = {
+                                viewModel.onAction(HomeAction.SetFilter(HomeFilter.PENDING))
+                                showFilterMenu = false
+                            })
+                            DropdownMenuItem(text = { Text("Completed") }, onClick = {
+                                viewModel.onAction(HomeAction.SetFilter(HomeFilter.COMPLETED))
+                                showFilterMenu = false
+                            })
+                            DropdownMenuItem(text = { Text("All") }, onClick = {
+                                viewModel.onAction(HomeAction.SetFilter(HomeFilter.ALL))
+                                showFilterMenu = false
+                            })
+                        }
+                    }
+                    IconButton(onClick = onNavigateToSearch) {
+                        Icon(Icons.Filled.Search, contentDescription = "Search")
+                    }
+                    IconButton(onClick = onNavigateToSettings) {
+                        Icon(Icons.Filled.Settings, contentDescription = "Settings")
+                    }
+                },
+                colors = TopAppBarDefaults.topAppBarColors(containerColor = MaterialTheme.colorScheme.background)
+            )
         },
+        snackbarHost = { SnackbarHost(snackbarHostState) },
         containerColor = MaterialTheme.colorScheme.background
     ) { innerPadding ->
         if (uiState.isLoading) {
@@ -113,182 +153,116 @@ fun HomeScreen(
                     .padding(innerPadding),
                 verticalArrangement = Arrangement.spacedBy(0.dp)
             ) {
-                // Greeting header
+                // 4 Chips: Today, Completed, Pending, All
                 item {
-                    Row(
+                    LazyRow(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .padding(horizontal = 20.dp, vertical = 16.dp),
-                        horizontalArrangement = Arrangement.SpaceBetween,
-                        verticalAlignment = Alignment.CenterVertically
+                            .padding(horizontal = 16.dp, vertical = 12.dp),
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
                     ) {
-                        Column {
-                            Text(
-                                text = "Hello, ${uiState.greetingName},",
-                                style = MaterialTheme.typography.headlineLarge.copy(fontWeight = FontWeight.Bold),
-                                color = MaterialTheme.colorScheme.onBackground
-                            )
-                            Text(
-                                text = "You have work today",
-                                style = MaterialTheme.typography.bodyLarge,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant
-                            )
-                        }
-                        Row {
-                            IconButton(onClick = onNavigateToHistory) {
-                                Icon(Icons.Filled.Notifications, contentDescription = "Notifications")
-                            }
-                            Box(
-                                modifier = Modifier
-                                    .size(36.dp)
-                                    .clip(CircleShape)
-                                    .background(MaterialTheme.colorScheme.surfaceVariant),
-                                contentAlignment = Alignment.Center
-                            ) {
-                                IconButton(onClick = onNavigateToProfile) {
-                                    Icon(Icons.Filled.Person, contentDescription = "Avatar")
-                                }
-                            }
-                        }
-                    }
-                }
-
-                // 2x2 stat tiles
-                item {
-                    Column(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(horizontal = 20.dp),
-                        verticalArrangement = Arrangement.spacedBy(12.dp)
-                    ) {
-                        Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                            StatTileByType(
-                                type = StatType.TODAY,
-                                count = uiState.counts.today,
-                                modifier = Modifier.weight(1f),
-                                onClick = { /* filter today */ }
-                            )
-                            StatTileByType(
-                                type = StatType.SCHEDULED,
-                                count = uiState.counts.scheduled,
-                                modifier = Modifier.weight(1f),
-                                onClick = { /* filter scheduled */ }
-                            )
-                        }
-                        Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                            StatTileByType(
-                                type = StatType.ALL,
-                                count = uiState.counts.all,
-                                modifier = Modifier.weight(1f),
-                                onClick = onNavigateToAllTasks
-                            )
-                            StatTileByType(
-                                type = StatType.OVERDUE,
-                                count = uiState.counts.overdue,
-                                modifier = Modifier.weight(1f),
-                                onClick = { /* filter overdue */ }
+                        val chips = listOf(
+                            HomeFilter.TODAY to "Today",
+                            HomeFilter.PENDING to "Pending",
+                            HomeFilter.COMPLETED to "Completed",
+                            HomeFilter.ALL to "All"
+                        )
+                        items(chips) { (filter, label) ->
+                            FilterChip(
+                                selected = uiState.selectedFilter == filter,
+                                onClick = { viewModel.onAction(HomeAction.SetFilter(filter)) },
+                                label = { Text(label) },
+                                colors = FilterChipDefaults.filterChipColors(
+                                    selectedContainerColor = MaterialTheme.colorScheme.primaryContainer,
+                                    selectedLabelColor = MaterialTheme.colorScheme.onPrimaryContainer
+                                )
                             )
                         }
                     }
                 }
 
                 item {
-                    Spacer(Modifier.height(24.dp))
+                    Spacer(Modifier.height(8.dp))
                     SectionHeader(
-                        title = "Today's Task",
+                        title = when (uiState.selectedFilter) {
+                            HomeFilter.TODAY -> "Today's Task"
+                            HomeFilter.PENDING -> "Pending Tasks"
+                            HomeFilter.COMPLETED -> "Completed Tasks"
+                            HomeFilter.ALL -> "All Tasks"
+                        },
                         modifier = Modifier.padding(horizontal = 20.dp)
                     )
                     Spacer(Modifier.height(8.dp))
                 }
 
-                if (uiState.todayTasks.isEmpty()) {
+                if (uiState.filteredTasks.isEmpty()) {
                     item {
                         EmptyState(
                             title = "No tasks yet",
-                            description = "Tap + to create your first task and stay organized!"
+                            description = when (uiState.selectedFilter) {
+                                HomeFilter.TODAY -> "No tasks for today. Tap + to create!"
+                                HomeFilter.COMPLETED -> "No completed tasks yet"
+                                HomeFilter.PENDING -> "No pending tasks – you're all caught up!"
+                                HomeFilter.ALL -> "Tap + to create your first task and stay organized!"
+                            }
                         )
                     }
                 } else {
-                    items(uiState.todayTasks, key = { it.id }) { task ->
+                    items(uiState.filteredTasks, key = { it.id }) { task ->
                         var showMenu by remember { mutableStateOf(false) }
 
-                        val dismissState = rememberSwipeToDismissBoxState(
-                            confirmValueChange = { value ->
-                                when (value) {
-                                    SwipeToDismissBoxValue.StartToEnd -> {
-                                        // Swipe to complete
-                                        viewModel.onAction(HomeAction.ToggleComplete(task.id, !task.isCompleted))
-                                        false // Don't dismiss, just toggle
-                                    }
-                                    SwipeToDismissBoxValue.EndToStart -> {
-                                        viewModel.onAction(HomeAction.DeleteTask(task))
-                                        true
-                                    }
-                                    else -> false
-                                }
-                            }
-                        )
-
-                        SwipeToDismissBox(
-                            state = dismissState,
-                            backgroundContent = {
-                                val color = when (dismissState.dismissDirection) {
-                                    SwipeToDismissBoxValue.StartToEnd -> Color(0xFF4CAF50).copy(alpha = 0.2f)
-                                    SwipeToDismissBoxValue.EndToStart -> Color(0xFFF44336).copy(alpha = 0.2f)
-                                    else -> Color.Transparent
-                                }
-                                Box(
-                                    Modifier
-                                        .fillMaxSize()
-                                        .background(color)
-                                )
-                            },
-                            modifier = Modifier.animateContentSize()
-                        ) {
-                            Box {
-                                TaskRow(
-                                    title = task.title,
-                                    isCompleted = task.isCompleted,
-                                    timeLabel = formatTimeLabel(task.dueAt),
-                                    description = task.description.takeIf { it.isNotBlank() },
-                                    subTasks = task.subTasks,
-                                    onCheckedChange = { checked ->
-                                        viewModel.onAction(HomeAction.ToggleComplete(task.id, checked))
-                                    },
-                                    onAddSubTask = {
-                                        // For Loop 4, simple inline add with placeholder
-                                        viewModel.onAction(HomeAction.AddSubTask(task.id, "New Sub-Task"))
-                                    },
-                                    onSubTaskChecked = { subId, done ->
-                                        viewModel.onAction(HomeAction.ToggleSubTask(task.id, subId, done))
-                                    },
-                                    onMoreClick = { showMenu = true },
-                                    onClick = { onNavigateToTaskDetail(task.id) }
-                                )
-                                DropdownMenu(
-                                    expanded = showMenu,
-                                    onDismissRequest = { showMenu = false }
-                                ) {
-                                    DropdownMenuItem(text = { Text("Edit") }, onClick = {
+                        Box(modifier = Modifier.animateContentSize()) {
+                            TaskRow(
+                                title = task.title,
+                                isCompleted = task.isCompleted,
+                                timeLabel = formatTimeLabel(task.dueAt),
+                                description = task.description.takeIf { it.isNotBlank() },
+                                subTasks = task.subTasks,
+                                onCheckedChange = { checked ->
+                                    viewModel.onAction(HomeAction.ToggleComplete(task.id, checked))
+                                },
+                                onAddSubTask = {
+                                    viewModel.onAction(HomeAction.AddSubTask(task.id, "New Sub-Task"))
+                                },
+                                onSubTaskChecked = { subId, done ->
+                                    viewModel.onAction(HomeAction.ToggleSubTask(task.id, subId, done))
+                                },
+                                onMoreClick = { showMenu = true },
+                                onClick = { onNavigateToTaskDetail(task.id) }
+                            )
+                            // Submenu: Edit, Delete, Mark Done – fixed
+                            DropdownMenu(
+                                expanded = showMenu,
+                                onDismissRequest = { showMenu = false }
+                            ) {
+                                DropdownMenuItem(
+                                    text = { Text("Edit") },
+                                    onClick = {
                                         showMenu = false
                                         onNavigateToTaskDetail(task.id)
-                                    })
-                                    DropdownMenuItem(text = { Text("Duplicate") }, onClick = {
+                                    }
+                                )
+                                DropdownMenuItem(
+                                    text = { Text(if (task.isCompleted) "Mark Pending" else "Mark Done") },
+                                    onClick = {
                                         showMenu = false
-                                        // Duplicate logic could be in ViewModel
-                                    })
-                                    DropdownMenuItem(text = { Text("Delete") }, onClick = {
+                                        viewModel.onAction(HomeAction.ToggleComplete(task.id, !task.isCompleted))
+                                    }
+                                )
+                                DropdownMenuItem(
+                                    text = { Text("Delete") },
+                                    onClick = {
                                         showMenu = false
                                         viewModel.onAction(HomeAction.DeleteTask(task))
-                                    })
-                                }
+                                    }
+                                )
                             }
                         }
                     }
                 }
 
                 item {
-                    Spacer(Modifier.height(80.dp))
+                    Spacer(Modifier.height(100.dp))
                 }
             }
         }
@@ -301,10 +275,8 @@ private fun formatTimeLabel(dueAt: Long?): String {
     val startOfToday = getStartOfDay(now)
     val startOfYesterday = startOfToday - 24 * 60 * 60 * 1000L
     val endOfToday = getEndOfDay(now)
-
     val timeFormat = SimpleDateFormat("h:mm a", Locale.getDefault())
     val timeStr = timeFormat.format(Date(dueAt))
-
     return when {
         dueAt in startOfToday..endOfToday -> "Today • $timeStr"
         dueAt in startOfYesterday until startOfToday -> "Yesterday • $timeStr"
@@ -316,21 +288,19 @@ private fun formatTimeLabel(dueAt: Long?): String {
 }
 
 private fun getStartOfDay(timeMillis: Long): Long {
-    val cal = java.util.Calendar.getInstance()
-    cal.timeInMillis = timeMillis
-    cal.set(java.util.Calendar.HOUR_OF_DAY, 0)
-    cal.set(java.util.Calendar.MINUTE, 0)
-    cal.set(java.util.Calendar.SECOND, 0)
-    cal.set(java.util.Calendar.MILLISECOND, 0)
+    val cal = java.util.Calendar.getInstance().apply {
+        this.timeInMillis = timeMillis
+        set(java.util.Calendar.HOUR_OF_DAY, 0); set(java.util.Calendar.MINUTE, 0)
+        set(java.util.Calendar.SECOND, 0); set(java.util.Calendar.MILLISECOND, 0)
+    }
     return cal.timeInMillis
 }
 
 private fun getEndOfDay(timeMillis: Long): Long {
-    val cal = java.util.Calendar.getInstance()
-    cal.timeInMillis = timeMillis
-    cal.set(java.util.Calendar.HOUR_OF_DAY, 23)
-    cal.set(java.util.Calendar.MINUTE, 59)
-    cal.set(java.util.Calendar.SECOND, 59)
-    cal.set(java.util.Calendar.MILLISECOND, 999)
+    val cal = java.util.Calendar.getInstance().apply {
+        this.timeInMillis = timeMillis
+        set(java.util.Calendar.HOUR_OF_DAY, 23); set(java.util.Calendar.MINUTE, 59)
+        set(java.util.Calendar.SECOND, 59); set(java.util.Calendar.MILLISECOND, 999)
+    }
     return cal.timeInMillis
 }

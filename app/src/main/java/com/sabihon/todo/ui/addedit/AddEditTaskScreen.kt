@@ -265,7 +265,8 @@ fun AddEditTaskScreen(
                 },
                 dismissButton = {
                     TextButton(onClick = { showDatePicker = false }) { Text("Cancel") }
-                }
+                },
+                shape = androidx.compose.foundation.shape.RoundedCornerShape(24.dp)
             ) {
                 DatePicker(state = datePickerState)
             }
@@ -288,6 +289,7 @@ fun AddEditTaskScreen(
                 dismissButton = {
                     TextButton(onClick = { showTimePicker = false }) { Text("Cancel") }
                 },
+                shape = androidx.compose.foundation.shape.RoundedCornerShape(24.dp),
                 text = {
                     TimePicker(state = timePickerState)
                 }

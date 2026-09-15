@@ -17,12 +17,10 @@ import com.sabihon.todo.ui.history.HistoryScreen
 import com.sabihon.todo.ui.home.HomeScreen
 import com.sabihon.todo.ui.profile.ProfileScreen
 import com.sabihon.todo.ui.search.SearchScreen
+import com.sabihon.todo.ui.settings.SettingsScreen
 import com.sabihon.todo.ui.taskdetail.TaskDetailScreen
 import com.sabihon.todo.ui.addedit.AddEditTaskScreen
 
-/**
- * Main NavHost – handles auth gating.
- */
 @Composable
 fun SabihonNavHost(
     modifier: Modifier = Modifier,
@@ -74,29 +72,37 @@ fun SabihonNavHost(
                 onNavigateBack = { navController.popBackStack() }
             )
         }
+        // Main screens with bottom navigation
         composable<Route.Home> {
-            HomeScreen(
-                onNavigateToAllTasks = { navController.navigate(Route.AllTasks) },
-                onNavigateToCategories = { navController.navigate(Route.Categories) },
-                onNavigateToTaskDetail = { taskId -> navController.navigate(Route.TaskDetail(taskId)) },
-                onNavigateToAddTask = { navController.navigate(Route.AddEditTask()) },
-                onNavigateToSearch = { navController.navigate(Route.Search) },
-                onNavigateToHistory = { navController.navigate(Route.History) },
-                onNavigateToProfile = { navController.navigate(Route.Profile) },
-                onNavigateToCategory = { catId -> navController.navigate(Route.CategoryDetail(catId)) }
-            )
+            MainScaffold(navController = navController) { _ ->
+                HomeScreen(
+                    onNavigateToAllTasks = { navController.navigate(Route.AllTasks) },
+                    onNavigateToCategories = { navController.navigate(Route.Categories) },
+                    onNavigateToTaskDetail = { taskId -> navController.navigate(Route.TaskDetail(taskId)) },
+                    onNavigateToAddTask = { navController.navigate(Route.AddEditTask()) },
+                    onNavigateToSearch = { navController.navigate(Route.Search) },
+                    onNavigateToHistory = { navController.navigate(Route.History) },
+                    onNavigateToProfile = { navController.navigate(Route.Profile) },
+                    onNavigateToSettings = { navController.navigate(Route.Settings) },
+                    onNavigateToCategory = { catId -> navController.navigate(Route.CategoryDetail(catId)) }
+                )
+            }
         }
         composable<Route.Categories> {
-            CategoriesScreen(
-                onBack = { navController.popBackStack() },
-                onCategoryClick = { catId -> navController.navigate(Route.CategoryDetail(catId)) }
-            )
+            MainScaffold(navController = navController) { _ ->
+                CategoriesScreen(
+                    onBack = { navController.popBackStack() },
+                    onCategoryClick = { catId -> navController.navigate(Route.CategoryDetail(catId)) }
+                )
+            }
         }
         composable<Route.AllTasks> {
-            CategoriesScreen(
-                onBack = { navController.popBackStack() },
-                onCategoryClick = { catId -> navController.navigate(Route.CategoryDetail(catId)) }
-            )
+            MainScaffold(navController = navController) { _ ->
+                CategoriesScreen(
+                    onBack = { navController.popBackStack() },
+                    onCategoryClick = { catId -> navController.navigate(Route.CategoryDetail(catId)) }
+                )
+            }
         }
         composable<Route.CategoryDetail> { backStackEntry ->
             val args = backStackEntry.toRoute<Route.CategoryDetail>()
@@ -124,26 +130,50 @@ fun SabihonNavHost(
             )
         }
         composable<Route.Search> {
-            SearchScreen(
-                onBack = { navController.popBackStack() },
-                onTaskClick = { taskId -> navController.navigate(Route.TaskDetail(taskId)) }
-            )
+            MainScaffold(navController = navController) { _ ->
+                SearchScreen(
+                    onBack = { navController.navigate(Route.Home) {
+                        popUpTo(Route.Home) { inclusive = false }
+                    }},
+                    onTaskClick = { taskId -> navController.navigate(Route.TaskDetail(taskId)) }
+                )
+            }
         }
         composable<Route.History> {
-            HistoryScreen(
-                onBack = { navController.popBackStack() },
-                onTaskClick = { taskId -> navController.navigate(Route.TaskDetail(taskId)) }
-            )
+            MainScaffold(navController = navController) { _ ->
+                HistoryScreen(
+                    onBack = { navController.navigate(Route.Home) {
+                        popUpTo(Route.Home) { inclusive = false }
+                    }},
+                    onTaskClick = { taskId -> navController.navigate(Route.TaskDetail(taskId)) }
+                )
+            }
         }
         composable<Route.Profile> {
-            ProfileScreen(
-                onBack = { navController.popBackStack() },
-                onSignOut = {
-                    navController.navigate(Route.Login) {
-                        popUpTo(Route.Home) { inclusive = true }
+            MainScaffold(navController = navController) { _ ->
+                ProfileScreen(
+                    onBack = { navController.navigate(Route.Home) {
+                        popUpTo(Route.Home) { inclusive = false }
+                    }},
+                    onSignOut = {
+                        navController.navigate(Route.Login) {
+                            popUpTo(Route.Home) { inclusive = true }
+                        }
                     }
-                }
-            )
+                )
+            }
+        }
+        composable<Route.Settings> {
+            MainScaffold(navController = navController) { _ ->
+                SettingsScreen(
+                    onBack = { navController.navigate(Route.Home) {
+                        popUpTo(Route.Home) { inclusive = false }
+                    }},
+                    onNavigateToHistory = { navController.navigate(Route.History) },
+                    onNavigateToProfile = { navController.navigate(Route.Profile) },
+                    onNavigateToAbout = { /* Could navigate to about */ }
+                )
+            }
         }
     }
 }
