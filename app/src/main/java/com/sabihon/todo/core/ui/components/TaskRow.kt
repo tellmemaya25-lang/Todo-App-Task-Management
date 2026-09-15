@@ -105,10 +105,10 @@ fun TaskRow(
         else -> Color(0xFF6B7280)
     }
 
-    // Background #e3f5ff for bg of task per request – use #e3f5ff always for color contrast fix, even in dark mode
+    // Background #e3f5ff for bg of task – make all task in light theme consistent bg color use 1st image
     // This ensures task cards are #e3f5ff light blue on both light and dark, with dark text for contrast
     val baseBackground = Color(0xFFE3F5FF)
-    val completedBackground = Color(0xFFC7DCFF)
+    val completedBackground = Color(0xFFE3F5FF)
 
     val containerColor by animateColorAsState(
         targetValue = if (effectiveCompleted) completedBackground else baseBackground,
