@@ -87,7 +87,7 @@ dependencies {
     implementation("androidx.navigation:navigation-compose:2.9.3")
     implementation("androidx.datastore:datastore-preferences:1.1.1")
     implementation("androidx.work:work-runtime-ktx:2.10.0")
-    implementation("androidx.hilt:hilt-work:2.55")
+    implementation("androidx.hilt:hilt-work:1.2.0")
 
     // Compose BOM
     implementation(platform("androidx.compose:compose-bom:2025.08.00"))
