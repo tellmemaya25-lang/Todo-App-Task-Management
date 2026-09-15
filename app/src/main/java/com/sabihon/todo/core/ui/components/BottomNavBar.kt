@@ -127,10 +127,11 @@ fun RoundedBottomNavBar(
                         horizontalAlignment = Alignment.CenterHorizontally,
                         verticalArrangement = Arrangement.spacedBy(4.dp)
                     ) {
+                        val unselectedColor = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f)
                         Icon(
                             imageVector = tab.icon,
                             contentDescription = tab.label,
-                            tint = if (isSelected) AccentBlue else Color.Gray,
+                            tint = if (isSelected) AccentBlue else unselectedColor,
                             modifier = Modifier.size(24.dp)
                         )
                         Text(
@@ -139,7 +140,7 @@ fun RoundedBottomNavBar(
                                 fontSize = 11.sp,
                                 fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal
                             ),
-                            color = if (isSelected) AccentBlue else Color.Gray
+                            color = if (isSelected) AccentBlue else unselectedColor
                         )
                     }
                 }
