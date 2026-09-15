@@ -98,6 +98,25 @@ fun TaskDetailScreen(
                     IconButton(onClick = onBack) {
                         Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
                     }
+                },
+                actions = {
+                    // Edit icon aligned to topbar right per request – blue rounded square like screenshot
+                    Box(
+                        modifier = Modifier
+                            .padding(end = 8.dp)
+                            .size(40.dp)
+                            .clip(RoundedCornerShape(12.dp))
+                            .background(AccentBlue)
+                            .clickable { onEdit(taskId) },
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Icon(
+                            Icons.Filled.Edit,
+                            contentDescription = "Edit",
+                            tint = Color.White,
+                            modifier = Modifier.size(18.dp)
+                        )
+                    }
                 }
             )
         },
@@ -253,16 +272,6 @@ fun TaskDetailScreen(
                                             viewModel.updateDescription(editableDesc)
                                         }
                                     }
-                                }
-
-                                Spacer(Modifier.width(8.dp))
-
-                                Box(
-                                    modifier = Modifier.size(40.dp).clip(RoundedCornerShape(12.dp))
-                                        .background(AccentBlue).clickable { onEdit(taskId) },
-                                    contentAlignment = Alignment.Center
-                                ) {
-                                    Icon(Icons.Filled.Edit, null, tint = Color.White, modifier = Modifier.size(18.dp))
                                 }
                             }
 
