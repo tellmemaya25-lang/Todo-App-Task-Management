@@ -131,8 +131,11 @@ fun AddEditTaskScreen(
                 value = uiState.description,
                 onValueChange = viewModel::onDescriptionChange,
                 label = { Text("Description") },
+                placeholder = { Text("Add details... Cybersecurity is What type of thing...") },
                 modifier = Modifier.fillMaxWidth(),
-                minLines = 3
+                shape = RoundedCornerShape(16.dp),
+                minLines = 3,
+                maxLines = 6
             )
 
             Text("Category", style = MaterialTheme.typography.titleMedium)

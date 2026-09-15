@@ -190,23 +190,56 @@ fun TaskDetailScreen(
 
                                 Spacer(Modifier.width(12.dp))
 
-                                Column(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
+                                Column(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(6.dp)) {
                                     Text(
                                         text = task.title,
                                         style = MaterialTheme.typography.titleMedium.copy(
                                             fontWeight = FontWeight.Bold,
                                             fontSize = 16.sp
                                         ),
-                                        maxLines = 1,
+                                        maxLines = 2,
                                         overflow = TextOverflow.Ellipsis
                                     )
-                                    Text(
-                                        text = task.description.takeIf { it.isNotBlank() } ?: "Cybersecurity",
-                                        style = MaterialTheme.typography.bodySmall.copy(fontSize = 13.sp),
-                                        color = Color(0xFF6B7280),
-                                        maxLines = 1,
-                                        overflow = TextOverflow.Ellipsis
+                                    // Multiline editable description per user request
+                                    var editableDesc by remember(task.id, task.description) { mutableStateOf(task.description) }
+                                    LaunchedEffect(task.description) {
+                                        if (editableDesc != task.description) editableDesc = task.description
+                                    }
+                                    OutlinedTextField(
+                                        value = editableDesc,
+                                        onValueChange = { newVal ->
+                                            editableDesc = newVal
+                                        },
+                                        placeholder = {
+                                            Text(
+                                                "Add description...",
+                                                style = MaterialTheme.typography.bodySmall.copy(fontSize = 13.sp),
+                                                color = Color(0xFF9CA3AF)
+                                            )
+                                        },
+                                        modifier = Modifier.fillMaxWidth(),
+                                        shape = RoundedCornerShape(12.dp),
+                                        minLines = 2,
+                                        maxLines = 4,
+                                        textStyle = MaterialTheme.typography.bodySmall.copy(
+                                            fontSize = 13.sp,
+                                            color = Color(0xFF6B7280)
+                                        ),
+                                        colors = androidx.compose.material3.OutlinedTextFieldDefaults.colors(
+                                            focusedContainerColor = Color.White.copy(alpha = 0.6f),
+                                            unfocusedContainerColor = Color.White.copy(alpha = 0.4f),
+                                            focusedBorderColor = AccentBlue.copy(alpha = 0.4f),
+                                            unfocusedBorderColor = Color.Transparent,
+                                            cursorColor = AccentBlue
+                                        )
                                     )
+                                    // Auto-save when changed and focus lost or after typing
+                                    LaunchedEffect(editableDesc) {
+                                        if (editableDesc != task.description) {
+                                            kotlinx.coroutines.delay(600)
+                                            viewModel.updateDescription(editableDesc)
+                                        }
+                                    }
                                 }
 
                                 Spacer(Modifier.width(12.dp))

@@ -268,7 +268,7 @@ fun TaskRow(
 
                         val shortDesc = when {
                             !categoryLabel.isNullOrBlank() -> categoryLabel
-                            !description.isNullOrBlank() -> description.take(40)
+                            !description.isNullOrBlank() -> description
                             timeLabel.isNotBlank() && timeLabel != "Today" -> timeLabel
                             else -> null
                         }
@@ -278,10 +278,11 @@ fun TaskRow(
                                 text = shortDesc,
                                 style = MaterialTheme.typography.bodySmall.copy(
                                     fontSize = 13.sp,
-                                    fontWeight = FontWeight.Normal
+                                    fontWeight = FontWeight.Normal,
+                                    lineHeight = 16.sp
                                 ),
                                 color = Color(0xFF6B7280).copy(alpha = 0.9f),
-                                maxLines = 1,
+                                maxLines = 2,
                                 overflow = TextOverflow.Ellipsis
                             )
                         }

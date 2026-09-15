@@ -67,4 +67,23 @@ class TaskDetailViewModel @Inject constructor(
             updateTaskUseCase(updatedTask)
         }
     }
+
+    fun updateDescription(newDesc: String) {
+        viewModelScope.launch {
+            val currentTask = _uiState.value.task ?: return@launch
+            if (currentTask.description == newDesc) return@launch
+            val updatedTask = currentTask.copy(description = newDesc)
+            updateTaskUseCase(updatedTask)
+        }
+    }
+
+    fun updateTitle(newTitle: String) {
+        if (newTitle.isBlank()) return
+        viewModelScope.launch {
+            val currentTask = _uiState.value.task ?: return@launch
+            if (currentTask.title == newTitle) return@launch
+            val updatedTask = currentTask.copy(title = newTitle)
+            updateTaskUseCase(updatedTask)
+        }
+    }
 }
