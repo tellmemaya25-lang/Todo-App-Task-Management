@@ -88,15 +88,15 @@ fun SwipeableTaskRow(
     Box(
         modifier = modifier
             .fillMaxWidth()
-            .padding(horizontal = 16.dp, vertical = 6.dp)
             .clip(RoundedCornerShape(24.dp))
-            .background(Color(0xFFC7DCFF).copy(alpha = 0.4f))
     ) {
         // Background actions – no overlap with percentage (percentage now left side)
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(horizontal = 12.dp, vertical = 8.dp),
+                .clip(RoundedCornerShape(24.dp))
+                .background(Color(0xFFE8EEFF))
+                .padding(horizontal = 12.dp, vertical = 12.dp),
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically
         ) {

@@ -58,6 +58,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
+import com.sabihon.todo.core.ui.components.SubTaskRoundedCheckbox
 import com.sabihon.todo.core.ui.theme.AccentBlue
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -282,34 +283,10 @@ fun TaskDetailScreen(
                                         )
                                         .padding(horizontal = 16.dp, vertical = 14.dp)
                                 ) {
-                                    Box(
-                                        modifier = Modifier.size(22.dp),
-                                        contentAlignment = Alignment.Center
-                                    ) {
-                                        if (sub.isDone) {
-                                            Box(
-                                                modifier = Modifier
-                                                    .size(20.dp)
-                                                    .clip(CircleShape)
-                                                    .background(AccentBlue),
-                                                contentAlignment = Alignment.Center
-                                            ) {
-                                                Icon(
-                                                    Icons.Filled.Check,
-                                                    contentDescription = null,
-                                                    tint = Color.White,
-                                                    modifier = Modifier.size(12.dp)
-                                                )
-                                            }
-                                        } else {
-                                            Canvas(modifier = Modifier.size(20.dp)) {
-                                                drawCircle(
-                                                    color = Color.Gray.copy(alpha = 0.4f),
-                                                    style = Stroke(width = 1.5.dp.toPx())
-                                                )
-                                            }
-                                        }
-                                    }
+                                    SubTaskRoundedCheckbox(
+                                        checked = sub.isDone,
+                                        onCheckedChange = { viewModel.toggleSubTask(sub.id) }
+                                    )
 
                                     Column(
                                         modifier = Modifier.weight(1f),
