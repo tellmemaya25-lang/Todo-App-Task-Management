@@ -181,20 +181,20 @@ fun TaskDetailScreen(
                                 modifier = Modifier.fillMaxWidth().padding(end = 72.dp) // leave space for overlapping percentage
                             )
 
-                            // Box with description white card + percentage overlapping top right
+                            // Box with description white card + percentage overlapping right side 30% per image-2.png request
                             Box(
                                 modifier = Modifier
                                     .fillMaxWidth()
-                                    .padding(top = 12.dp) // space for overlap offset
                             ) {
-                                // White description box – non-editable, dark mode adapted to surfaceContainerHigh
+                                // White description box – non-editable, dark mode adapted – with right padding to avoid text under circle
                                 Box(
                                     modifier = Modifier
                                         .fillMaxWidth()
-                                        .padding(top = 20.dp) // push down so circle overlaps top edge
+                                        .padding(end = 24.dp) // leave space for 30% overlap circle
                                         .clip(RoundedCornerShape(16.dp))
                                         .background(innerWhiteBg)
                                         .padding(16.dp)
+                                        .padding(end = 32.dp) // text avoids circle overlap area
                                 ) {
                                     Text(
                                         text = task.description.takeIf { it.isNotBlank() } ?: "Cybersecurity is What type of thing this do what Other things should we able to do here. asdasdf asdfas asdf asd asdfa",
@@ -206,11 +206,11 @@ fun TaskDetailScreen(
                                     )
                                 }
 
-                                // Percentage overlapping description top right – Instagram badge style
+                                // Percentage overlapping right side 30% – Instagram badge style – image-2.png 66% 2/3 right side overlap
                                 Box(
                                     modifier = Modifier
-                                        .align(Alignment.TopEnd)
-                                        .offset(x = (-8).dp, y = 0.dp)
+                                        .align(Alignment.CenterEnd)
+                                        .offset(x = 12.dp) // 30% overlap: 64dp circle, 19.2dp inside, 44.8dp outside => offset 12.8dp ~12.dp
                                         .size(64.dp)
                                         .clip(CircleShape)
                                         .background(innerWhiteBg2)
@@ -363,51 +363,20 @@ fun TaskDetailScreen(
                                             Text("×", fontSize = 14.sp)
                                         }
                                     } else {
-                                        // Consistent like All Tasks: title bold 16sp + short desc 13sp + status dot 6dp – dark mode adapted
-                                        Column(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                                            Text(
-                                                text = sub.title,
-                                                style = MaterialTheme.typography.titleMedium.copy(
-                                                    fontWeight = FontWeight.Bold,
-                                                    fontSize = 15.sp,
-                                                    lineHeight = 18.sp,
-                                                    textDecoration = if (sub.isDone) TextDecoration.LineThrough else null
-                                                ),
-                                                color = if (sub.isDone) subTextSecondary.copy(alpha = 0.6f) else subTextPrimary,
-                                                maxLines = 1,
-                                                overflow = TextOverflow.Ellipsis
-                                            )
-                                            Text(
-                                                text = "from: ${task.title}",
-                                                style = MaterialTheme.typography.bodySmall.copy(
-                                                    fontSize = 12.sp,
-                                                    lineHeight = 14.sp
-                                                ),
-                                                color = subTextSecondary.copy(alpha = 0.9f),
-                                                maxLines = 1,
-                                                overflow = TextOverflow.Ellipsis
-                                            )
-                                            Row(
-                                                horizontalArrangement = Arrangement.spacedBy(6.dp),
-                                                verticalAlignment = Alignment.CenterVertically,
-                                                modifier = Modifier.padding(top = 2.dp)
-                                            ) {
-                                                Box(
-                                                    modifier = Modifier
-                                                        .size(6.dp)
-                                                        .clip(CircleShape)
-                                                        .background(if (sub.isDone) Color(0xFF4CAF50) else Color(0xFF9CA3AF))
-                                                )
-                                                Text(
-                                                    text = if (sub.isDone) "Completed" else "Pending",
-                                                    style = MaterialTheme.typography.labelSmall.copy(
-                                                        fontSize = 10.sp,
-                                                        fontWeight = FontWeight.Medium
-                                                    ),
-                                                    color = if (sub.isDone) Color(0xFF4CAF50) else subTextSecondary
-                                                )
-                                            }
-                                        }
+                                        // Remove red lines per request – only title, no from: Webinar and no Completed dot – image-1.png red lines removed
+                                        Text(
+                                            text = sub.title,
+                                            style = MaterialTheme.typography.titleMedium.copy(
+                                                fontWeight = FontWeight.Bold,
+                                                fontSize = 15.sp,
+                                                lineHeight = 18.sp,
+                                                textDecoration = if (sub.isDone) TextDecoration.LineThrough else null
+                                            ),
+                                            color = if (sub.isDone) subTextSecondary.copy(alpha = 0.6f) else subTextPrimary,
+                                            maxLines = 1,
+                                            overflow = TextOverflow.Ellipsis,
+                                            modifier = Modifier.weight(1f)
+                                        )
                                         IconButton(onClick = {
                                             editingSubId = sub.id
                                             editingSubText = sub.title
