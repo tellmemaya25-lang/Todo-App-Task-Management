@@ -20,8 +20,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
-import androidx.compose.material3.Checkbox
-import androidx.compose.material3.CheckboxDefaults
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -42,10 +41,11 @@ import com.sabihon.todo.core.ui.theme.AccentBlue
 import com.sabihon.todo.domain.model.SubTask
 
 /**
- * TaskRow inspired by screenshot – each task as its own card
+ * TaskRow – each task as its own card, inspired by screenshot
  * - 24.dp radius, elevation 0, surfaceVariant 0.6
- * - Left: interactive circular percentage + checkbox
- * - Center: title + subtitle "from: ..." / description
+ * - Left: interactive circular percentage + checkbox (blue check / empty)
+ * - Center: title + subtitle from:
+ * - Sub-tasks: design from screenshot – blue check circle / empty circle, title + from:, divider, Add task
  * - Long press to edit/delete/mark done (no 3 dots)
  */
 @OptIn(ExperimentalFoundationApi::class)
@@ -61,11 +61,10 @@ fun TaskRow(
     onCheckedChange: (Boolean) -> Unit = {},
     onAddSubTask: (() -> Unit)? = null,
     onSubTaskChecked: ((String, Boolean) -> Unit)? = null,
-    onMoreClick: (() -> Unit)? = null, // deprecated – kept for compat
+    onMoreClick: (() -> Unit)? = null,
     onClick: (() -> Unit)? = null,
     onLongClick: (() -> Unit)? = null
 ) {
-    // Calculate percentage for sub-tasks
     val totalSubs = subTasks.size
     val doneSubs = subTasks.count { it.isDone }
     val progress = if (totalSubs > 0) doneSubs.toFloat() / totalSubs else if (isCompleted) 1f else 0f
@@ -82,7 +81,7 @@ fun TaskRow(
         ),
         elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
     ) {
-        Row(
+        Column(
             modifier = Modifier
                 .fillMaxWidth()
                 .combinedClickable(
@@ -90,233 +89,227 @@ fun TaskRow(
                     onLongClick = { onLongClick?.invoke() ?: onMoreClick?.invoke() }
                 )
                 .padding(16.dp),
-            verticalAlignment = Alignment.CenterVertically
+            verticalArrangement = Arrangement.spacedBy(4.dp)
         ) {
-            // Left: interactive percentage + checkbox – inspired by screenshot
-            Box(
-                modifier = Modifier.size(48.dp),
-                contentAlignment = Alignment.Center
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically
             ) {
-                if (hasSubTasks) {
-                    // Circular percentage ring
-                    Canvas(modifier = Modifier.size(36.dp)) {
-                        val strokeWidth = 3.dp.toPx()
-                        // Background circle
-                        drawCircle(
-                            color = Color.Gray.copy(alpha = 0.2f),
-                            style = Stroke(width = strokeWidth)
-                        )
-                        // Progress arc
-                        if (progress > 0f) {
-                            drawArc(
-                                color = AccentBlue,
-                                startAngle = -90f,
-                                sweepAngle = 360f * progress,
-                                useCenter = false,
-                                style = Stroke(width = strokeWidth, cap = StrokeCap.Round)
+                // Left: percentage ring + checkbox – screenshot style
+                Box(
+                    modifier = Modifier.size(48.dp),
+                    contentAlignment = Alignment.Center
+                ) {
+                    if (hasSubTasks) {
+                        Canvas(modifier = Modifier.size(36.dp)) {
+                            val strokeWidth = 3.dp.toPx()
+                            drawCircle(
+                                color = Color.Gray.copy(alpha = 0.2f),
+                                style = Stroke(width = strokeWidth)
                             )
+                            if (progress > 0f) {
+                                drawArc(
+                                    color = AccentBlue,
+                                    startAngle = -90f,
+                                    sweepAngle = 360f * progress,
+                                    useCenter = false,
+                                    style = Stroke(width = strokeWidth, cap = StrokeCap.Round)
+                                )
+                            }
                         }
-                    }
-                    // Center content – percentage or check
-                    if (isCompleted || progress >= 1f) {
-                        Box(
-                            modifier = Modifier
-                                .size(24.dp)
-                                .clip(CircleShape)
-                                .background(AccentBlue),
-                            contentAlignment = Alignment.Center
-                        ) {
-                            Icon(
-                                imageVector = Icons.Filled.Check,
-                                contentDescription = "Completed",
-                                tint = Color.White,
-                                modifier = Modifier.size(14.dp)
+                        if (isCompleted || progress >= 1f) {
+                            Box(
+                                modifier = Modifier
+                                    .size(24.dp)
+                                    .clip(CircleShape)
+                                    .background(AccentBlue),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Filled.Check,
+                                    contentDescription = "Completed",
+                                    tint = Color.White,
+                                    modifier = Modifier.size(14.dp)
+                                )
+                            }
+                        } else {
+                            Text(
+                                text = "${(progress * 100).toInt()}%",
+                                style = MaterialTheme.typography.labelSmall.copy(
+                                    fontSize = 9.sp,
+                                    fontWeight = FontWeight.Bold
+                                ),
+                                color = MaterialTheme.colorScheme.onSurface
                             )
                         }
                     } else {
-                        Text(
-                            text = "${(progress * 100).toInt()}%",
-                            style = MaterialTheme.typography.labelSmall.copy(
-                                fontSize = 9.sp,
-                                fontWeight = FontWeight.Bold
-                            ),
-                            color = MaterialTheme.colorScheme.onSurface
+                        CircleCheckbox(
+                            checked = isCompleted,
+                            onCheckedChange = onCheckedChange
                         )
                     }
-                } else {
-                    // Simple circle checkbox like screenshot
-                    CircleCheckbox(
-                        checked = isCompleted,
-                        onCheckedChange = onCheckedChange,
-                        modifier = Modifier
-                    )
-                }
-            }
-
-            Spacer(Modifier.width(12.dp))
-
-            Column(
-                modifier = Modifier.weight(1f),
-                verticalArrangement = Arrangement.spacedBy(4.dp)
-            ) {
-                // Title – with strikethrough if completed like screenshot
-                Text(
-                    text = title,
-                    style = MaterialTheme.typography.bodyLarge.copy(
-                        fontWeight = FontWeight.Medium,
-                        textDecoration = if (isCompleted) TextDecoration.LineThrough else null
-                    ),
-                    color = if (isCompleted) MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f)
-                    else MaterialTheme.colorScheme.onSurface,
-                    maxLines = 2,
-                    overflow = TextOverflow.Ellipsis
-                )
-
-                // Subtitle – "from: ..." style like screenshot, or description/time
-                val subtitle = when {
-                    !categoryLabel.isNullOrBlank() -> "from: $categoryLabel"
-                    !description.isNullOrBlank() -> description
-                    timeLabel.isNotBlank() -> timeLabel
-                    else -> null
                 }
 
-                if (subtitle != null) {
+                Spacer(Modifier.width(12.dp))
+
+                Column(
+                    modifier = Modifier.weight(1f),
+                    verticalArrangement = Arrangement.spacedBy(2.dp)
+                ) {
                     Text(
-                        text = subtitle,
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        maxLines = 1,
+                        text = title,
+                        style = MaterialTheme.typography.bodyLarge.copy(
+                            fontWeight = FontWeight.Medium,
+                            textDecoration = if (isCompleted) TextDecoration.LineThrough else null
+                        ),
+                        color = if (isCompleted) MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f)
+                        else MaterialTheme.colorScheme.onSurface,
+                        maxLines = 2,
                         overflow = TextOverflow.Ellipsis
                     )
-                }
 
-                // Sub-tasks – inside card, each as row like screenshot second card
-                if (subTasks.isNotEmpty()) {
-                    Column(
-                        verticalArrangement = Arrangement.spacedBy(6.dp),
-                        modifier = Modifier.padding(top = 8.dp)
-                    ) {
-                        subTasks.forEach { sub ->
-                            Row(
-                                verticalAlignment = Alignment.CenterVertically,
-                                horizontalArrangement = Arrangement.spacedBy(8.dp),
-                                modifier = Modifier.fillMaxWidth()
-                            ) {
-                                Checkbox(
-                                    checked = sub.isDone,
-                                    onCheckedChange = { checked ->
-                                        onSubTaskChecked?.invoke(sub.id, checked)
-                                    },
-                                    modifier = Modifier.size(18.dp),
-                                    colors = CheckboxDefaults.colors(
-                                        checkedColor = AccentBlue,
-                                        uncheckedColor = MaterialTheme.colorScheme.outline.copy(alpha = 0.5f)
-                                    )
-                                )
-                                Text(
-                                    text = sub.title,
-                                    style = MaterialTheme.typography.bodySmall.copy(
-                                        textDecoration = if (sub.isDone) TextDecoration.LineThrough else null
-                                    ),
-                                    color = if (sub.isDone) MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f)
-                                    else MaterialTheme.colorScheme.onSurface,
-                                    maxLines = 1,
-                                    overflow = TextOverflow.Ellipsis,
-                                    modifier = Modifier.weight(1f)
-                                )
-                            }
-                        }
-                        // Add task row like screenshot "Add task"
-                        if (onAddSubTask != null) {
-                            TextButton(
-                                onClick = onAddSubTask,
-                                shape = RoundedCornerShape(16.dp),
-                                modifier = Modifier.padding(top = 2.dp)
-                            ) {
-                                Text(
-                                    text = "+ Add task",
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                    style = MaterialTheme.typography.bodySmall
-                                )
-                            }
-                        }
+                    val subtitle = when {
+                        !categoryLabel.isNullOrBlank() -> "from: $categoryLabel"
+                        !description.isNullOrBlank() -> description
+                        timeLabel.isNotBlank() -> timeLabel
+                        else -> null
+                    }
+
+                    if (subtitle != null) {
+                        Text(
+                            text = subtitle,
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis
+                        )
                     }
                 }
             }
-        }
-    }
-}
 
-/**
- * Variant for task grouping card (like screenshot showing multiple tasks inside one card)
- * Not used by default – each task is its own card per user request, but kept for reference
- */
-@Composable
-fun TaskGroupCard(
-    tasks: List<Pair<String, Boolean>>,
-    modifier: Modifier = Modifier
-) {
-    Card(
-        modifier = modifier
-            .fillMaxWidth()
-            .padding(horizontal = 16.dp, vertical = 6.dp),
-        shape = RoundedCornerShape(20.dp),
-        colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.surfaceContainerHighest
-        ),
-        elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
-    ) {
-        Column(
-            modifier = Modifier.padding(12.dp),
-            verticalArrangement = Arrangement.spacedBy(12.dp)
-        ) {
-            tasks.forEach { (title, completed) ->
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(12.dp)
+            // Sub-tasks – exact design from screenshot
+            if (hasSubTasks) {
+                Column(
+                    modifier = Modifier
+                        .padding(top = 12.dp)
+                        .clip(RoundedCornerShape(16.dp))
+                        .background(MaterialTheme.colorScheme.surface.copy(alpha = 0.5f))
                 ) {
-                    Box(
-                        modifier = Modifier
-                            .size(20.dp)
-                            .clip(CircleShape)
-                            .background(if (completed) AccentBlue else Color.Transparent)
-                            .background(
-                                if (!completed) Color.Transparent else AccentBlue,
-                                CircleShape
-                            ),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        if (completed) {
-                            Icon(Icons.Filled.Check, null, tint = Color.White, modifier = Modifier.size(12.dp))
-                        } else {
+                    subTasks.forEachIndexed { index, sub ->
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(12.dp),
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .combinedClickable(
+                                    onClick = { onSubTaskChecked?.invoke(sub.id, !sub.isDone) }
+                                )
+                                .padding(horizontal = 12.dp, vertical = 10.dp)
+                        ) {
+                            // Blue check / empty circle like screenshot
                             Box(
-                                modifier = Modifier
-                                    .size(18.dp)
-                                    .clip(CircleShape)
-                                    .background(Color.Transparent)
+                                modifier = Modifier.size(22.dp),
+                                contentAlignment = Alignment.Center
                             ) {
-                                Canvas(modifier = Modifier.matchParentSize()) {
-                                    drawCircle(
-                                        color = Color.Gray.copy(alpha = 0.4f),
-                                        style = Stroke(width = 1.5.dp.toPx())
-                                    )
+                                if (sub.isDone) {
+                                    Box(
+                                        modifier = Modifier
+                                            .size(20.dp)
+                                            .clip(CircleShape)
+                                            .background(AccentBlue),
+                                        contentAlignment = Alignment.Center
+                                    ) {
+                                        Icon(
+                                            imageVector = Icons.Filled.Check,
+                                            contentDescription = null,
+                                            tint = Color.White,
+                                            modifier = Modifier.size(12.dp)
+                                        )
+                                    }
+                                } else {
+                                    Canvas(modifier = Modifier.size(20.dp)) {
+                                        drawCircle(
+                                            color = Color.Gray.copy(alpha = 0.4f),
+                                            style = Stroke(width = 1.5.dp.toPx())
+                                        )
+                                    }
                                 }
                             }
+
+                            Column(
+                                modifier = Modifier.weight(1f),
+                                verticalArrangement = Arrangement.spacedBy(2.dp)
+                            ) {
+                                Text(
+                                    text = sub.title,
+                                    style = MaterialTheme.typography.bodyMedium.copy(
+                                        textDecoration = if (sub.isDone) TextDecoration.LineThrough else null
+                                    ),
+                                    color = if (sub.isDone) MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f)
+                                    else MaterialTheme.colorScheme.onSurface,
+                                    maxLines = 1,
+                                    overflow = TextOverflow.Ellipsis
+                                )
+                                // from: subtitle – use categoryLabel if provided, else show generic like screenshot
+                                Text(
+                                    text = if (!categoryLabel.isNullOrBlank()) "from: $categoryLabel" else "from: ${title.take(20)}",
+                                    style = MaterialTheme.typography.labelSmall,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f),
+                                    maxLines = 1,
+                                    overflow = TextOverflow.Ellipsis
+                                )
+                            }
+                        }
+
+                        if (index < subTasks.size - 1) {
+                            HorizontalDivider(
+                                modifier = Modifier.padding(horizontal = 12.dp),
+                                thickness = 0.5.dp,
+                                color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.3f)
+                            )
                         }
                     }
-                    Column {
-                        Text(
-                            text = title,
-                            style = MaterialTheme.typography.bodyMedium.copy(
-                                textDecoration = if (completed) TextDecoration.LineThrough else null
-                            ),
-                            color = if (completed) MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f)
-                            else MaterialTheme.colorScheme.onSurface
+
+                    // Add task row – empty circle + Add task gray like screenshot
+                    if (onAddSubTask != null) {
+                        HorizontalDivider(
+                            modifier = Modifier.padding(horizontal = 12.dp),
+                            thickness = 0.5.dp,
+                            color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.3f)
                         )
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(12.dp),
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .combinedClickable(onClick = { onAddSubTask.invoke() })
+                                .padding(horizontal = 12.dp, vertical = 10.dp)
+                        ) {
+                            Canvas(modifier = Modifier.size(20.dp)) {
+                                drawCircle(
+                                    color = Color.Gray.copy(alpha = 0.3f),
+                                    style = Stroke(width = 1.2.dp.toPx())
+                                )
+                            }
+                            Text(
+                                text = "Add task",
+                                style = MaterialTheme.typography.bodyMedium,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f)
+                            )
+                        }
+                    }
+                }
+            } else {
+                if (onAddSubTask != null) {
+                    TextButton(
+                        onClick = onAddSubTask,
+                        shape = RoundedCornerShape(16.dp),
+                        modifier = Modifier.padding(top = 4.dp)
+                    ) {
                         Text(
-                            text = "from: Website Redesign",
-                            style = MaterialTheme.typography.labelSmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                            text = "+ Add task",
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            style = MaterialTheme.typography.bodySmall
                         )
                     }
                 }
