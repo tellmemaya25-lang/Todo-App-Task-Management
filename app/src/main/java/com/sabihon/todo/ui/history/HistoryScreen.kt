@@ -11,13 +11,14 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -112,36 +113,65 @@ fun HistoryScreen(
                 }
             }
 
-            // Grouped tasks – now showing title, description, status
+            // Grouped tasks – now showing title, description, status with dividers
             uiState.grouped.forEach { (groupName, tasks) ->
                 if (tasks.isNotEmpty()) {
                     item {
-                        Text(groupName, style = MaterialTheme.typography.titleMedium, modifier = Modifier.padding(top = 8.dp))
+                        Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                            Text(groupName, style = MaterialTheme.typography.titleMedium, modifier = Modifier.padding(top = 8.dp))
+                            HorizontalDivider(
+                                thickness = 0.5.dp,
+                                color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.3f)
+                            )
+                        }
                     }
-                    items(tasks, key = { it.id }) { task ->
-                        HistoryTaskCard(
-                            task = task,
-                            onClick = { onTaskClick(task.id) },
-                            onRestore = { viewModel.restoreTask(task.id) },
-                            onDelete = { viewModel.permanentlyDelete(task.id) }
-                        )
+                    itemsIndexed(tasks, key = { _, task -> task.id }) { index, task ->
+                        Column {
+                            HistoryTaskCard(
+                                task = task,
+                                onClick = { onTaskClick(task.id) },
+                                onRestore = { viewModel.restoreTask(task.id) },
+                                onDelete = { viewModel.permanentlyDelete(task.id) }
+                            )
+                            if (index < tasks.size - 1) {
+                                HorizontalDivider(
+                                    modifier = Modifier.padding(horizontal = 16.dp, vertical = 4.dp),
+                                    thickness = 0.5.dp,
+                                    color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.25f)
+                                )
+                            }
+                        }
                     }
                 }
             }
 
-            // Activity log
+            // Activity log with dividers
             if (uiState.activityLogs.isNotEmpty()) {
                 item {
-                    Text("Activity Log", style = MaterialTheme.typography.titleMedium, modifier = Modifier.padding(top = 16.dp))
-                }
-                items(uiState.activityLogs) { log ->
-                    Column(modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp)) {
-                        Text("${log.action.name} – ${log.taskTitle}", style = MaterialTheme.typography.bodyMedium)
-                        Text(
-                            java.text.SimpleDateFormat("MMM d, h:mm a").format(java.util.Date(log.timestamp)),
-                            style = MaterialTheme.typography.labelSmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                        Text("Activity Log", style = MaterialTheme.typography.titleMedium, modifier = Modifier.padding(top = 16.dp))
+                        HorizontalDivider(
+                            thickness = 0.5.dp,
+                            color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.3f)
                         )
+                    }
+                }
+                itemsIndexed(uiState.activityLogs) { index, log ->
+                    Column {
+                        Column(modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp)) {
+                            Text("${log.action.name} – ${log.taskTitle}", style = MaterialTheme.typography.bodyMedium)
+                            Text(
+                                java.text.SimpleDateFormat("MMM d, h:mm a").format(java.util.Date(log.timestamp)),
+                                style = MaterialTheme.typography.labelSmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        }
+                        if (index < uiState.activityLogs.size - 1) {
+                            HorizontalDivider(
+                                thickness = 0.5.dp,
+                                color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.2f)
+                            )
+                        }
                     }
                 }
             }

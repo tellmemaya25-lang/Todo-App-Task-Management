@@ -95,7 +95,7 @@ fun SwipeableTaskRow(
             modifier = Modifier
                 .fillMaxWidth()
                 .clip(RoundedCornerShape(24.dp))
-                .background(Color(0xFFE8EEFF))
+                .background(Color(0xFFE3F5FF).copy(alpha = 0.8f))
                 .padding(horizontal = 12.dp, vertical = 12.dp),
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically

@@ -100,9 +100,9 @@ fun TaskRow(
         else -> MaterialTheme.colorScheme.onSurfaceVariant
     }
 
-    // Background #c7dcff per request, with gradient when done
-    val baseBackground = Color(0xFFC7DCFF)
-    val completedBackground = Color(0xFFB3CCFF)
+    // Background #e3f5ff per request, with gradient when done
+    val baseBackground = Color(0xFFE3F5FF)
+    val completedBackground = Color(0xFFC7DCFF)
 
     val containerColor by animateColorAsState(
         targetValue = if (isCompleted) completedBackground else baseBackground,
@@ -123,8 +123,8 @@ fun TaskRow(
         Brush.linearGradient(
             colors = listOf(
                 AccentBlue.copy(alpha = 0.2f),
-                Color(0xFFC7DCFF),
-                Color(0xFFA8C0FF)
+                Color(0xFFE3F5FF),
+                Color(0xFFC7DCFF)
             )
         )
     } else null
