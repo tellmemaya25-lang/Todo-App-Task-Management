@@ -10,7 +10,10 @@ import androidx.compose.foundation.gestures.rememberDraggableState
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxHeight
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.matchParentSize
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
@@ -23,11 +26,8 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -41,12 +41,11 @@ import kotlinx.coroutines.launch
 import kotlin.math.roundToInt
 
 /**
- * Swipeable task row – FIXED OVERLAP + CONDITION FOR SWIPE LEFT
- * - Outer Box has padding 16dp/6dp and clip 24dp (was causing overlap because TaskRow also had padding)
- * - TaskRow now called with hasOuterPadding=false so foreground fully covers background when offset=0
- * - Background actions hidden when not swiped, no blue/red arcs peeking
- * - Swipe right -> Mark Done ONLY if not completed (condition per request: if not completed dont mark as complete on left swipe)
- * - Swipe left -> Edit/Delete, NEVER marks as complete – added guard isCompleted check
+ * Swipeable task row – centered icons + fill vertical height per request
+ * - Outer Box padding 16dp/6dp clip 24dp bg #E3F5FF
+ * - Background Row now matchParentSize + fillMaxHeight centered vertically, so icons fill container height
+ * - Icons 56dp (was 48dp) centered, with 12dp horizontal padding, vertical fill
+ * - Left swipe Edit/Delete blue #3B82F6 + red #E57373 centered and fill height, right swipe Mark Done
  */
 @Composable
 fun SwipeableTaskRow(
@@ -79,12 +78,11 @@ fun SwipeableTaskRow(
     LaunchedEffect(isCompleted) {
         if (offsetX.value != 0f) {
             scope.launch {
-                offsetX.animateTo(0f, animationSpec = spring(dampingRatio = Spring.DampingRatioMediumBouncy))
+                offsetX.animateTo(0f, spring(dampingRatio = Spring.DampingRatioMediumBouncy))
             }
         }
     }
 
-    // Outer container handles padding + clipping – fixes overlap where background showed through gaps
     Box(
         modifier = modifier
             .fillMaxWidth()
@@ -92,75 +90,91 @@ fun SwipeableTaskRow(
             .clip(RoundedCornerShape(24.dp))
             .background(Color(0xFFE3F5FF))
     ) {
-        // Background actions – only visible when swiped
+        // Background actions – fill vertical height + centered per request
         Row(
             modifier = Modifier
-                .fillMaxWidth()
+                .matchParentSize()
                 .background(Color(0xFFE3F5FF))
-                .padding(horizontal = 12.dp, vertical = 12.dp),
+                .padding(horizontal = 12.dp, vertical = 8.dp),
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically
         ) {
+            // Left – Mark Done, centered, fills height
             Box(
                 modifier = Modifier
-                    .size(48.dp)
+                    .fillMaxHeight()
+                    .size(56.dp)
                     .clip(RoundedCornerShape(16.dp))
                     .background(AccentBlue),
                 contentAlignment = Alignment.Center
             ) {
                 Icon(
-                    imageVector = Icons.Filled.CheckCircle,
+                    Icons.Filled.CheckCircle,
                     contentDescription = "Mark Done",
                     tint = Color.White,
                     modifier = Modifier.size(24.dp)
                 )
             }
+            // Right – Edit + Delete, centered, fills height
             Row(
+                modifier = Modifier.fillMaxHeight(),
                 horizontalArrangement = Arrangement.spacedBy(8.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                IconButton(
-                    onClick = {
-                        scope.launch {
-                            offsetX.animateTo(0f, spring(dampingRatio = Spring.DampingRatioMediumBouncy))
-                        }
-                        onEdit?.invoke()
-                    },
+                Box(
                     modifier = Modifier
-                        .size(48.dp)
+                        .fillMaxHeight()
+                        .size(56.dp)
                         .clip(RoundedCornerShape(16.dp))
-                        .background(AccentBlue.copy(alpha = 0.9f))
+                        .background(AccentBlue)
+                        .padding(4.dp),
+                    contentAlignment = Alignment.Center
                 ) {
-                    Icon(
-                        imageVector = Icons.Filled.Edit,
-                        contentDescription = "Edit",
-                        tint = Color.White,
-                        modifier = Modifier.size(20.dp)
-                    )
+                    IconButton(
+                        onClick = {
+                            scope.launch {
+                                offsetX.animateTo(0f, spring(dampingRatio = Spring.DampingRatioMediumBouncy))
+                            }
+                            onEdit?.invoke()
+                        },
+                        modifier = Modifier.fillMaxSize()
+                    ) {
+                        Icon(
+                            Icons.Filled.Edit,
+                            contentDescription = "Edit",
+                            tint = Color.White,
+                            modifier = Modifier.size(20.dp)
+                        )
+                    }
                 }
-                IconButton(
-                    onClick = {
-                        scope.launch {
-                            offsetX.animateTo(0f, spring(dampingRatio = Spring.DampingRatioMediumBouncy))
-                        }
-                        onDelete?.invoke()
-                    },
+                Box(
                     modifier = Modifier
-                        .size(48.dp)
+                        .fillMaxHeight()
+                        .size(56.dp)
                         .clip(RoundedCornerShape(16.dp))
-                        .background(Color(0xFFE57373))
+                        .background(Color(0xFFE57373)),
+                    contentAlignment = Alignment.Center
                 ) {
-                    Icon(
-                        imageVector = Icons.Filled.Delete,
-                        contentDescription = "Delete",
-                        tint = Color.White,
-                        modifier = Modifier.size(20.dp)
-                    )
+                    IconButton(
+                        onClick = {
+                            scope.launch {
+                                offsetX.animateTo(0f, spring(dampingRatio = Spring.DampingRatioMediumBouncy))
+                            }
+                            onDelete?.invoke()
+                        },
+                        modifier = Modifier.fillMaxSize()
+                    ) {
+                        Icon(
+                            Icons.Filled.Delete,
+                            contentDescription = "Delete",
+                            tint = Color.White,
+                            modifier = Modifier.size(20.dp)
+                        )
+                    }
                 }
             }
         }
 
-        // Foreground draggable – TaskRow without outer padding so it fully covers background at rest
         Box(
             modifier = Modifier
                 .fillMaxWidth()
@@ -177,16 +191,12 @@ fun SwipeableTaskRow(
                         scope.launch {
                             when {
                                 offsetX.value > startThreshold / 2 -> {
-                                    // CONDITION: only mark complete on right swipe if not already completed
-                                    // Left swipe should never mark as complete per request
                                     if (!isCompleted) {
                                         onToggleComplete?.invoke(true)
                                     }
                                     offsetX.animateTo(0f, spring(dampingRatio = Spring.DampingRatioMediumBouncy))
                                 }
                                 offsetX.value < endThreshold / 2 -> {
-                                    // Swipe left: Edit/Delete – NEVER mark as complete
-                                    // Guard: if task are not completed dont mark it as complete
                                     offsetX.animateTo(maxEnd, spring(dampingRatio = Spring.DampingRatioMediumBouncy))
                                 }
                                 else -> {
