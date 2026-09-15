@@ -19,7 +19,6 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
@@ -48,7 +47,6 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.drawscope.Stroke
@@ -93,9 +91,7 @@ fun TaskDetailScreen(
     ) { padding ->
         if (uiState.isLoading) {
             Box(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .padding(padding),
+                modifier = Modifier.fillMaxSize().padding(padding),
                 contentAlignment = Alignment.Center
             ) {
                 CircularProgressIndicator()
@@ -113,82 +109,91 @@ fun TaskDetailScreen(
                         .padding(horizontal = 16.dp, vertical = 12.dp),
                     verticalArrangement = Arrangement.spacedBy(16.dp)
                 ) {
-                    // Header card – Webinar style from screenshot
+                    // Header – percentage in front of title, bg #e3f5ff, with dividers
                     Card(
                         modifier = Modifier.fillMaxWidth(),
                         shape = RoundedCornerShape(24.dp),
-                        colors = CardDefaults.cardColors(
-                            containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.6f)
-                        ),
-                        elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
+                        colors = CardDefaults.cardColors(containerColor = Color(0xFFE3F5FF)),
+                        elevation = CardDefaults.cardElevation(0.dp)
                     ) {
-                        Box(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .background(
-                                    if (task.isCompleted) Brush.linearGradient(
-                                        colors = listOf(
-                                            AccentBlue.copy(alpha = 0.15f),
-                                            MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.4f)
-                                        )
-                                    ) else Brush.linearGradient(
-                                        colors = listOf(
-                                            MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.6f),
-                                            MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.6f)
-                                        )
-                                    )
-                                )
-                        ) {
+                        Column {
                             Row(
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .padding(16.dp),
-                                verticalAlignment = Alignment.Top
+                                modifier = Modifier.fillMaxWidth().padding(16.dp),
+                                verticalAlignment = Alignment.CenterVertically
                             ) {
-                                // Left check + title
+                                // Percentage in front of title – 40% 2/5 like screenshot
                                 Box(
-                                    modifier = Modifier
-                                        .size(28.dp)
-                                        .clip(CircleShape)
-                                        .background(if (task.isCompleted) AccentBlue else Color.Transparent),
+                                    modifier = Modifier.size(56.dp),
                                     contentAlignment = Alignment.Center
                                 ) {
-                                    if (task.isCompleted) {
-                                        Icon(
-                                            Icons.Filled.Check,
-                                            contentDescription = null,
-                                            tint = Color.White,
-                                            modifier = Modifier.size(16.dp)
-                                        )
-                                    } else {
-                                        Canvas(modifier = Modifier.size(24.dp)) {
+                                    if (totalSubs > 0) {
+                                        Canvas(modifier = Modifier.size(48.dp)) {
+                                            val stroke = 3.dp.toPx()
                                             drawCircle(
-                                                color = Color.Gray.copy(alpha = 0.35f),
-                                                style = Stroke(width = 2.dp.toPx())
+                                                color = Color.Gray.copy(alpha = 0.15f),
+                                                style = Stroke(width = stroke)
                                             )
+                                            if (progress > 0f) {
+                                                drawArc(
+                                                    color = AccentBlue,
+                                                    startAngle = -90f,
+                                                    sweepAngle = 360f * progress,
+                                                    useCenter = false,
+                                                    style = Stroke(width = stroke, cap = StrokeCap.Round)
+                                                )
+                                            }
+                                        }
+                                        Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                                            Text(
+                                                text = "${(progress * 100).toInt()}%",
+                                                style = MaterialTheme.typography.labelMedium.copy(
+                                                    fontWeight = FontWeight.Bold,
+                                                    fontSize = 11.sp
+                                                ),
+                                                color = Color(0xFF101114)
+                                            )
+                                            Text(
+                                                text = "$doneSubs/$totalSubs",
+                                                style = MaterialTheme.typography.labelSmall.copy(fontSize = 8.sp),
+                                                color = Color(0xFF6B7280)
+                                            )
+                                        }
+                                    } else {
+                                        Box(
+                                            modifier = Modifier.size(32.dp).clip(CircleShape)
+                                                .background(if (task.isCompleted) AccentBlue else Color.Transparent),
+                                            contentAlignment = Alignment.Center
+                                        ) {
+                                            if (task.isCompleted) {
+                                                Icon(Icons.Filled.Edit, null, tint = Color.White, modifier = Modifier.size(16.dp))
+                                            } else {
+                                                Canvas(modifier = Modifier.size(24.dp)) {
+                                                    drawCircle(
+                                                        color = Color.Gray.copy(alpha = 0.3f),
+                                                        style = Stroke(width = 2.dp.toPx())
+                                                    )
+                                                }
+                                            }
                                         }
                                     }
                                 }
 
                                 Spacer(Modifier.width(12.dp))
 
-                                Column(
-                                    modifier = Modifier.weight(1f),
-                                    verticalArrangement = Arrangement.spacedBy(2.dp)
-                                ) {
+                                Column(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
                                     Text(
                                         text = task.title,
                                         style = MaterialTheme.typography.titleMedium.copy(
                                             fontWeight = FontWeight.Bold,
                                             fontSize = 16.sp
                                         ),
-                                        maxLines = 2,
+                                        maxLines = 1,
                                         overflow = TextOverflow.Ellipsis
                                     )
                                     Text(
                                         text = task.description.takeIf { it.isNotBlank() } ?: "Cybersecurity",
                                         style = MaterialTheme.typography.bodySmall.copy(fontSize = 13.sp),
-                                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                        color = Color(0xFF6B7280),
                                         maxLines = 1,
                                         overflow = TextOverflow.Ellipsis
                                     )
@@ -196,144 +201,69 @@ fun TaskDetailScreen(
 
                                 Spacer(Modifier.width(12.dp))
 
-                                // Right: edit button + percentage like screenshot
-                                Column(
-                                    horizontalAlignment = Alignment.CenterHorizontally,
-                                    verticalArrangement = Arrangement.spacedBy(8.dp)
+                                Box(
+                                    modifier = Modifier.size(40.dp).clip(RoundedCornerShape(12.dp))
+                                        .background(AccentBlue).clickable { onEdit(taskId) },
+                                    contentAlignment = Alignment.Center
                                 ) {
-                                    // Edit button blue
-                                    Box(
-                                        modifier = Modifier
-                                            .size(40.dp)
-                                            .clip(RoundedCornerShape(12.dp))
-                                            .background(AccentBlue)
-                                            .clickable { onEdit(taskId) },
-                                        contentAlignment = Alignment.Center
-                                    ) {
-                                        Icon(
-                                            Icons.Filled.Edit,
-                                            contentDescription = "Edit",
-                                            tint = Color.White,
-                                            modifier = Modifier.size(18.dp)
-                                        )
-                                    }
-
-                                    // Percentage 50% 2/4 like screenshot top right
-                                    if (totalSubs > 0) {
-                                        Box(
-                                            modifier = Modifier.size(48.dp),
-                                            contentAlignment = Alignment.Center
-                                        ) {
-                                            Canvas(modifier = Modifier.size(48.dp)) {
-                                                val strokeWidth = 3.dp.toPx()
-                                                drawCircle(
-                                                    color = Color.Gray.copy(alpha = 0.15f),
-                                                    style = Stroke(width = strokeWidth)
-                                                )
-                                                if (progress > 0f) {
-                                                    drawArc(
-                                                        color = AccentBlue,
-                                                        startAngle = -90f,
-                                                        sweepAngle = 360f * progress,
-                                                        useCenter = false,
-                                                        style = Stroke(width = strokeWidth, cap = StrokeCap.Round)
-                                                    )
-                                                }
-                                            }
-                                            Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                                                Text(
-                                                    text = "${(progress * 100).toInt()}%",
-                                                    style = MaterialTheme.typography.labelMedium.copy(
-                                                        fontWeight = FontWeight.Bold,
-                                                        fontSize = 11.sp
-                                                    ),
-                                                    color = MaterialTheme.colorScheme.onSurface
-                                                )
-                                                Text(
-                                                    text = "$doneSubs/$totalSubs",
-                                                    style = MaterialTheme.typography.labelSmall.copy(fontSize = 8.sp),
-                                                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                                                )
-                                            }
-                                        }
-                                    }
+                                    Icon(Icons.Filled.Edit, null, tint = Color.White, modifier = Modifier.size(18.dp))
                                 }
                             }
+
+                            // Horizontal divider to task
+                            HorizontalDivider(thickness = 0.5.dp, color = Color.Gray.copy(alpha = 0.15f))
                         }
                     }
 
-                    // Sub-tasks card with dividers – exact format from screenshot
+                    // Sub-tasks with dividers – light purple bg like screenshot
                     Card(
                         modifier = Modifier.fillMaxWidth(),
                         shape = RoundedCornerShape(20.dp),
-                        colors = CardDefaults.cardColors(
-                            containerColor = MaterialTheme.colorScheme.surfaceContainerHighest
-                        ),
-                        elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
+                        colors = CardDefaults.cardColors(containerColor = Color(0xFFF0EBFF)),
+                        elevation = CardDefaults.cardElevation(0.dp)
                     ) {
-                        Column(modifier = Modifier.fillMaxWidth()) {
+                        Column {
                             task.subTasks.forEachIndexed { index, sub ->
                                 Row(
                                     verticalAlignment = Alignment.CenterVertically,
                                     horizontalArrangement = Arrangement.spacedBy(12.dp),
-                                    modifier = Modifier
-                                        .fillMaxWidth()
-                                        .combinedClickable(
-                                            onClick = { viewModel.toggleSubTask(sub.id) }
-                                        )
+                                    modifier = Modifier.fillMaxWidth()
+                                        .combinedClickable(onClick = { viewModel.toggleSubTask(sub.id) })
                                         .padding(horizontal = 16.dp, vertical = 14.dp)
                                 ) {
                                     SubTaskRoundedCheckbox(
                                         checked = sub.isDone,
                                         onCheckedChange = { viewModel.toggleSubTask(sub.id) }
                                     )
-
-                                    Column(
-                                        modifier = Modifier.weight(1f),
-                                        verticalArrangement = Arrangement.spacedBy(2.dp)
-                                    ) {
+                                    Column(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
                                         Text(
                                             text = sub.title,
                                             style = MaterialTheme.typography.bodyMedium.copy(
                                                 textDecoration = if (sub.isDone) TextDecoration.LineThrough else null
                                             ),
-                                            color = if (sub.isDone) MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f)
-                                            else MaterialTheme.colorScheme.onSurface,
+                                            color = if (sub.isDone) Color.Gray.copy(alpha = 0.5f) else Color(0xFF101114),
                                             maxLines = 1,
                                             overflow = TextOverflow.Ellipsis
                                         )
                                         Text(
                                             text = "from: ${task.title}",
                                             style = MaterialTheme.typography.labelSmall,
-                                            color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f),
-                                            maxLines = 1,
-                                            overflow = TextOverflow.Ellipsis
+                                            color = Color.Gray.copy(alpha = 0.7f),
+                                            maxLines = 1
                                         )
                                     }
                                 }
-
-                                if (index < task.subTasks.size - 1) {
-                                    HorizontalDivider(
-                                        modifier = Modifier.padding(horizontal = 16.dp),
-                                        thickness = 0.5.dp,
-                                        color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.2f)
-                                    )
-                                }
-                            }
-
-                            // Divider before Add task CTA
-                            if (task.subTasks.isNotEmpty()) {
+                                // Horizontal divider for each sub-task
                                 HorizontalDivider(
                                     modifier = Modifier.padding(horizontal = 16.dp),
                                     thickness = 0.5.dp,
-                                    color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.2f)
+                                    color = Color.Gray.copy(alpha = 0.15f)
                                 )
                             }
 
-                            // Add task as CTA – blue, rounded bottom, divider above already
+                            // Add task CTA – blue, rounded bottom
                             Box(
-                                modifier = Modifier
-                                    .fillMaxWidth()
+                                modifier = Modifier.fillMaxWidth()
                                     .clip(RoundedCornerShape(bottomStart = 20.dp, bottomEnd = 20.dp))
                                     .background(AccentBlue)
                                     .clickable { showAddSheet = true }
@@ -344,12 +274,7 @@ fun TaskDetailScreen(
                                     verticalAlignment = Alignment.CenterVertically,
                                     horizontalArrangement = Arrangement.spacedBy(8.dp)
                                 ) {
-                                    Icon(
-                                        imageVector = Icons.Filled.Edit,
-                                        contentDescription = null,
-                                        tint = Color.White,
-                                        modifier = Modifier.size(18.dp)
-                                    )
+                                    Icon(Icons.Filled.Edit, null, tint = Color.White, modifier = Modifier.size(18.dp))
                                     Text(
                                         text = "Add task",
                                         style = MaterialTheme.typography.titleSmall.copy(
@@ -365,7 +290,6 @@ fun TaskDetailScreen(
                     Spacer(Modifier.height(100.dp))
                 }
 
-                // Add sub-task bottom sheet – rename like image bottom edit
                 if (showAddSheet) {
                     ModalBottomSheet(
                         onDismissRequest = { showAddSheet = false },
@@ -376,39 +300,14 @@ fun TaskDetailScreen(
                         dragHandle = null
                     ) {
                         Column(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(horizontal = 20.dp)
-                                .padding(bottom = 32.dp),
+                            modifier = Modifier.fillMaxWidth().padding(horizontal = 20.dp).padding(bottom = 32.dp),
                             verticalArrangement = Arrangement.spacedBy(16.dp)
                         ) {
-                            Box(
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .padding(top = 4.dp, bottom = 8.dp),
-                                contentAlignment = Alignment.Center
-                            ) {
-                                Box(
-                                    modifier = Modifier
-                                        .width(40.dp)
-                                        .height(4.dp)
-                                        .background(
-                                            Color.Gray.copy(alpha = 0.4f),
-                                            RoundedCornerShape(100.dp)
-                                        )
-                                )
+                            Box(modifier = Modifier.fillMaxWidth().padding(top = 4.dp, bottom = 8.dp), contentAlignment = Alignment.Center) {
+                                Box(modifier = Modifier.width(40.dp).height(4.dp).background(Color.Gray.copy(alpha = 0.4f), RoundedCornerShape(100.dp)))
                             }
-
-                            Text(
-                                text = "Add new task",
-                                style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold)
-                            )
-                            Text(
-                                text = "to ${task.title}",
-                                style = MaterialTheme.typography.bodySmall,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant
-                            )
-
+                            Text("Add new task", style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold))
+                            Text("to ${task.title}", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                             OutlinedTextField(
                                 value = newSubTaskTitle,
                                 onValueChange = { newSubTaskTitle = it },
@@ -418,23 +317,13 @@ fun TaskDetailScreen(
                                 shape = RoundedCornerShape(16.dp),
                                 singleLine = true
                             )
-
-                            Row(
-                                modifier = Modifier.fillMaxWidth(),
-                                horizontalArrangement = Arrangement.spacedBy(12.dp)
-                            ) {
-                                TextButton(
-                                    onClick = { showAddSheet = false },
-                                    modifier = Modifier.weight(1f),
-                                    shape = RoundedCornerShape(16.dp)
-                                ) {
+                            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                                TextButton(onClick = { showAddSheet = false }, modifier = Modifier.weight(1f), shape = RoundedCornerShape(16.dp)) {
                                     Text("Cancel")
                                 }
                                 Button(
                                     onClick = {
-                                        if (newSubTaskTitle.isNotBlank()) {
-                                            viewModel.addSubTask(newSubTaskTitle.trim())
-                                        }
+                                        if (newSubTaskTitle.isNotBlank()) viewModel.addSubTask(newSubTaskTitle.trim())
                                         showAddSheet = false
                                         newSubTaskTitle = ""
                                     },
@@ -446,19 +335,12 @@ fun TaskDetailScreen(
                                     Text("Add")
                                 }
                             }
-
                             Spacer(Modifier.height(16.dp))
                         }
                     }
                 }
             } ?: run {
-                Box(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .padding(padding)
-                        .padding(20.dp),
-                    contentAlignment = Alignment.Center
-                ) {
+                Box(modifier = Modifier.fillMaxSize().padding(padding).padding(20.dp), contentAlignment = Alignment.Center) {
                     Text("Task not found")
                 }
             }

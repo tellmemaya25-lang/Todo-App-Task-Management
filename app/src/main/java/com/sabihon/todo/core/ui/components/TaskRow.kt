@@ -142,169 +142,177 @@ fun TaskRow(
                 .fillMaxWidth()
                 .then(if (gradientBrush != null) Modifier.background(gradientBrush) else Modifier)
         ) {
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .combinedClickable(
-                        onClick = { onClick?.invoke() },
-                        onLongClick = { onLongClick?.invoke() ?: onMoreClick?.invoke() }
-                    )
-                    .padding(16.dp),
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                // Left: percentage – big as title+description, moved to left to avoid swipe overlap on right
-                Box(
+            Column(modifier = Modifier.fillMaxWidth()) {
+                Row(
                     modifier = Modifier
-                        .size(56.dp)
-                        .scale(checkScale),
-                    contentAlignment = Alignment.Center
+                        .fillMaxWidth()
+                        .combinedClickable(
+                            onClick = { onClick?.invoke() },
+                            onLongClick = { onLongClick?.invoke() ?: onMoreClick?.invoke() }
+                        )
+                        .padding(16.dp),
+                    verticalAlignment = Alignment.CenterVertically
                 ) {
-                    if (hasSubTasks) {
-                        Canvas(modifier = Modifier.size(56.dp)) {
-                            val strokeWidth = 4.dp.toPx()
-                            drawCircle(
-                                color = Color.Gray.copy(alpha = 0.15f),
-                                style = Stroke(width = strokeWidth)
-                            )
-                            if (animatedProgress > 0f) {
-                                drawArc(
-                                    color = AccentBlue,
-                                    startAngle = -90f,
-                                    sweepAngle = 360f * animatedProgress,
-                                    useCenter = false,
-                                    style = Stroke(width = strokeWidth, cap = StrokeCap.Round)
-                                )
-                            }
-                        }
-                        if (isCompleted || animatedProgress >= 1f) {
-                            Box(
-                                modifier = Modifier
-                                    .size(40.dp)
-                                    .clip(CircleShape)
-                                    .background(
-                                        Brush.radialGradient(
-                                            colors = listOf(AccentBlue, AccentBlue.copy(alpha = 0.85f))
-                                        )
-                                    ),
-                                contentAlignment = Alignment.Center
-                            ) {
-                                androidx.compose.material3.Icon(
-                                    imageVector = Icons.Filled.Check,
-                                    contentDescription = "Done",
-                                    tint = Color.White,
-                                    modifier = Modifier.size(20.dp)
-                                )
-                            }
-                        } else {
-                            Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                                Text(
-                                    text = "${(animatedProgress * 100).toInt()}%",
-                                    style = MaterialTheme.typography.titleSmall.copy(
-                                        fontWeight = FontWeight.Bold,
-                                        fontSize = 13.sp
-                                    ),
-                                    color = Color(0xFF101114)
-                                )
-                                Text(
-                                    text = "$doneSubs/$totalSubs",
-                                    style = MaterialTheme.typography.labelSmall.copy(fontSize = 9.sp),
-                                    color = Color(0xFF6B7280)
-                                )
-                            }
-                        }
-                    } else {
-                        if (isCompleted) {
-                            Box(
-                                modifier = Modifier
-                                    .size(48.dp)
-                                    .clip(CircleShape)
-                                    .background(
-                                        Brush.linearGradient(
-                                            colors = listOf(AccentBlue, Color(0xFF5A8CFF))
-                                        )
-                                    ),
-                                contentAlignment = Alignment.Center
-                            ) {
-                                androidx.compose.material3.Icon(
-                                    imageVector = Icons.Filled.Check,
-                                    contentDescription = "Completed",
-                                    tint = Color.White,
-                                    modifier = Modifier.size(24.dp)
-                                )
-                            }
-                        } else {
-                            Canvas(modifier = Modifier.size(48.dp)) {
+                    // Percentage in front of title – big as title+description, with animation
+                    Box(
+                        modifier = Modifier
+                            .size(56.dp)
+                            .scale(checkScale),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        if (hasSubTasks) {
+                            Canvas(modifier = Modifier.size(56.dp)) {
+                                val strokeWidth = 4.dp.toPx()
                                 drawCircle(
-                                    color = Color.Gray.copy(alpha = 0.35f),
-                                    style = Stroke(width = 2.dp.toPx())
+                                    color = Color.Gray.copy(alpha = 0.15f),
+                                    style = Stroke(width = strokeWidth)
                                 )
+                                if (animatedProgress > 0f) {
+                                    drawArc(
+                                        color = AccentBlue,
+                                        startAngle = -90f,
+                                        sweepAngle = 360f * animatedProgress,
+                                        useCenter = false,
+                                        style = Stroke(width = strokeWidth, cap = StrokeCap.Round)
+                                    )
+                                }
+                            }
+                            if (isCompleted || animatedProgress >= 1f) {
+                                Box(
+                                    modifier = Modifier
+                                        .size(40.dp)
+                                        .clip(CircleShape)
+                                        .background(
+                                            Brush.radialGradient(
+                                                colors = listOf(AccentBlue, AccentBlue.copy(alpha = 0.85f))
+                                            )
+                                        ),
+                                    contentAlignment = Alignment.Center
+                                ) {
+                                    androidx.compose.material3.Icon(
+                                        imageVector = Icons.Filled.Check,
+                                        contentDescription = "Done",
+                                        tint = Color.White,
+                                        modifier = Modifier.size(20.dp)
+                                    )
+                                }
+                            } else {
+                                Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                                    Text(
+                                        text = "${(animatedProgress * 100).toInt()}%",
+                                        style = MaterialTheme.typography.titleSmall.copy(
+                                            fontWeight = FontWeight.Bold,
+                                            fontSize = 13.sp
+                                        ),
+                                        color = Color(0xFF101114)
+                                    )
+                                    Text(
+                                        text = "$doneSubs/$totalSubs",
+                                        style = MaterialTheme.typography.labelSmall.copy(fontSize = 9.sp),
+                                        color = Color(0xFF6B7280)
+                                    )
+                                }
+                            }
+                        } else {
+                            if (isCompleted) {
+                                Box(
+                                    modifier = Modifier
+                                        .size(48.dp)
+                                        .clip(CircleShape)
+                                        .background(
+                                            Brush.linearGradient(
+                                                colors = listOf(AccentBlue, Color(0xFF5A8CFF))
+                                            )
+                                        ),
+                                    contentAlignment = Alignment.Center
+                                ) {
+                                    androidx.compose.material3.Icon(
+                                        imageVector = Icons.Filled.Check,
+                                        contentDescription = "Completed",
+                                        tint = Color.White,
+                                        modifier = Modifier.size(24.dp)
+                                    )
+                                }
+                            } else {
+                                Canvas(modifier = Modifier.size(48.dp)) {
+                                    drawCircle(
+                                        color = Color.Gray.copy(alpha = 0.35f),
+                                        style = Stroke(width = 2.dp.toPx())
+                                    )
+                                }
                             }
                         }
                     }
-                }
 
-                Spacer(Modifier.width(16.dp))
+                    Spacer(Modifier.width(16.dp))
 
-                // Right: title + short desc + status – strong hierarchy, no overlap with swipe right actions
-                Column(
-                    modifier = Modifier.weight(1f),
-                    verticalArrangement = Arrangement.spacedBy(4.dp)
-                ) {
-                    Text(
-                        text = title,
-                        style = MaterialTheme.typography.titleMedium.copy(
-                            fontWeight = FontWeight.Bold,
-                            fontSize = 16.sp,
-                            lineHeight = 20.sp,
-                            textDecoration = if (isCompleted) TextDecoration.LineThrough else null
-                        ),
-                        color = if (isCompleted) Color(0xFF6B7280).copy(alpha = 0.6f)
-                        else Color(0xFF101114),
-                        maxLines = 1,
-                        overflow = TextOverflow.Ellipsis
-                    )
-
-                    val shortDesc = when {
-                        !categoryLabel.isNullOrBlank() -> categoryLabel
-                        !description.isNullOrBlank() -> description.take(40)
-                        timeLabel.isNotBlank() && timeLabel != "Today" -> timeLabel
-                        else -> null
-                    }
-
-                    if (shortDesc != null) {
+                    // Title + short desc + status – strong hierarchy
+                    Column(
+                        modifier = Modifier.weight(1f),
+                        verticalArrangement = Arrangement.spacedBy(4.dp)
+                    ) {
                         Text(
-                            text = shortDesc,
-                            style = MaterialTheme.typography.bodySmall.copy(
-                                fontSize = 13.sp,
-                                fontWeight = FontWeight.Normal
+                            text = title,
+                            style = MaterialTheme.typography.titleMedium.copy(
+                                fontWeight = FontWeight.Bold,
+                                fontSize = 16.sp,
+                                lineHeight = 20.sp,
+                                textDecoration = if (isCompleted) TextDecoration.LineThrough else null
                             ),
-                            color = Color(0xFF6B7280).copy(alpha = 0.9f),
+                            color = if (isCompleted) Color(0xFF6B7280).copy(alpha = 0.6f)
+                            else Color(0xFF101114),
                             maxLines = 1,
                             overflow = TextOverflow.Ellipsis
                         )
-                    }
 
-                    Row(
-                        horizontalArrangement = Arrangement.spacedBy(6.dp),
-                        verticalAlignment = Alignment.CenterVertically,
-                        modifier = Modifier.padding(top = 2.dp)
-                    ) {
-                        Box(
-                            modifier = Modifier
-                                .size(6.dp)
-                                .clip(CircleShape)
-                                .background(statusColor)
-                        )
-                        Text(
-                            text = "$statusText • $doneSubs/$totalSubs",
-                            style = MaterialTheme.typography.labelSmall.copy(
-                                fontSize = 11.sp,
-                                fontWeight = FontWeight.Medium
-                            ),
-                            color = statusColor
-                        )
+                        val shortDesc = when {
+                            !categoryLabel.isNullOrBlank() -> categoryLabel
+                            !description.isNullOrBlank() -> description.take(40)
+                            timeLabel.isNotBlank() && timeLabel != "Today" -> timeLabel
+                            else -> null
+                        }
+
+                        if (shortDesc != null) {
+                            Text(
+                                text = shortDesc,
+                                style = MaterialTheme.typography.bodySmall.copy(
+                                    fontSize = 13.sp,
+                                    fontWeight = FontWeight.Normal
+                                ),
+                                color = Color(0xFF6B7280).copy(alpha = 0.9f),
+                                maxLines = 1,
+                                overflow = TextOverflow.Ellipsis
+                            )
+                        }
+
+                        Row(
+                            horizontalArrangement = Arrangement.spacedBy(6.dp),
+                            verticalAlignment = Alignment.CenterVertically,
+                            modifier = Modifier.padding(top = 2.dp)
+                        ) {
+                            Box(
+                                modifier = Modifier
+                                    .size(6.dp)
+                                    .clip(CircleShape)
+                                    .background(statusColor)
+                            )
+                            Text(
+                                text = "$statusText • $doneSubs/$totalSubs",
+                                style = MaterialTheme.typography.labelSmall.copy(
+                                    fontSize = 11.sp,
+                                    fontWeight = FontWeight.Medium
+                                ),
+                                color = statusColor
+                            )
+                        }
                     }
                 }
+
+                // Horizontal divider to task – per request add horizontal dividers to task
+                androidx.compose.material3.HorizontalDivider(
+                    thickness = 0.5.dp,
+                    color = Color.Gray.copy(alpha = 0.12f)
+                )
             }
         }
     }
