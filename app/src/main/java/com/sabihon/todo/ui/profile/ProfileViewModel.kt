@@ -1,5 +1,6 @@
 package com.sabihon.todo.ui.profile
 
+import android.content.Context
 import android.net.Uri
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
@@ -12,6 +13,8 @@ import com.sabihon.todo.core.datastore.ThemePreferences
 import com.sabihon.todo.core.datastore.ThemePref
 import com.sabihon.todo.domain.repository.AuthRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
+import dagger.hilt.android.qualifiers.ApplicationContext
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -19,6 +22,9 @@ import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.tasks.await
+import kotlinx.coroutines.withContext
+import java.io.File
+import java.io.FileOutputStream
 import javax.inject.Inject
 
 data class ProfileUiState(
@@ -26,6 +32,7 @@ data class ProfileUiState(
     val email: String = "",
     val photoUrl: String? = null,
     val localPhotoUri: Uri? = null,
+    val localPhotoPath: String? = null,
     val theme: ThemePref = ThemePref.SYSTEM,
     val isLoading: Boolean = false,
     val error: String? = null,
@@ -41,6 +48,7 @@ data class ProfileUiState(
 
 @HiltViewModel
 class ProfileViewModel @Inject constructor(
+    @ApplicationContext private val appContext: Context,
     private val auth: FirebaseAuth,
     private val firestore: FirebaseFirestore,
     private val storage: FirebaseStorage,
@@ -61,6 +69,10 @@ class ProfileViewModel @Inject constructor(
         viewModelScope.launch {
             try {
                 val uid = user?.uid
+                // Try to load local photo first
+                val localPath = loadLocalPhotoPath(uid)
+                val localUri = localPath?.let { File(it).takeIf { f -> f.exists() }?.let { Uri.fromFile(it) } }
+
                 if (uid != null) {
                     val doc = firestore.collection("users").document(uid).get().await()
                     val firestorePhoto = doc.getString("photoUrl")
@@ -69,7 +81,9 @@ class ProfileViewModel @Inject constructor(
                         it.copy(
                             displayName = firestoreName ?: user?.displayName ?: "",
                             email = user?.email ?: "",
-                            photoUrl = firestorePhoto ?: user?.photoUrl?.toString()
+                            photoUrl = firestorePhoto ?: user?.photoUrl?.toString(),
+                            localPhotoPath = localPath,
+                            localPhotoUri = localUri ?: it.localPhotoUri
                         )
                     }
                 } else {
@@ -77,7 +91,9 @@ class ProfileViewModel @Inject constructor(
                         it.copy(
                             displayName = user?.displayName ?: "",
                             email = user?.email ?: "",
-                            photoUrl = user?.photoUrl?.toString()
+                            photoUrl = user?.photoUrl?.toString(),
+                            localPhotoPath = localPath,
+                            localPhotoUri = localUri ?: it.localPhotoUri
                         )
                     }
                 }
@@ -91,6 +107,32 @@ class ProfileViewModel @Inject constructor(
                     )
                 }
             }
+        }
+    }
+
+    private fun getLocalPhotoFile(uid: String?): File {
+        val dir = File(appContext.filesDir, "profile_images").apply { mkdirs() }
+        return File(dir, "${uid ?: "default"}_profile.jpg")
+    }
+
+    private fun loadLocalPhotoPath(uid: String?): String? {
+        return try {
+            val file = getLocalPhotoFile(uid)
+            if (file.exists()) file.absolutePath else null
+        } catch (_: Exception) { null }
+    }
+
+    private suspend fun saveImageLocally(uri: Uri, uid: String?): String? = withContext(Dispatchers.IO) {
+        try {
+            val input = appContext.contentResolver.openInputStream(uri) ?: return@withContext null
+            val outFile = getLocalPhotoFile(uid)
+            FileOutputStream(outFile).use { output ->
+                input.copyTo(output)
+            }
+            input.close()
+            outFile.absolutePath
+        } catch (e: Exception) {
+            null
         }
     }
 
@@ -108,6 +150,14 @@ class ProfileViewModel @Inject constructor(
 
     fun onPhotoPicked(uri: Uri) {
         _uiState.update { it.copy(localPhotoUri = uri, error = null) }
+        // Store locally immediately for offline access + then upload to Firebase
+        viewModelScope.launch {
+            val uid = auth.currentUser?.uid
+            val localPath = saveImageLocally(uri, uid)
+            if (localPath != null) {
+                _uiState.update { it.copy(localPhotoPath = localPath, localPhotoUri = Uri.fromFile(File(localPath))) }
+            }
+        }
         uploadPhoto(uri)
     }
 
