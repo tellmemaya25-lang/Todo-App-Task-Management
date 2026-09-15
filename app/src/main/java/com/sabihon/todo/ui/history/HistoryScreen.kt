@@ -10,7 +10,6 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -34,10 +33,13 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
-import com.sabihon.todo.core.ui.components.TaskRow
+import com.sabihon.todo.core.ui.components.PillChip
 import com.sabihon.todo.core.ui.theme.AccentBlue
+import com.sabihon.todo.domain.model.Task
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -72,7 +74,8 @@ fun HistoryScreen(
                 Card(
                     modifier = Modifier.fillMaxWidth(),
                     shape = RoundedCornerShape(24.dp),
-                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)
+                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant),
+                    elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
                 ) {
                     Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
                         Text("Statistics", style = MaterialTheme.typography.titleLarge)
@@ -81,7 +84,6 @@ fun HistoryScreen(
                             StatItem(label = "Completion", value = "${(uiState.stats.completionRate * 100).toInt()}%")
                             StatItem(label = "Streak", value = "${uiState.stats.currentStreak} days")
                         }
-                        // Simple 7-day bar chart drawn with Canvas
                         Text("Last 7 days", style = MaterialTheme.typography.labelMedium)
                         Box(
                             modifier = Modifier
@@ -110,29 +112,19 @@ fun HistoryScreen(
                 }
             }
 
-            // Grouped tasks
+            // Grouped tasks – now showing title, description, status
             uiState.grouped.forEach { (groupName, tasks) ->
                 if (tasks.isNotEmpty()) {
                     item {
                         Text(groupName, style = MaterialTheme.typography.titleMedium, modifier = Modifier.padding(top = 8.dp))
                     }
                     items(tasks, key = { it.id }) { task ->
-                        Column {
-                            TaskRow(
-                                title = task.title,
-                                isCompleted = task.isCompleted,
-                                timeLabel = task.completedAt?.let { java.text.SimpleDateFormat("h:mm a").format(java.util.Date(it)) } ?: "Completed",
-                                onClick = { onTaskClick(task.id) }
-                            )
-                            Row(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.padding(start = 60.dp)) {
-                                TextButton(onClick = { viewModel.restoreTask(task.id) }) {
-                                    Text("Restore")
-                                }
-                                TextButton(onClick = { viewModel.permanentlyDelete(task.id) }) {
-                                    Text("Delete", color = Color.Red)
-                                }
-                            }
-                        }
+                        HistoryTaskCard(
+                            task = task,
+                            onClick = { onTaskClick(task.id) },
+                            onRestore = { viewModel.restoreTask(task.id) },
+                            onDelete = { viewModel.permanentlyDelete(task.id) }
+                        )
                     }
                 }
             }
@@ -154,7 +146,118 @@ fun HistoryScreen(
                 }
             }
 
-            item { Spacer(Modifier.height(32.dp)) }
+            item { Spacer(Modifier.height(100.dp)) }
+        }
+    }
+}
+
+@Composable
+private fun HistoryTaskCard(
+    task: Task,
+    onClick: () -> Unit,
+    onRestore: () -> Unit,
+    onDelete: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+    val statusText = when {
+        task.isDeleted -> "Deleted"
+        task.isCompleted -> "Completed"
+        else -> "Pending"
+    }
+    val statusColor = when {
+        task.isDeleted -> MaterialTheme.colorScheme.errorContainer
+        task.isCompleted -> MaterialTheme.colorScheme.primaryContainer
+        else -> MaterialTheme.colorScheme.surface
+    }
+    val statusContentColor = when {
+        task.isDeleted -> MaterialTheme.colorScheme.onErrorContainer
+        task.isCompleted -> MaterialTheme.colorScheme.onPrimaryContainer
+        else -> MaterialTheme.colorScheme.onSurfaceVariant
+    }
+
+    Card(
+        modifier = modifier
+            .fillMaxWidth()
+            .padding(vertical = 6.dp),
+        shape = RoundedCornerShape(24.dp),
+        colors = CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.6f)
+        ),
+        elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
+        onClick = onClick
+    ) {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(16.dp),
+            verticalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
+            // Title – required
+            Text(
+                text = task.title,
+                style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
+                color = MaterialTheme.colorScheme.onSurface,
+                maxLines = 2,
+                overflow = TextOverflow.Ellipsis
+            )
+
+            // Description – required
+            if (task.description.isNotBlank()) {
+                Text(
+                    text = task.description,
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    maxLines = 3,
+                    overflow = TextOverflow.Ellipsis
+                )
+            } else {
+                Text(
+                    text = "No description",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f)
+                )
+            }
+
+            // Status + time row
+            Row(
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                verticalAlignment = Alignment.CenterVertically,
+                modifier = Modifier.padding(top = 4.dp)
+            ) {
+                // Status chip – 100.dp pill
+                PillChip(
+                    text = statusText,
+                    containerColor = statusColor,
+                    contentColor = statusContentColor
+                )
+                // Completed time
+                task.completedAt?.let {
+                    Text(
+                        text = java.text.SimpleDateFormat("MMM d, h:mm a").format(java.util.Date(it)),
+                        style = MaterialTheme.typography.labelSmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
+            }
+
+            // Actions – 16.dp buttons
+            Row(
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                modifier = Modifier.padding(top = 4.dp)
+            ) {
+                TextButton(
+                    onClick = onRestore,
+                    shape = RoundedCornerShape(16.dp)
+                ) {
+                    Text("Restore", color = AccentBlue, style = MaterialTheme.typography.labelMedium)
+                }
+                TextButton(
+                    onClick = onDelete,
+                    shape = RoundedCornerShape(16.dp)
+                ) {
+                    Text("Delete", color = Color.Red, style = MaterialTheme.typography.labelMedium)
+                }
+            }
         }
     }
 }
