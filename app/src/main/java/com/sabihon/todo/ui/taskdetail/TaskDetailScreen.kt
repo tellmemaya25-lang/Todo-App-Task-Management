@@ -391,8 +391,8 @@ fun TaskDetailScreen(
                                 }
                                 HorizontalDivider(
                                     modifier = Modifier.padding(horizontal = 16.dp),
-                                    thickness = 0.5.dp,
-                                    color = if (isDark) MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f) else Color.Gray.copy(alpha = 0.12f)
+                                    thickness = 0.8.dp,
+                                    color = Color.Gray.copy(alpha = 0.3f)
                                 )
                             }
                             }
