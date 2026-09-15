@@ -102,13 +102,13 @@ fun TaskRow(
     val statusColor = when {
         effectiveCompleted -> Color(0xFF4CAF50)
         hasSubTasks && animatedProgress > 0f -> AccentBlue
-        else -> MaterialTheme.colorScheme.onSurfaceVariant
+        else -> Color(0xFF6B7280)
     }
 
-    // Background #e3f5ff per request, with gradient when done – dark mode adapted
-    val isDark = isSystemInDarkTheme()
-    val baseBackground = if (isDark) Color(0xFF1E2A44) else Color(0xFFE3F5FF)
-    val completedBackground = if (isDark) Color(0xFF24324F) else Color(0xFFC7DCFF)
+    // Background #e3f5ff for bg of task per request – use #e3f5ff always for color contrast fix, even in dark mode
+    // This ensures task cards are #e3f5ff light blue on both light and dark, with dark text for contrast
+    val baseBackground = Color(0xFFE3F5FF)
+    val completedBackground = Color(0xFFC7DCFF)
 
     val containerColor by animateColorAsState(
         targetValue = if (effectiveCompleted) completedBackground else baseBackground,
@@ -210,12 +210,12 @@ fun TaskRow(
                                             fontWeight = FontWeight.Bold,
                                             fontSize = 13.sp
                                         ),
-                                        color = MaterialTheme.colorScheme.onSurface
+                                        color = Color(0xFF101114)
                                     )
                                     Text(
                                         text = "$doneSubs/$totalSubs",
                                         style = MaterialTheme.typography.labelSmall.copy(fontSize = 9.sp),
-                                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                                        color = Color(0xFF6B7280)
                                     )
                                 }
                             }
@@ -265,8 +265,7 @@ fun TaskRow(
                                 lineHeight = 20.sp,
                                 textDecoration = if (effectiveCompleted) TextDecoration.LineThrough else null
                             ),
-                            color = if (effectiveCompleted) MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f)
-                            else MaterialTheme.colorScheme.onSurface,
+                            color = if (effectiveCompleted) Color(0xFF6B7280).copy(alpha = 0.6f) else Color(0xFF101114),
                             maxLines = 1,
                             overflow = TextOverflow.Ellipsis
                         )
@@ -286,7 +285,7 @@ fun TaskRow(
                                     fontWeight = FontWeight.Normal,
                                     lineHeight = 16.sp
                                 ),
-                                color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.9f),
+                                color = Color(0xFF6B7280).copy(alpha = 0.9f),
                                 maxLines = 2,
                                 overflow = TextOverflow.Ellipsis
                             )

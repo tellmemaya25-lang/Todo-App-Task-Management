@@ -43,12 +43,12 @@ import kotlinx.coroutines.launch
 import kotlin.math.roundToInt
 
 /**
- * Swipeable task row – home page swipe right to edit/delete + dark mode adapted
+ * Swipeable task row – home page swipe right to edit/delete + fix color contrast use #e3f5ff for bg of task
  * - Supports BOTH swipe left and swipe right to reveal edit/delete per request
  * - Gesture: draggable horizontal, thresholds ±80dp, reveal 160dp
  * - Icons centered vertically fill height 56dp, no bg, AccentBlue / #E57373, 24.dp clip outer
  * - Background aligned to revealed side so icons are visible (fix center not visible with 140dp)
- * - Dark mode: background #1E2A44 dark vs #E3F5FF light, uses MaterialTheme surfaceVariant
+ * - Bg of task #e3f5ff always per request for color contrast fix, even in dark mode – dark text on light bg ensures contrast
  * - Tap to close when opened, click closes then triggers action
  */
 @Composable
@@ -87,8 +87,8 @@ fun SwipeableTaskRow(
         }
     }
 
-    val isDark = isSystemInDarkTheme()
-    val swipeBg = if (isDark) Color(0xFF1E2A44) else Color(0xFFE3F5FF)
+    // Bg of task #e3f5ff always per request for color contrast
+    val swipeBg = Color(0xFFE3F5FF)
     Box(
         modifier = modifier
             .fillMaxWidth()
@@ -98,7 +98,7 @@ fun SwipeableTaskRow(
     ) {
         // Background – edit/delete, visible on swipe right (left side) and swipe left (right side)
         // Aligned to revealed edge so icons are visible even with 160dp offset, centered vertically 56dp
-        // Dark mode adapted: uses swipeBg dark #1E2A44
+        // Bg #e3f5ff always for contrast
         val bgAlignment = when {
             offsetX.value > 10f -> Alignment.CenterStart
             offsetX.value < -10f -> Alignment.CenterEnd
