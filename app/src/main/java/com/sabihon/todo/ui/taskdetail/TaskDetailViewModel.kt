@@ -49,7 +49,10 @@ class TaskDetailViewModel @Inject constructor(
             val updatedSubs = currentTask.subTasks.map {
                 if (it.id == subTaskId) it.copy(isDone = !it.isDone) else it
             }
-            val updatedTask = currentTask.copy(subTasks = updatedSubs)
+            // Dont mark as complete when all task are not done – only complete if all sub-tasks done
+            val allDone = updatedSubs.isNotEmpty() && updatedSubs.all { it.isDone }
+            val shouldBeCompleted = if (updatedSubs.isEmpty()) currentTask.isCompleted else allDone
+            val updatedTask = currentTask.copy(subTasks = updatedSubs, isCompleted = shouldBeCompleted)
             updateTaskUseCase(updatedTask)
         }
     }

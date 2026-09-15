@@ -191,7 +191,9 @@ fun SwipeableTaskRow(
                         scope.launch {
                             when {
                                 offsetX.value > startThreshold / 2 -> {
-                                    if (!isCompleted) {
+                                    // Dont mark as complete when all task are not done
+                                    val hasIncomplete = subTasks.isNotEmpty() && subTasks.any { !it.isDone }
+                                    if (!isCompleted && !hasIncomplete) {
                                         onToggleComplete?.invoke(true)
                                     }
                                     offsetX.animateTo(0f, spring(dampingRatio = Spring.DampingRatioMediumBouncy))

@@ -77,6 +77,8 @@ fun TaskRow(
     val doneSubs = subTasks.count { it.isDone }
     val rawProgress = if (totalSubs > 0) doneSubs.toFloat() / totalSubs else if (isCompleted) 1f else 0f
     val hasSubTasks = totalSubs > 0
+    // Dont mark as complete when all task are not done – effective completion requires all sub-tasks done
+    val effectiveCompleted = if (hasSubTasks) doneSubs == totalSubs else isCompleted
 
     // Animated percentage – for animation when progress changes
     var targetProgress by remember { mutableFloatStateOf(0f) }
@@ -90,13 +92,13 @@ fun TaskRow(
     )
 
     val statusText = when {
-        isCompleted -> "Completed"
+        effectiveCompleted -> "Completed"
         hasSubTasks && animatedProgress > 0f && animatedProgress < 1f -> "In Progress"
         hasSubTasks && animatedProgress == 0f -> "Pending"
         else -> "Pending"
     }
     val statusColor = when {
-        isCompleted -> Color(0xFF4CAF50)
+        effectiveCompleted -> Color(0xFF4CAF50)
         hasSubTasks && animatedProgress > 0f -> AccentBlue
         else -> MaterialTheme.colorScheme.onSurfaceVariant
     }
@@ -106,13 +108,13 @@ fun TaskRow(
     val completedBackground = Color(0xFFC7DCFF)
 
     val containerColor by animateColorAsState(
-        targetValue = if (isCompleted) completedBackground else baseBackground,
+        targetValue = if (effectiveCompleted) completedBackground else baseBackground,
         animationSpec = tween(400),
         label = "containerColor"
     )
 
     val checkScale by animateFloatAsState(
-        targetValue = if (isCompleted) 1.1f else 1f,
+        targetValue = if (effectiveCompleted) 1.1f else 1f,
         animationSpec = spring(
             dampingRatio = Spring.DampingRatioMediumBouncy,
             stiffness = Spring.StiffnessMedium
@@ -120,7 +122,7 @@ fun TaskRow(
         label = "checkScale"
     )
 
-    val gradientBrush = if (isCompleted) {
+    val gradientBrush = if (effectiveCompleted) {
         Brush.linearGradient(
             colors = listOf(
                 AccentBlue.copy(alpha = 0.2f),
@@ -178,7 +180,7 @@ fun TaskRow(
                                     )
                                 }
                             }
-                            if (isCompleted || animatedProgress >= 1f) {
+                            if (effectiveCompleted) {
                                 Box(
                                     modifier = Modifier
                                         .size(40.dp)
@@ -215,7 +217,7 @@ fun TaskRow(
                                 }
                             }
                         } else {
-                            if (isCompleted) {
+                            if (effectiveCompleted) {
                                 Box(
                                     modifier = Modifier
                                         .size(48.dp)
@@ -258,9 +260,9 @@ fun TaskRow(
                                 fontWeight = FontWeight.Bold,
                                 fontSize = 16.sp,
                                 lineHeight = 20.sp,
-                                textDecoration = if (isCompleted) TextDecoration.LineThrough else null
+                                textDecoration = if (effectiveCompleted) TextDecoration.LineThrough else null
                             ),
-                            color = if (isCompleted) Color(0xFF6B7280).copy(alpha = 0.6f)
+                            color = if (effectiveCompleted) Color(0xFF6B7280).copy(alpha = 0.6f)
                             else Color(0xFF101114),
                             maxLines = 1,
                             overflow = TextOverflow.Ellipsis
