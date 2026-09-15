@@ -89,7 +89,7 @@ fun SearchScreen(
             )
             Spacer(Modifier.height(12.dp))
 
-            // Recent searches suggestions – show when query empty or as suggestions
+            // Recent searches suggestions – reduced to important ones as requested
             if (uiState.query.isBlank() && uiState.recentSearches.isNotEmpty()) {
                 Text("Recent searches", style = MaterialTheme.typography.titleSmall)
                 Spacer(Modifier.height(8.dp))
@@ -99,7 +99,8 @@ fun SearchScreen(
                     colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f))
                 ) {
                     Column {
-                        uiState.recentSearches.take(5).forEach { recent ->
+                        // Reduced to 2 most important recent searches
+                        uiState.recentSearches.take(2).forEach { recent ->
                             ListItem(
                                 headlineContent = { Text(recent) },
                                 leadingContent = { Icon(Icons.Filled.History, contentDescription = null) },
@@ -109,18 +110,12 @@ fun SearchScreen(
                                 }
                             )
                         }
-                        if (uiState.recentSearches.size > 5) {
-                            TextButton(
-                                onClick = { /* clear recent */ },
-                                modifier = Modifier.padding(horizontal = 8.dp)
-                            ) { Text("Clear history") }
-                        }
                     }
                 }
                 Spacer(Modifier.height(12.dp))
             } else if (uiState.query.isNotBlank() && uiState.recentSearches.isNotEmpty()) {
-                // Show filtered suggestions based on query
-                val suggestions = uiState.recentSearches.filter { it.contains(uiState.query, ignoreCase = true) }.take(3)
+                // Show only 1-2 filtered suggestions based on query – reduced
+                val suggestions = uiState.recentSearches.filter { it.contains(uiState.query, ignoreCase = true) }.take(2)
                 if (suggestions.isNotEmpty()) {
                     Text("Suggestions", style = MaterialTheme.typography.titleSmall)
                     Spacer(Modifier.height(4.dp))

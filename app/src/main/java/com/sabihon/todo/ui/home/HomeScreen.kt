@@ -1,23 +1,18 @@
 package com.sabihon.todo.ui.home
 
 import androidx.compose.animation.animateContentSize
-import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.FilterList
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.DropdownMenu
@@ -43,9 +38,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
@@ -73,7 +66,6 @@ fun HomeScreen(
 ) {
     val uiState by viewModel.uiState.collectAsState()
     val snackbarHostState = remember { SnackbarHostState() }
-    var showFilterMenu by remember { mutableStateOf(false) }
 
     LaunchedEffect(uiState.showUndo) {
         if (uiState.showUndo) {
@@ -107,34 +99,7 @@ fun HomeScreen(
                     }
                 },
                 actions = {
-                    // Filtering Task top right
-                    Box {
-                        IconButton(onClick = { showFilterMenu = true }) {
-                            Icon(Icons.Filled.FilterList, contentDescription = "Filter tasks")
-                        }
-                        DropdownMenu(expanded = showFilterMenu, onDismissRequest = { showFilterMenu = false }) {
-                            DropdownMenuItem(text = { Text("Today") }, onClick = {
-                                viewModel.onAction(HomeAction.SetFilter(HomeFilter.TODAY))
-                                showFilterMenu = false
-                            })
-                            DropdownMenuItem(text = { Text("Pending") }, onClick = {
-                                viewModel.onAction(HomeAction.SetFilter(HomeFilter.PENDING))
-                                showFilterMenu = false
-                            })
-                            DropdownMenuItem(text = { Text("Completed") }, onClick = {
-                                viewModel.onAction(HomeAction.SetFilter(HomeFilter.COMPLETED))
-                                showFilterMenu = false
-                            })
-                            DropdownMenuItem(text = { Text("All") }, onClick = {
-                                viewModel.onAction(HomeAction.SetFilter(HomeFilter.ALL))
-                                showFilterMenu = false
-                            })
-                            DropdownMenuItem(text = { Text("Overdue") }, onClick = {
-                                viewModel.onAction(HomeAction.SetFilter(HomeFilter.OVERDUE))
-                                showFilterMenu = false
-                            })
-                        }
-                    }
+                    // Filter icon removed as requested – filtering via chips below
                     IconButton(onClick = onNavigateToSearch) {
                         Icon(Icons.Filled.Search, contentDescription = "Search")
                     }
@@ -157,7 +122,7 @@ fun HomeScreen(
                     .padding(innerPadding),
                 verticalArrangement = Arrangement.spacedBy(0.dp)
             ) {
-                // 5 Chips: Today, Pending, Completed, All, Overdue – matching reference image + user request
+                // 5 Chips: Today, Pending, Completed, All, Overdue
                 item {
                     LazyRow(
                         modifier = Modifier
@@ -210,14 +175,13 @@ fun HomeScreen(
                                 HomeFilter.COMPLETED -> "No completed tasks yet"
                                 HomeFilter.PENDING -> "No pending tasks – you're all caught up!"
                                 HomeFilter.ALL -> "Tap + to create your first task and stay organized!"
-                                HomeFilter.OVERDUE -> "No overdue tasks – great job staying on track!"
+                                HomeFilter.OVERDUE -> "No overdue tasks – great job!"
                             }
                         )
                     }
                 } else {
                     items(uiState.filteredTasks, key = { it.id }) { task ->
                         var showMenu by remember { mutableStateOf(false) }
-
                         Box(modifier = Modifier.animateContentSize()) {
                             TaskRow(
                                 title = task.title,
@@ -237,18 +201,14 @@ fun HomeScreen(
                                 onMoreClick = { showMenu = true },
                                 onClick = { onNavigateToTaskDetail(task.id) }
                             )
-                            // Submenu: Edit, Delete, Mark Done – fixed
                             DropdownMenu(
                                 expanded = showMenu,
                                 onDismissRequest = { showMenu = false }
                             ) {
-                                DropdownMenuItem(
-                                    text = { Text("Edit") },
-                                    onClick = {
-                                        showMenu = false
-                                        onNavigateToTaskDetail(task.id)
-                                    }
-                                )
+                                DropdownMenuItem(text = { Text("Edit") }, onClick = {
+                                    showMenu = false
+                                    onNavigateToTaskDetail(task.id)
+                                })
                                 DropdownMenuItem(
                                     text = { Text(if (task.isCompleted) "Mark Pending" else "Mark Done") },
                                     onClick = {
@@ -256,21 +216,16 @@ fun HomeScreen(
                                         viewModel.onAction(HomeAction.ToggleComplete(task.id, !task.isCompleted))
                                     }
                                 )
-                                DropdownMenuItem(
-                                    text = { Text("Delete") },
-                                    onClick = {
-                                        showMenu = false
-                                        viewModel.onAction(HomeAction.DeleteTask(task))
-                                    }
-                                )
+                                DropdownMenuItem(text = { Text("Delete") }, onClick = {
+                                    showMenu = false
+                                    viewModel.onAction(HomeAction.DeleteTask(task))
+                                })
                             }
                         }
                     }
                 }
 
-                item {
-                    Spacer(Modifier.height(100.dp))
-                }
+                item { Spacer(Modifier.height(100.dp)) }
             }
         }
     }

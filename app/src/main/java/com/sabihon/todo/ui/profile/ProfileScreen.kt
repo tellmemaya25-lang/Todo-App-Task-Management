@@ -9,7 +9,6 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -17,15 +16,15 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.CameraAlt
-import androidx.compose.material.icons.filled.Person
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.FilterChip
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -35,6 +34,7 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -46,10 +46,10 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import coil.compose.AsyncImage
-import com.sabihon.todo.core.datastore.ThemePref
 import com.sabihon.todo.core.ui.components.ConfirmDialog
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -62,25 +62,24 @@ fun ProfileScreen(
     val uiState by viewModel.uiState.collectAsState()
     val snackbarHostState = remember { SnackbarHostState() }
 
-    // Image picker launcher
     val photoPickerLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.PickVisualMedia()
     ) { uri: Uri? ->
-        if (uri != null) {
-            viewModel.onPhotoPicked(uri)
-        }
+        if (uri != null) viewModel.onPhotoPicked(uri)
     }
 
     val fallbackPickerLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.GetContent()
     ) { uri: Uri? ->
-        if (uri != null) {
-            viewModel.onPhotoPicked(uri)
-        }
+        if (uri != null) viewModel.onPhotoPicked(uri)
     }
 
-    LaunchedEffect(uiState.error) {
+    LaunchedEffect(uiState.error, uiState.successMessage) {
         uiState.error?.let {
+            snackbarHostState.showSnackbar(it)
+            viewModel.clearError()
+        }
+        uiState.successMessage?.let {
             snackbarHostState.showSnackbar(it)
             viewModel.clearError()
         }
@@ -106,7 +105,7 @@ fun ProfileScreen(
                 .padding(20.dp),
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
-            // Avatar with edit capability – moved profile icon here as requested
+            // Avatar with edit
             Box(
                 modifier = Modifier
                     .size(100.dp)
@@ -128,35 +127,26 @@ fun ProfileScreen(
                     contentAlignment = Alignment.Center
                 ) {
                     when {
-                        uiState.isUploadingPhoto -> {
-                            CircularProgressIndicator(modifier = Modifier.size(40.dp))
-                        }
-                        uiState.localPhotoUri != null -> {
-                            AsyncImage(
-                                model = uiState.localPhotoUri,
-                                contentDescription = "Profile photo",
-                                modifier = Modifier.fillMaxSize().clip(CircleShape),
-                                contentScale = ContentScale.Crop
-                            )
-                        }
-                        uiState.photoUrl != null -> {
-                            AsyncImage(
-                                model = uiState.photoUrl,
-                                contentDescription = "Profile photo",
-                                modifier = Modifier.fillMaxSize().clip(CircleShape),
-                                contentScale = ContentScale.Crop
-                            )
-                        }
-                        else -> {
-                            Text(
-                                text = uiState.displayName.take(2).uppercase().ifBlank { "U" },
-                                style = MaterialTheme.typography.headlineMedium,
-                                color = MaterialTheme.colorScheme.onPrimaryContainer
-                            )
-                        }
+                        uiState.isUploadingPhoto -> CircularProgressIndicator(modifier = Modifier.size(40.dp))
+                        uiState.localPhotoUri != null -> AsyncImage(
+                            model = uiState.localPhotoUri,
+                            contentDescription = "Profile photo",
+                            modifier = Modifier.fillMaxSize().clip(CircleShape),
+                            contentScale = ContentScale.Crop
+                        )
+                        uiState.photoUrl != null -> AsyncImage(
+                            model = uiState.photoUrl,
+                            contentDescription = "Profile photo",
+                            modifier = Modifier.fillMaxSize().clip(CircleShape),
+                            contentScale = ContentScale.Crop
+                        )
+                        else -> Text(
+                            text = uiState.displayName.take(2).uppercase().ifBlank { "U" },
+                            style = MaterialTheme.typography.headlineMedium,
+                            color = MaterialTheme.colorScheme.onPrimaryContainer
+                        )
                     }
                 }
-                // Camera edit icon overlay
                 Box(
                     modifier = Modifier
                         .size(32.dp)
@@ -172,12 +162,7 @@ fun ProfileScreen(
                         },
                     contentAlignment = Alignment.Center
                 ) {
-                    Icon(
-                        Icons.Filled.CameraAlt,
-                        contentDescription = "Edit photo",
-                        tint = Color.White,
-                        modifier = Modifier.size(18.dp)
-                    )
+                    Icon(Icons.Filled.CameraAlt, contentDescription = "Edit photo", tint = Color.White, modifier = Modifier.size(18.dp))
                 }
             }
 
@@ -194,13 +179,13 @@ fun ProfileScreen(
                 label = { Text("Display Name") },
                 modifier = Modifier.fillMaxWidth(),
                 singleLine = true,
-                shape = androidx.compose.foundation.shape.RoundedCornerShape(16.dp)
+                shape = RoundedCornerShape(16.dp)
             )
             Button(
                 onClick = { viewModel.saveDisplayName() },
                 modifier = Modifier.fillMaxWidth(),
                 enabled = !uiState.isLoading,
-                shape = androidx.compose.foundation.shape.RoundedCornerShape(16.dp)
+                shape = RoundedCornerShape(16.dp)
             ) {
                 if (uiState.isLoading) CircularProgressIndicator(modifier = Modifier.size(20.dp))
                 else Text("Save Name")
@@ -213,38 +198,30 @@ fun ProfileScreen(
                 modifier = Modifier.fillMaxWidth(),
                 readOnly = true,
                 singleLine = true,
-                shape = androidx.compose.foundation.shape.RoundedCornerShape(16.dp)
+                shape = RoundedCornerShape(16.dp)
             )
 
             Spacer(Modifier.height(8.dp))
-            Text("Theme", style = MaterialTheme.typography.titleMedium)
-            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                FilterChip(
-                    selected = uiState.theme == ThemePref.SYSTEM,
-                    onClick = { viewModel.setTheme(ThemePref.SYSTEM) },
-                    label = { Text("System") }
-                )
-                FilterChip(
-                    selected = uiState.theme == ThemePref.LIGHT,
-                    onClick = { viewModel.setTheme(ThemePref.LIGHT) },
-                    label = { Text("Light") }
-                )
-                FilterChip(
-                    selected = uiState.theme == ThemePref.DARK,
-                    onClick = { viewModel.setTheme(ThemePref.DARK) },
-                    label = { Text("Dark") }
-                )
+
+            // Change Password – added as requested
+            Text("Security", style = MaterialTheme.typography.titleMedium)
+            OutlinedButton(
+                onClick = { viewModel.setShowChangePassword(true) },
+                modifier = Modifier.fillMaxWidth(),
+                shape = RoundedCornerShape(16.dp)
+            ) {
+                Text("Change Password")
             }
 
             Spacer(Modifier.height(16.dp))
-            OutlinedButton(onClick = { viewModel.signOut(onSignOut) }, modifier = Modifier.fillMaxWidth(), shape = androidx.compose.foundation.shape.RoundedCornerShape(16.dp)) {
+            OutlinedButton(onClick = { viewModel.signOut(onSignOut) }, modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(16.dp)) {
                 Text("Sign Out")
             }
             Button(
                 onClick = { viewModel.setShowDeleteConfirm(true) },
                 modifier = Modifier.fillMaxWidth(),
                 colors = ButtonDefaults.buttonColors(containerColor = Color.Red),
-                shape = androidx.compose.foundation.shape.RoundedCornerShape(16.dp)
+                shape = RoundedCornerShape(16.dp)
             ) {
                 Text("Delete Account")
             }
@@ -260,6 +237,61 @@ fun ProfileScreen(
                     viewModel.deleteAccount(onSignOut)
                 },
                 onDismiss = { viewModel.setShowDeleteConfirm(false) }
+            )
+        }
+
+        if (uiState.showChangePasswordDialog) {
+            AlertDialog(
+                onDismissRequest = { viewModel.setShowChangePassword(false) },
+                title = { Text("Change Password") },
+                shape = RoundedCornerShape(24.dp),
+                text = {
+                    Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                        OutlinedTextField(
+                            value = uiState.currentPassword,
+                            onValueChange = viewModel::onCurrentPasswordChange,
+                            label = { Text("Current Password") },
+                            visualTransformation = PasswordVisualTransformation(),
+                            modifier = Modifier.fillMaxWidth(),
+                            singleLine = true,
+                            shape = RoundedCornerShape(16.dp)
+                        )
+                        OutlinedTextField(
+                            value = uiState.newPassword,
+                            onValueChange = viewModel::onNewPasswordChange,
+                            label = { Text("New Password") },
+                            visualTransformation = PasswordVisualTransformation(),
+                            modifier = Modifier.fillMaxWidth(),
+                            singleLine = true,
+                            shape = RoundedCornerShape(16.dp)
+                        )
+                        OutlinedTextField(
+                            value = uiState.confirmNewPassword,
+                            onValueChange = viewModel::onConfirmNewPasswordChange,
+                            label = { Text("Confirm New Password") },
+                            visualTransformation = PasswordVisualTransformation(),
+                            modifier = Modifier.fillMaxWidth(),
+                            singleLine = true,
+                            shape = RoundedCornerShape(16.dp)
+                        )
+                        uiState.passwordError?.let {
+                            Text(it, color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.bodySmall)
+                        }
+                    }
+                },
+                confirmButton = {
+                    Button(
+                        onClick = { viewModel.changePassword() },
+                        enabled = !uiState.isLoading,
+                        shape = RoundedCornerShape(16.dp)
+                    ) {
+                        if (uiState.isLoading) CircularProgressIndicator(modifier = Modifier.size(16.dp))
+                        else Text("Change")
+                    }
+                },
+                dismissButton = {
+                    TextButton(onClick = { viewModel.setShowChangePassword(false) }) { Text("Cancel") }
+                }
             )
         }
     }
