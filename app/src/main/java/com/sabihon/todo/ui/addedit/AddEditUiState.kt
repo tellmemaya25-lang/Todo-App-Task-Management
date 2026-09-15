@@ -26,6 +26,5 @@ data class AddEditUiState(
     val titleError: String? = null,
     val categories: List<Category> = emptyList(),
     val isEditMode: Boolean = false,
-    val showDeleteConfirm: Boolean = false,
-    val debugInfo: String? = null
+    val showDeleteConfirm: Boolean = false
 )

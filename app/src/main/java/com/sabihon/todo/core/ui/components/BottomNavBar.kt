@@ -6,12 +6,12 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.navigationBars
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
@@ -37,9 +37,8 @@ import androidx.compose.ui.unit.sp
 import com.sabihon.todo.core.ui.theme.AccentBlue
 
 /**
- * Bottom nav matching reference image – floating white card with 24.dp rounded corners,
- * 5 items: Home, Search, + (center FAB), History, Profile
- * Selected item blue, others grey, with subtle shadow.
+ * Bottom nav – edge-to-edge flush, top 24.dp rounded, 5.dp subtle outer shadow
+ * Tabs: Home | Search | + (center 48dp blue) | History | Profile
  */
 data class BottomNavTab(
     val label: String,
@@ -61,98 +60,94 @@ fun RoundedBottomNavBar(
         BottomNavTab("Profile", Icons.Filled.Person, "profile")
     )
 
-    // Floating container with 24.dp radius like image
+    // Edge-to-edge shape – only top rounded 24.dp, bottom flush 0
+    val bottomNavShape = RoundedCornerShape(
+        topStart = 24.dp,
+        topEnd = 24.dp,
+        bottomStart = 0.dp,
+        bottomEnd = 0.dp
+    )
+
+    // Flush edge to edge, 5.dp outward shadow
     Surface(
         modifier = modifier
             .fillMaxWidth()
-            .padding(horizontal = 16.dp, vertical = 12.dp)
-            .shadow(8.dp, RoundedCornerShape(24.dp)),
-        shape = RoundedCornerShape(24.dp),
+            .shadow(
+                elevation = 5.dp,
+                shape = bottomNavShape,
+                clip = false,
+                ambientColor = Color.Black.copy(alpha = 0.15f),
+                spotColor = Color.Black.copy(alpha = 0.15f)
+            ),
+        shape = bottomNavShape,
         color = MaterialTheme.colorScheme.surface,
-        tonalElevation = 4.dp
+        tonalElevation = 0.dp,
+        shadowElevation = 5.dp
     ) {
-        Column {
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 8.dp, vertical = 12.dp),
-                horizontalArrangement = Arrangement.SpaceAround,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                tabs.forEach { tab ->
-                    val isSelected = when (tab.route) {
-                        "home" -> currentRoute.contains("Home") || currentRoute.contains("AllTasks") || currentRoute.contains("Categories")
-                        "search" -> currentRoute.contains("Search")
-                        "history" -> currentRoute.contains("History")
-                        "profile" -> currentRoute.contains("Profile") || currentRoute.contains("Settings")
-                        "add" -> false
-                        else -> false
-                    }
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .windowInsetsPadding(WindowInsets.navigationBars)
+                .padding(horizontal = 8.dp, vertical = 12.dp),
+            horizontalArrangement = Arrangement.SpaceAround,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            tabs.forEach { tab ->
+                val isSelected = when (tab.route) {
+                    "home" -> currentRoute.contains("Home") || currentRoute.contains("AllTasks") || currentRoute.contains("Categories")
+                    "search" -> currentRoute.contains("Search")
+                    "history" -> currentRoute.contains("History")
+                    "profile" -> currentRoute.contains("Profile") || currentRoute.contains("Settings")
+                    "add" -> false
+                    else -> false
+                }
 
-                    // Middle + button special styling
-                    if (tab.route == "add") {
-                        Box(
-                            modifier = Modifier
-                                .size(48.dp)
-                                .clip(CircleShape)
-                                .background(AccentBlue)
-                                .clickable { onNavigate("add") },
-                            contentAlignment = Alignment.Center
-                        ) {
-                            Icon(
-                                imageVector = Icons.Filled.Add,
-                                contentDescription = "Add Task",
-                                tint = Color.White,
-                                modifier = Modifier.size(28.dp)
-                            )
-                        }
-                    } else {
-                        Column(
-                            modifier = Modifier
-                                .clip(RoundedCornerShape(12.dp))
-                                .clickable { onNavigate(tab.route) }
-                                .padding(horizontal = 12.dp, vertical = 6.dp),
-                            horizontalAlignment = Alignment.CenterHorizontally,
-                            verticalArrangement = Arrangement.spacedBy(4.dp)
-                        ) {
-                            Icon(
-                                imageVector = tab.icon,
-                                contentDescription = tab.label,
-                                tint = if (isSelected) AccentBlue else Color.Gray,
-                                modifier = Modifier.size(24.dp)
-                            )
-                            Text(
-                                text = tab.label,
-                                style = MaterialTheme.typography.labelSmall.copy(
-                                    fontSize = 11.sp,
-                                    fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal
-                                ),
-                                color = if (isSelected) AccentBlue else Color.Gray
-                            )
-                        }
+                if (tab.route == "add") {
+                    Box(
+                        modifier = Modifier
+                            .size(48.dp)
+                            .clip(CircleShape)
+                            .background(AccentBlue)
+                            .clickable { onNavigate("add") },
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Icon(
+                            imageVector = Icons.Filled.Add,
+                            contentDescription = "Add Task",
+                            tint = Color.White,
+                            modifier = Modifier.size(28.dp)
+                        )
+                    }
+                } else {
+                    Column(
+                        modifier = Modifier
+                            .clip(RoundedCornerShape(16.dp))
+                            .clickable { onNavigate(tab.route) }
+                            .padding(horizontal = 12.dp, vertical = 6.dp),
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        verticalArrangement = Arrangement.spacedBy(4.dp)
+                    ) {
+                        Icon(
+                            imageVector = tab.icon,
+                            contentDescription = tab.label,
+                            tint = if (isSelected) AccentBlue else Color.Gray,
+                            modifier = Modifier.size(24.dp)
+                        )
+                        Text(
+                            text = tab.label,
+                            style = MaterialTheme.typography.labelSmall.copy(
+                                fontSize = 11.sp,
+                                fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal
+                            ),
+                            color = if (isSelected) AccentBlue else Color.Gray
+                        )
                     }
                 }
-            }
-            // iOS-like home indicator handle like in image
-            Box(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(bottom = 8.dp),
-                contentAlignment = Alignment.Center
-            ) {
-                Box(
-                    modifier = Modifier
-                        .width(40.dp)
-                        .height(4.dp)
-                        .clip(RoundedCornerShape(100.dp))
-                        .background(Color.LightGray.copy(alpha = 0.5f))
-                )
             }
         }
     }
 }
 
-// Legacy simple version for fallback
 @Composable
 fun BottomNavBarSimple(
     currentRoute: String,

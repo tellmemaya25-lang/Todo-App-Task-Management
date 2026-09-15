@@ -40,8 +40,6 @@ class AddEditViewModel @Inject constructor(
 
     init {
         observeCategories()
-        // Debug info
-        _uiState.update { it.copy(debugInfo = "uid=${auth.currentUser?.uid ?: "null"} email=${auth.currentUser?.email}") }
     }
 
     private fun observeCategories() {

@@ -236,18 +236,8 @@ fun AddEditTaskScreen(
                 }
             }
 
-            // Detailed error + debug info
             uiState.errorMessage?.let {
                 Text(text = it, color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.bodySmall)
-            }
-
-            // Debug: show current user ID for troubleshooting
-            if (uiState.debugInfo != null) {
-                Text(
-                    text = "Debug: ${uiState.debugInfo}",
-                    style = MaterialTheme.typography.labelSmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
             }
         }
 
