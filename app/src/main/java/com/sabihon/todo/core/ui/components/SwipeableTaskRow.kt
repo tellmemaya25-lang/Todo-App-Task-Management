@@ -21,7 +21,6 @@ import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -42,10 +41,11 @@ import kotlinx.coroutines.launch
 import kotlin.math.roundToInt
 
 /**
- * Swipeable task row – stable implementation using draggable + Animatable
- * - Swipe right (positive offset) -> Mark as Done (blue)
- * - Swipe left (negative offset) -> Edit (blue) + Delete (red)
- * - Works with LazyColumn vertical scroll
+ * Swipeable task row – FIXED OVERLAP
+ * - Outer Box has padding 16dp/6dp and clip 24dp (was causing overlap because TaskRow also had padding)
+ * - TaskRow now called with hasOuterPadding=false so foreground fully covers background when offset=0
+ * - Background actions hidden when not swiped, no blue/red arcs peeking
+ * - Swipe right -> Mark Done, Swipe left -> Edit/Delete
  */
 @Composable
 fun SwipeableTaskRow(
@@ -66,8 +66,8 @@ fun SwipeableTaskRow(
     onToggleComplete: ((Boolean) -> Unit)? = null
 ) {
     val density = LocalDensity.current
-    val startThreshold = with(density) { 100.dp.toPx() } // swipe right threshold
-    val endThreshold = with(density) { -160.dp.toPx() } // swipe left threshold
+    val startThreshold = with(density) { 100.dp.toPx() }
+    val endThreshold = with(density) { -160.dp.toPx() }
     val maxStart = with(density) { 100.dp.toPx() }
     val maxEnd = with(density) { -160.dp.toPx() }
 
@@ -75,9 +75,7 @@ fun SwipeableTaskRow(
     val scope = rememberCoroutineScope()
     var isDragging by remember { androidx.compose.runtime.mutableStateOf(false) }
 
-    // Auto snap back after action if needed
     LaunchedEffect(isCompleted) {
-        // When task toggled, snap back to center
         if (offsetX.value != 0f) {
             scope.launch {
                 offsetX.animateTo(0f, animationSpec = spring(dampingRatio = Spring.DampingRatioMediumBouncy))
@@ -85,22 +83,23 @@ fun SwipeableTaskRow(
         }
     }
 
+    // Outer container handles padding + clipping – fixes overlap where background showed through gaps
     Box(
         modifier = modifier
             .fillMaxWidth()
+            .padding(horizontal = 16.dp, vertical = 6.dp)
             .clip(RoundedCornerShape(24.dp))
+            .background(Color(0xFFE3F5FF))
     ) {
-        // Background actions – no overlap with percentage (percentage now left side)
+        // Background actions – only visible when swiped
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .clip(RoundedCornerShape(24.dp))
-                .background(Color(0xFFE3F5FF).copy(alpha = 0.8f))
+                .background(Color(0xFFE3F5FF))
                 .padding(horizontal = 12.dp, vertical = 12.dp),
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically
         ) {
-            // Left – Mark Done (visible when swiped right) – percentage is left, so keep small gap
             Box(
                 modifier = Modifier
                     .size(48.dp)
@@ -115,8 +114,6 @@ fun SwipeableTaskRow(
                     modifier = Modifier.size(24.dp)
                 )
             }
-
-            // Right – Edit + Delete (visible when swiped left) – percentage now left, so no overlap
             Row(
                 horizontalArrangement = Arrangement.spacedBy(8.dp),
                 verticalAlignment = Alignment.CenterVertically
@@ -162,36 +159,30 @@ fun SwipeableTaskRow(
             }
         }
 
-        // Foreground draggable card
+        // Foreground draggable – TaskRow without outer padding so it fully covers background at rest
         Box(
             modifier = Modifier
                 .fillMaxWidth()
                 .offset { IntOffset(offsetX.value.roundToInt(), 0) }
                 .draggable(
                     state = rememberDraggableState { delta ->
-                        // Only allow horizontal drag, clamp
                         val newValue = (offsetX.value + delta).coerceIn(maxEnd, maxStart)
-                        scope.launch {
-                            offsetX.snapTo(newValue)
-                        }
+                        scope.launch { offsetX.snapTo(newValue) }
                     },
                     orientation = Orientation.Horizontal,
                     onDragStarted = { isDragging = true },
-                    onDragStopped = { velocity ->
+                    onDragStopped = {
                         isDragging = false
                         scope.launch {
                             when {
                                 offsetX.value > startThreshold / 2 -> {
-                                    // Swipe right -> mark done
                                     onToggleComplete?.invoke(!isCompleted)
                                     offsetX.animateTo(0f, spring(dampingRatio = Spring.DampingRatioMediumBouncy))
                                 }
                                 offsetX.value < endThreshold / 2 -> {
-                                    // Swipe left -> reveal edit/delete, stay open
                                     offsetX.animateTo(maxEnd, spring(dampingRatio = Spring.DampingRatioMediumBouncy))
                                 }
                                 else -> {
-                                    // Snap back to center
                                     offsetX.animateTo(0f, spring(dampingRatio = Spring.DampingRatioMediumBouncy))
                                 }
                             }
@@ -206,11 +197,11 @@ fun SwipeableTaskRow(
                 description = description,
                 subTasks = subTasks,
                 categoryLabel = categoryLabel,
+                hasOuterPadding = false,
                 onCheckedChange = onCheckedChange,
                 onAddSubTask = onAddSubTask,
                 onSubTaskChecked = onSubTaskChecked,
                 onClick = {
-                    // If swiped open, close first, else click
                     if (offsetX.value != 0f) {
                         scope.launch {
                             offsetX.animateTo(0f, spring(dampingRatio = Spring.DampingRatioMediumBouncy))

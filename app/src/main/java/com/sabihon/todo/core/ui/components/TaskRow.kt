@@ -65,6 +65,7 @@ fun TaskRow(
     description: String? = null,
     subTasks: List<SubTask> = emptyList(),
     categoryLabel: String? = null,
+    hasOuterPadding: Boolean = true,
     onCheckedChange: (Boolean) -> Unit = {},
     onAddSubTask: (() -> Unit)? = null,
     onSubTaskChecked: ((String, Boolean) -> Unit)? = null,
@@ -132,7 +133,7 @@ fun TaskRow(
     Card(
         modifier = modifier
             .fillMaxWidth()
-            .padding(horizontal = 16.dp, vertical = 6.dp),
+            .then(if (hasOuterPadding) Modifier.padding(horizontal = 16.dp, vertical = 6.dp) else Modifier),
         shape = RoundedCornerShape(24.dp),
         colors = CardDefaults.cardColors(containerColor = containerColor),
         elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
