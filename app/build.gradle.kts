@@ -39,7 +39,8 @@ android {
         }
         debug {
             isMinifyEnabled = false
-            applicationIdSuffix = ".debug"
+            // Removed applicationIdSuffix to avoid google-services.json mismatch
+            // If you want .debug suffix, add com.sabihon.todo.debug to Firebase project
         }
     }
 
