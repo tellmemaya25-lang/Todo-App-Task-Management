@@ -30,6 +30,7 @@ import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.Flag
 import androidx.compose.material.icons.filled.KeyboardArrowDown
 import androidx.compose.material.icons.filled.KeyboardArrowUp
+import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.material3.AssistChip
 import androidx.compose.material3.AssistChipDefaults
 import androidx.compose.material3.Button
@@ -48,6 +49,7 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
+import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -114,7 +116,11 @@ fun TaskDetailScreen(
                             modifier = Modifier.size(22.dp)
                         )
                     }
-                }
+                },
+                colors = TopAppBarDefaults.topAppBarColors(
+                    containerColor = MaterialTheme.colorScheme.background,
+                    titleContentColor = MaterialTheme.colorScheme.onBackground
+                )
             )
         },
         containerColor = MaterialTheme.colorScheme.background
@@ -146,42 +152,75 @@ fun TaskDetailScreen(
                         .padding(horizontal = 16.dp, vertical = 12.dp),
                     verticalArrangement = Arrangement.spacedBy(16.dp)
                 ) {
-                    // Header – Webinar style: fix spacing per image-2.png – title + percentage top row, white description box below, date/priority chips below with spacing
+                    // Header – Webinar style with percentage overlapping description top right per request + dark mode contrast fix
+                    val isDark = isSystemInDarkTheme()
+                    val outerCardBg = if (isDark) Color(0xFF1E2A44) else Color(0xFFE3F5FF)
+                    val innerWhiteBg = if (isDark) MaterialTheme.colorScheme.surfaceContainerHigh else Color.White
+                    val innerWhiteBg2 = if (isDark) MaterialTheme.colorScheme.surfaceContainer else Color.White
+                    val textPrimary = MaterialTheme.colorScheme.onSurface
+                    val textSecondary = MaterialTheme.colorScheme.onSurfaceVariant
+                    val dividerColor = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.6f)
+
                     Card(
                         modifier = Modifier.fillMaxWidth(),
                         shape = RoundedCornerShape(24.dp),
-                        colors = CardDefaults.cardColors(containerColor = Color(0xFFE3F5FF)),
+                        colors = CardDefaults.cardColors(containerColor = outerCardBg),
                         elevation = CardDefaults.cardElevation(0.dp)
                     ) {
                         Column(modifier = Modifier.fillMaxWidth().padding(16.dp), verticalArrangement = Arrangement.spacedBy(16.dp)) {
-                            // Top row: title left, percentage right – 44% 4/9 like image-2
-                            Row(
-                                modifier = Modifier.fillMaxWidth(),
-                                horizontalArrangement = Arrangement.SpaceBetween,
-                                verticalAlignment = Alignment.CenterVertically
+                            // Title on top – Webinar
+                            Text(
+                                text = task.title,
+                                style = MaterialTheme.typography.titleMedium.copy(
+                                    fontWeight = FontWeight.Bold,
+                                    fontSize = 16.sp
+                                ),
+                                color = textPrimary,
+                                maxLines = 2,
+                                overflow = TextOverflow.Ellipsis,
+                                modifier = Modifier.fillMaxWidth().padding(end = 72.dp) // leave space for overlapping percentage
+                            )
+
+                            // Box with description white card + percentage overlapping top right
+                            Box(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(top = 12.dp) // space for overlap offset
                             ) {
-                                Text(
-                                    text = task.title,
-                                    style = MaterialTheme.typography.titleMedium.copy(
-                                        fontWeight = FontWeight.Bold,
-                                        fontSize = 16.sp
-                                    ),
-                                    maxLines = 1,
-                                    overflow = TextOverflow.Ellipsis,
-                                    modifier = Modifier.weight(1f)
-                                )
-                                Spacer(Modifier.width(12.dp))
+                                // White description box – non-editable, dark mode adapted to surfaceContainerHigh
                                 Box(
                                     modifier = Modifier
+                                        .fillMaxWidth()
+                                        .padding(top = 20.dp) // push down so circle overlaps top edge
+                                        .clip(RoundedCornerShape(16.dp))
+                                        .background(innerWhiteBg)
+                                        .padding(16.dp)
+                                ) {
+                                    Text(
+                                        text = task.description.takeIf { it.isNotBlank() } ?: "Cybersecurity is What type of thing this do what Other things should we able to do here. asdasdf asdfas asdf asd asdfa",
+                                        style = MaterialTheme.typography.bodySmall.copy(
+                                            fontSize = 13.sp,
+                                            lineHeight = 18.sp
+                                        ),
+                                        color = if (isDark) MaterialTheme.colorScheme.onSurface else Color(0xFF374151)
+                                    )
+                                }
+
+                                // Percentage overlapping description top right – Instagram badge style
+                                Box(
+                                    modifier = Modifier
+                                        .align(Alignment.TopEnd)
+                                        .offset(x = (-8).dp, y = 0.dp)
                                         .size(64.dp)
                                         .clip(CircleShape)
-                                        .background(Color.White),
+                                        .background(innerWhiteBg2)
+                                        .padding(2.dp),
                                     contentAlignment = Alignment.Center
                                 ) {
                                     Canvas(modifier = Modifier.size(56.dp)) {
                                         val stroke = 3.5.dp.toPx()
                                         drawCircle(
-                                            color = Color(0xFFE5E7EB),
+                                            color = if (isDark) Color(0xFF3A3B44) else Color(0xFFE5E7EB),
                                             style = Stroke(width = stroke)
                                         )
                                         if (progress > 0f) {
@@ -201,41 +240,23 @@ fun TaskDetailScreen(
                                                 fontWeight = FontWeight.Bold,
                                                 fontSize = 12.sp
                                             ),
-                                            color = Color(0xFF101114)
+                                            color = textPrimary
                                         )
                                         Text(
                                             text = "$doneSubs/$totalSubs",
                                             style = MaterialTheme.typography.labelSmall.copy(fontSize = 9.sp),
-                                            color = Color(0xFF6B7280)
+                                            color = textSecondary
                                         )
                                     }
                                 }
                             }
 
-                            // White description box – non-editable, white bg, with spacing like image-2
-                            Box(
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .clip(RoundedCornerShape(16.dp))
-                                    .background(Color.White)
-                                    .padding(16.dp)
-                            ) {
-                                Text(
-                                    text = task.description.takeIf { it.isNotBlank() } ?: "Cybersecurity is What type of thing this do what Other things should we able to do here. asdasdf asdfas asdf asd asdfa",
-                                    style = MaterialTheme.typography.bodySmall.copy(
-                                        fontSize = 13.sp,
-                                        lineHeight = 18.sp,
-                                        color = Color(0xFF374151)
-                                    )
-                                )
-                            }
-
-                            // Date and Priority below with spacing – white bg chips like image-2
+                            // Date and Priority below with spacing – dark mode adapted chips
                             Column(
                                 modifier = Modifier.fillMaxWidth(),
                                 verticalArrangement = Arrangement.spacedBy(12.dp)
                             ) {
-                                HorizontalDivider(thickness = 0.5.dp, color = Color(0xFFE5E7EB))
+                                HorizontalDivider(thickness = 0.5.dp, color = dividerColor)
                                 Row(
                                     horizontalArrangement = Arrangement.spacedBy(8.dp),
                                     modifier = Modifier.fillMaxWidth()
@@ -252,13 +273,13 @@ fun TaskDetailScreen(
                                             Icon(Icons.Filled.CalendarToday, null, modifier = Modifier.size(14.dp))
                                         },
                                         colors = AssistChipDefaults.assistChipColors(
-                                            containerColor = Color.White,
-                                            labelColor = Color(0xFF374151)
+                                            containerColor = innerWhiteBg,
+                                            labelColor = textSecondary
                                         ),
                                         shape = RoundedCornerShape(100.dp)
                                     )
                                     val priorityColor = when (task.priority) {
-                                        Priority.LOW -> Color(0xFF6B7280)
+                                        Priority.LOW -> if (isDark) Color(0xFF9CA3AF) else Color(0xFF6B7280)
                                         Priority.MEDIUM -> Color(0xFF3B82F6)
                                         Priority.HIGH -> Color(0xFFF59E0B)
                                         Priority.URGENT -> Color(0xFFEF4444)
@@ -278,7 +299,7 @@ fun TaskDetailScreen(
                                             Icon(Icons.Filled.Flag, null, modifier = Modifier.size(14.dp), tint = priorityColor)
                                         },
                                         colors = AssistChipDefaults.assistChipColors(
-                                            containerColor = Color.White,
+                                            containerColor = innerWhiteBg,
                                             labelColor = priorityColor
                                         ),
                                         shape = RoundedCornerShape(100.dp)
@@ -288,14 +309,17 @@ fun TaskDetailScreen(
                         }
                     }
 
-                    // Sub-tasks with edit – scrollable within container per request – corner radius 24.dp per request – consistent like All Tasks
+                    // Sub-tasks with edit – scrollable within container per request – corner radius 24.dp – consistent like All Tasks – dark mode contrast fix
                     var editingSubId by remember { mutableStateOf<String?>(null) }
                     var editingSubText by remember { mutableStateOf("") }
                     var isSubTasksExpanded by remember { mutableStateOf(false) }
+                    val subCardBg = if (isDark) Color(0xFF1E2A44) else Color(0xFFE3F5FF)
+                    val subTextPrimary = MaterialTheme.colorScheme.onSurface
+                    val subTextSecondary = MaterialTheme.colorScheme.onSurfaceVariant
                     Card(
                         modifier = Modifier.fillMaxWidth(),
                         shape = RoundedCornerShape(24.dp),
-                        colors = CardDefaults.cardColors(containerColor = Color(0xFFE3F5FF)),
+                        colors = CardDefaults.cardColors(containerColor = subCardBg),
                         elevation = CardDefaults.cardElevation(0.dp)
                     ) {
                         Column {
@@ -339,7 +363,7 @@ fun TaskDetailScreen(
                                             Text("×", fontSize = 14.sp)
                                         }
                                     } else {
-                                        // Consistent like All Tasks: title bold 16sp + short desc 13sp + status dot 6dp
+                                        // Consistent like All Tasks: title bold 16sp + short desc 13sp + status dot 6dp – dark mode adapted
                                         Column(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(4.dp)) {
                                             Text(
                                                 text = sub.title,
@@ -349,7 +373,7 @@ fun TaskDetailScreen(
                                                     lineHeight = 18.sp,
                                                     textDecoration = if (sub.isDone) TextDecoration.LineThrough else null
                                                 ),
-                                                color = if (sub.isDone) Color(0xFF6B7280).copy(alpha = 0.6f) else Color(0xFF101114),
+                                                color = if (sub.isDone) subTextSecondary.copy(alpha = 0.6f) else subTextPrimary,
                                                 maxLines = 1,
                                                 overflow = TextOverflow.Ellipsis
                                             )
@@ -359,7 +383,7 @@ fun TaskDetailScreen(
                                                     fontSize = 12.sp,
                                                     lineHeight = 14.sp
                                                 ),
-                                                color = Color(0xFF6B7280).copy(alpha = 0.9f),
+                                                color = subTextSecondary.copy(alpha = 0.9f),
                                                 maxLines = 1,
                                                 overflow = TextOverflow.Ellipsis
                                             )
@@ -380,7 +404,7 @@ fun TaskDetailScreen(
                                                         fontSize = 10.sp,
                                                         fontWeight = FontWeight.Medium
                                                     ),
-                                                    color = if (sub.isDone) Color(0xFF4CAF50) else Color(0xFF6B7280)
+                                                    color = if (sub.isDone) Color(0xFF4CAF50) else subTextSecondary
                                                 )
                                             }
                                         }
@@ -388,17 +412,17 @@ fun TaskDetailScreen(
                                             editingSubId = sub.id
                                             editingSubText = sub.title
                                         }, modifier = Modifier.size(28.dp)) {
-                                            Icon(Icons.Filled.Edit, null, modifier = Modifier.size(14.dp), tint = Color(0xFF6B7280))
+                                            Icon(Icons.Filled.Edit, null, modifier = Modifier.size(14.dp), tint = subTextSecondary)
                                         }
                                         IconButton(onClick = { viewModel.deleteSubTask(sub.id) }, modifier = Modifier.size(28.dp)) {
-                                            Text("×", color = Color(0xFF6B7280), fontSize = 14.sp)
+                                            Text("×", color = subTextSecondary, fontSize = 14.sp)
                                         }
                                     }
                                 }
                                 HorizontalDivider(
                                     modifier = Modifier.padding(horizontal = 16.dp),
                                     thickness = 0.5.dp,
-                                    color = Color.Gray.copy(alpha = 0.12f)
+                                    color = if (isDark) MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f) else Color.Gray.copy(alpha = 0.12f)
                                 )
                             }
                             }
@@ -428,7 +452,7 @@ fun TaskDetailScreen(
                                         )
                                     }
                                 }
-                                // Arrow down btn overlapping CTA – only show if list exceeds 5 items per request
+                                // Arrow down btn overlapping CTA – only show if list exceeds 5 items per request – dark mode adapted
                                 if (task.subTasks.size > 5) {
                                     Box(
                                         modifier = Modifier
@@ -436,7 +460,7 @@ fun TaskDetailScreen(
                                             .offset(y = (-12).dp)
                                             .size(32.dp)
                                             .clip(CircleShape)
-                                            .background(Color.White)
+                                            .background(if (isDark) MaterialTheme.colorScheme.surface else Color.White)
                                             .clickable { isSubTasksExpanded = !isSubTasksExpanded }
                                             .padding(4.dp),
                                         contentAlignment = Alignment.Center
