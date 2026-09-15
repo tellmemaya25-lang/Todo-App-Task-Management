@@ -23,6 +23,7 @@ import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FilterChip
+import androidx.compose.material3.FilterChipDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.ListItem
@@ -36,10 +37,12 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.sabihon.todo.core.ui.components.EmptyState
 import com.sabihon.todo.core.ui.components.TaskRow
+import com.sabihon.todo.core.ui.theme.AccentBlue
 import com.sabihon.todo.domain.model.Priority
 import com.sabihon.todo.domain.model.SortBy
 import com.sabihon.todo.domain.model.TaskStatusFilter
@@ -136,24 +139,37 @@ fun SearchScreen(
                 }
             }
 
-            // Filter chips
+            // Filter chips – blue highlights per request (was green)
             Text("Filters", style = MaterialTheme.typography.titleSmall)
             Spacer(Modifier.height(4.dp))
             FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 FilterChip(
                     selected = uiState.filter.status == TaskStatusFilter.ALL,
                     onClick = { viewModel.onStatusFilterChange(TaskStatusFilter.ALL) },
-                    label = { Text("All") }
+                    label = { Text("All") },
+                    colors = FilterChipDefaults.filterChipColors(
+                        selectedContainerColor = AccentBlue,
+                        selectedLabelColor = Color.White,
+                        selectedLeadingIconColor = Color.White
+                    )
                 )
                 FilterChip(
                     selected = uiState.filter.status == TaskStatusFilter.PENDING,
                     onClick = { viewModel.onStatusFilterChange(TaskStatusFilter.PENDING) },
-                    label = { Text("Pending") }
+                    label = { Text("Pending") },
+                    colors = FilterChipDefaults.filterChipColors(
+                        selectedContainerColor = AccentBlue,
+                        selectedLabelColor = Color.White
+                    )
                 )
                 FilterChip(
                     selected = uiState.filter.status == TaskStatusFilter.COMPLETED,
                     onClick = { viewModel.onStatusFilterChange(TaskStatusFilter.COMPLETED) },
-                    label = { Text("Completed") }
+                    label = { Text("Completed") },
+                    colors = FilterChipDefaults.filterChipColors(
+                        selectedContainerColor = AccentBlue,
+                        selectedLabelColor = Color.White
+                    )
                 )
                 Priority.values().forEach { pri ->
                     FilterChip(
@@ -162,7 +178,11 @@ fun SearchScreen(
                             if (uiState.filter.priority == pri) viewModel.onPriorityFilterChange(null)
                             else viewModel.onPriorityFilterChange(pri)
                         },
-                        label = { Text(pri.name) }
+                        label = { Text(pri.name) },
+                        colors = FilterChipDefaults.filterChipColors(
+                            selectedContainerColor = AccentBlue,
+                            selectedLabelColor = Color.White
+                        )
                     )
                 }
             }
@@ -171,13 +191,21 @@ fun SearchScreen(
                 FilterChip(
                     selected = uiState.filter.categoryId == null,
                     onClick = { viewModel.onCategoryFilterChange(null) },
-                    label = { Text("All Categories") }
+                    label = { Text("All Categories") },
+                    colors = FilterChipDefaults.filterChipColors(
+                        selectedContainerColor = AccentBlue,
+                        selectedLabelColor = Color.White
+                    )
                 )
                 uiState.categories.forEach { cat ->
                     FilterChip(
                         selected = uiState.filter.categoryId == cat.id,
                         onClick = { viewModel.onCategoryFilterChange(cat.id) },
-                        label = { Text(cat.name) }
+                        label = { Text(cat.name) },
+                        colors = FilterChipDefaults.filterChipColors(
+                            selectedContainerColor = AccentBlue,
+                            selectedLabelColor = Color.White
+                        )
                     )
                 }
             }
@@ -186,12 +214,20 @@ fun SearchScreen(
                 FilterChip(
                     selected = uiState.filter.sortBy == SortBy.DUE_DATE,
                     onClick = { viewModel.onSortChange(SortBy.DUE_DATE, true) },
-                    label = { Text("Sort by Due Date") }
+                    label = { Text("Sort by Due Date") },
+                    colors = FilterChipDefaults.filterChipColors(
+                        selectedContainerColor = AccentBlue,
+                        selectedLabelColor = Color.White
+                    )
                 )
                 FilterChip(
                     selected = uiState.filter.sortBy == SortBy.PRIORITY,
                     onClick = { viewModel.onSortChange(SortBy.PRIORITY, false) },
-                    label = { Text("Sort by Priority") }
+                    label = { Text("Sort by Priority") },
+                    colors = FilterChipDefaults.filterChipColors(
+                        selectedContainerColor = AccentBlue,
+                        selectedLabelColor = Color.White
+                    )
                 )
             }
 
