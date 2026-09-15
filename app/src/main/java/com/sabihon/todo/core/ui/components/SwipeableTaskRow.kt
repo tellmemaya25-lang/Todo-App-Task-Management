@@ -99,78 +99,57 @@ fun SwipeableTaskRow(
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically
         ) {
-            // Left – Mark Done, centered, fills height
+            // Left – Mark Done, centered, fills height – no bg/corner radius per request
             Box(
                 modifier = Modifier
                     .fillMaxHeight()
-                    .size(56.dp)
-                    .clip(RoundedCornerShape(16.dp))
-                    .background(AccentBlue),
+                    .size(56.dp),
                 contentAlignment = Alignment.Center
             ) {
                 Icon(
                     Icons.Filled.CheckCircle,
                     contentDescription = "Mark Done",
-                    tint = Color.White,
-                    modifier = Modifier.size(24.dp)
+                    tint = AccentBlue,
+                    modifier = Modifier.size(28.dp)
                 )
             }
-            // Right – Edit + Delete, centered, fills height
+            // Right – Edit + Delete, centered, fills height – no bg/corner radius per request
             Row(
                 modifier = Modifier.fillMaxHeight(),
-                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                horizontalArrangement = Arrangement.spacedBy(16.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                Box(
-                    modifier = Modifier
-                        .fillMaxHeight()
-                        .size(56.dp)
-                        .clip(RoundedCornerShape(16.dp))
-                        .background(AccentBlue)
-                        .padding(4.dp),
-                    contentAlignment = Alignment.Center
+                IconButton(
+                    onClick = {
+                        scope.launch {
+                            offsetX.animateTo(0f, spring(dampingRatio = Spring.DampingRatioMediumBouncy))
+                        }
+                        onEdit?.invoke()
+                    },
+                    modifier = Modifier.size(56.dp)
                 ) {
-                    IconButton(
-                        onClick = {
-                            scope.launch {
-                                offsetX.animateTo(0f, spring(dampingRatio = Spring.DampingRatioMediumBouncy))
-                            }
-                            onEdit?.invoke()
-                        },
-                        modifier = Modifier.fillMaxSize()
-                    ) {
-                        Icon(
-                            Icons.Filled.Edit,
-                            contentDescription = "Edit",
-                            tint = Color.White,
-                            modifier = Modifier.size(20.dp)
-                        )
-                    }
+                    Icon(
+                        Icons.Filled.Edit,
+                        contentDescription = "Edit",
+                        tint = AccentBlue,
+                        modifier = Modifier.size(24.dp)
+                    )
                 }
-                Box(
-                    modifier = Modifier
-                        .fillMaxHeight()
-                        .size(56.dp)
-                        .clip(RoundedCornerShape(16.dp))
-                        .background(Color(0xFFE57373)),
-                    contentAlignment = Alignment.Center
+                IconButton(
+                    onClick = {
+                        scope.launch {
+                            offsetX.animateTo(0f, spring(dampingRatio = Spring.DampingRatioMediumBouncy))
+                        }
+                        onDelete?.invoke()
+                    },
+                    modifier = Modifier.size(56.dp)
                 ) {
-                    IconButton(
-                        onClick = {
-                            scope.launch {
-                                offsetX.animateTo(0f, spring(dampingRatio = Spring.DampingRatioMediumBouncy))
-                            }
-                            onDelete?.invoke()
-                        },
-                        modifier = Modifier.fillMaxSize()
-                    ) {
-                        Icon(
-                            Icons.Filled.Delete,
-                            contentDescription = "Delete",
-                            tint = Color.White,
-                            modifier = Modifier.size(20.dp)
-                        )
-                    }
+                    Icon(
+                        Icons.Filled.Delete,
+                        contentDescription = "Delete",
+                        tint = Color(0xFFE57373),
+                        modifier = Modifier.size(24.dp)
+                    )
                 }
             }
         }
