@@ -26,6 +26,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.CalendarToday
+import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.Flag
 import androidx.compose.material.icons.filled.KeyboardArrowDown
@@ -375,16 +376,16 @@ fun TaskDetailScreen(
                                             overflow = TextOverflow.Ellipsis,
                                             modifier = Modifier.weight(1f)
                                         )
-                                        // Edit icon larger 20dp, consistent with 1st image
+                                        // Edit icon – use this icon and size from all tasks to edit task per request – image-1 ggadg asdgasg asdgasgd with pencil icon
                                         IconButton(onClick = {
                                             editingSubId = sub.id
                                             editingSubText = sub.title
-                                        }, modifier = Modifier.size(36.dp)) {
-                                            Icon(Icons.Filled.Edit, null, modifier = Modifier.size(20.dp), tint = subTextSecondary)
+                                        }, modifier = Modifier.size(48.dp)) {
+                                            Icon(Icons.Filled.Edit, null, modifier = Modifier.size(24.dp), tint = AccentBlue)
                                         }
-                                        // Delete icon larger 20sp, consistent with 1st image
-                                        IconButton(onClick = { viewModel.deleteSubTask(sub.id) }, modifier = Modifier.size(36.dp)) {
-                                            Text("×", color = subTextSecondary, fontSize = 20.sp, fontWeight = FontWeight.Bold)
+                                        // Delete icon – consistent with all tasks delete trash red 24dp
+                                        IconButton(onClick = { viewModel.deleteSubTask(sub.id) }, modifier = Modifier.size(48.dp)) {
+                                            Icon(Icons.Filled.Close, null, modifier = Modifier.size(20.dp), tint = Color(0xFF6B7280))
                                         }
                                     }
                                 }
