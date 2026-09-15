@@ -152,14 +152,17 @@ fun TaskDetailScreen(
                         .padding(horizontal = 16.dp, vertical = 12.dp),
                     verticalArrangement = Arrangement.spacedBy(16.dp)
                 ) {
-                    // Header – Webinar style with percentage overlapping description top right per request + dark mode contrast fix
+                    // Header – fix color contrast dark mode per image-1.png screenshot – outer dark, inner light gray, percentage white, chips light
                     val isDark = isSystemInDarkTheme()
+                    // Use #e3f5ff for bg of task per earlier request – but for detail outer dark in dark mode for contrast
                     val outerCardBg = if (isDark) Color(0xFF1E2A44) else Color(0xFFE3F5FF)
-                    val innerWhiteBg = if (isDark) MaterialTheme.colorScheme.surfaceContainerHigh else Color.White
-                    val innerWhiteBg2 = if (isDark) MaterialTheme.colorScheme.surfaceContainer else Color.White
-                    val textPrimary = MaterialTheme.colorScheme.onSurface
-                    val textSecondary = MaterialTheme.colorScheme.onSurfaceVariant
-                    val dividerColor = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.6f)
+                    // Inner description should be light even in dark mode for contrast – White / #E3F5FF light
+                    val innerWhiteBg = Color.White
+                    val innerWhiteBg2 = Color.White
+                    val textPrimary = if (isDark) Color(0xFF101114) else MaterialTheme.colorScheme.onSurface
+                    val textPrimaryDarkMode = Color(0xFF101114) // dark text on light inner for contrast
+                    val textSecondary = if (isDark) Color(0xFF6B7280) else MaterialTheme.colorScheme.onSurfaceVariant
+                    val dividerColor = if (isDark) Color(0xFF2E2F38) else MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.6f)
 
                     Card(
                         modifier = Modifier.fillMaxWidth(),
@@ -168,33 +171,33 @@ fun TaskDetailScreen(
                         elevation = CardDefaults.cardElevation(0.dp)
                     ) {
                         Column(modifier = Modifier.fillMaxWidth().padding(16.dp), verticalArrangement = Arrangement.spacedBy(16.dp)) {
-                            // Title on top – Webinar
+                            // Title on top – Webinar – dark text for contrast on #e3f5ff
                             Text(
                                 text = task.title,
                                 style = MaterialTheme.typography.titleMedium.copy(
                                     fontWeight = FontWeight.Bold,
                                     fontSize = 16.sp
                                 ),
-                                color = textPrimary,
+                                color = if (isDark) Color.White else Color(0xFF101114),
                                 maxLines = 2,
                                 overflow = TextOverflow.Ellipsis,
-                                modifier = Modifier.fillMaxWidth().padding(end = 72.dp) // leave space for overlapping percentage
+                                modifier = Modifier.fillMaxWidth().padding(end = 72.dp)
                             )
 
-                            // Box with description white card + percentage overlapping right side 30% per image-2.png request
+                            // Box with description white card + percentage overlapping right side 30% per image-2.png request – fix contrast dark mode
                             Box(
                                 modifier = Modifier
                                     .fillMaxWidth()
                             ) {
-                                // White description box – non-editable, dark mode adapted – with right padding to avoid text under circle
+                                // White description box – always White for contrast, dark text
                                 Box(
                                     modifier = Modifier
                                         .fillMaxWidth()
-                                        .padding(end = 24.dp) // leave space for 30% overlap circle
+                                        .padding(end = 24.dp)
                                         .clip(RoundedCornerShape(16.dp))
                                         .background(innerWhiteBg)
                                         .padding(16.dp)
-                                        .padding(end = 32.dp) // text avoids circle overlap area
+                                        .padding(end = 32.dp)
                                 ) {
                                     Text(
                                         text = task.description.takeIf { it.isNotBlank() } ?: "Cybersecurity is What type of thing this do what Other things should we able to do here. asdasdf asdfas asdf asd asdfa",
@@ -202,15 +205,15 @@ fun TaskDetailScreen(
                                             fontSize = 13.sp,
                                             lineHeight = 18.sp
                                         ),
-                                        color = if (isDark) MaterialTheme.colorScheme.onSurface else Color(0xFF374151)
+                                        color = Color(0xFF374151)
                                     )
                                 }
 
-                                // Percentage overlapping right side 30% – Instagram badge style – image-2.png 66% 2/3 right side overlap
+                                // Percentage overlapping right side 30% – always White bg for contrast, dark text
                                 Box(
                                     modifier = Modifier
                                         .align(Alignment.CenterEnd)
-                                        .offset(x = 12.dp) // 30% overlap: 64dp circle, 19.2dp inside, 44.8dp outside => offset 12.8dp ~12.dp
+                                        .offset(x = 12.dp)
                                         .size(64.dp)
                                         .clip(CircleShape)
                                         .background(innerWhiteBg2)
@@ -220,7 +223,7 @@ fun TaskDetailScreen(
                                     Canvas(modifier = Modifier.size(56.dp)) {
                                         val stroke = 3.5.dp.toPx()
                                         drawCircle(
-                                            color = if (isDark) Color(0xFF3A3B44) else Color(0xFFE5E7EB),
+                                            color = Color(0xFFE5E7EB),
                                             style = Stroke(width = stroke)
                                         )
                                         if (progress > 0f) {
@@ -240,18 +243,18 @@ fun TaskDetailScreen(
                                                 fontWeight = FontWeight.Bold,
                                                 fontSize = 12.sp
                                             ),
-                                            color = textPrimary
+                                            color = Color(0xFF101114)
                                         )
                                         Text(
                                             text = "$doneSubs/$totalSubs",
                                             style = MaterialTheme.typography.labelSmall.copy(fontSize = 9.sp),
-                                            color = textSecondary
+                                            color = Color(0xFF6B7280)
                                         )
                                     }
                                 }
                             }
 
-                            // Date and Priority below with spacing – dark mode adapted chips
+                            // Date and Priority below – chips White bg for contrast in both light/dark per screenshot
                             Column(
                                 modifier = Modifier.fillMaxWidth(),
                                 verticalArrangement = Arrangement.spacedBy(12.dp)
@@ -266,20 +269,21 @@ fun TaskDetailScreen(
                                         label = {
                                             Text(
                                                 text = task.dueAt?.let { formatDate(it) } ?: "Sep 16, 2026 • 1:51 AM",
-                                                style = MaterialTheme.typography.labelSmall.copy(fontSize = 11.sp)
+                                                style = MaterialTheme.typography.labelSmall.copy(fontSize = 11.sp),
+                                                color = Color(0xFF374151)
                                             )
                                         },
                                         leadingIcon = {
-                                            Icon(Icons.Filled.CalendarToday, null, modifier = Modifier.size(14.dp))
+                                            Icon(Icons.Filled.CalendarToday, null, modifier = Modifier.size(14.dp), tint = AccentBlue)
                                         },
                                         colors = AssistChipDefaults.assistChipColors(
-                                            containerColor = innerWhiteBg,
-                                            labelColor = textSecondary
+                                            containerColor = Color.White,
+                                            labelColor = Color(0xFF374151)
                                         ),
                                         shape = RoundedCornerShape(100.dp)
                                     )
                                     val priorityColor = when (task.priority) {
-                                        Priority.LOW -> if (isDark) Color(0xFF9CA3AF) else Color(0xFF6B7280)
+                                        Priority.LOW -> Color(0xFF6B7280)
                                         Priority.MEDIUM -> Color(0xFF3B82F6)
                                         Priority.HIGH -> Color(0xFFF59E0B)
                                         Priority.URGENT -> Color(0xFFEF4444)
@@ -292,14 +296,15 @@ fun TaskDetailScreen(
                                                 style = MaterialTheme.typography.labelSmall.copy(
                                                     fontSize = 11.sp,
                                                     fontWeight = FontWeight.Bold
-                                                )
+                                                ),
+                                                color = priorityColor
                                             )
                                         },
                                         leadingIcon = {
                                             Icon(Icons.Filled.Flag, null, modifier = Modifier.size(14.dp), tint = priorityColor)
                                         },
                                         colors = AssistChipDefaults.assistChipColors(
-                                            containerColor = innerWhiteBg,
+                                            containerColor = Color.White,
                                             labelColor = priorityColor
                                         ),
                                         shape = RoundedCornerShape(100.dp)
@@ -309,13 +314,14 @@ fun TaskDetailScreen(
                         }
                     }
 
-                    // Sub-tasks with edit – scrollable within container per request – corner radius 24.dp – consistent like All Tasks – dark mode contrast fix
+                    // Sub-tasks – fix color contrast dark mode per screenshot – dark bg #1E2A44 with blue checkboxes, light text, Add task blue CTA
                     var editingSubId by remember { mutableStateOf<String?>(null) }
                     var editingSubText by remember { mutableStateOf("") }
                     var isSubTasksExpanded by remember { mutableStateOf(false) }
+                    // Use #e3f5ff for light, dark navy for dark mode – good contrast
                     val subCardBg = if (isDark) Color(0xFF1E2A44) else Color(0xFFE3F5FF)
-                    val subTextPrimary = MaterialTheme.colorScheme.onSurface
-                    val subTextSecondary = MaterialTheme.colorScheme.onSurfaceVariant
+                    val subTextPrimary = if (isDark) Color.White else Color(0xFF101114)
+                    val subTextSecondary = if (isDark) Color(0xFF9CA3AF) else Color(0xFF6B7280)
                     Card(
                         modifier = Modifier.fillMaxWidth(),
                         shape = RoundedCornerShape(24.dp),
