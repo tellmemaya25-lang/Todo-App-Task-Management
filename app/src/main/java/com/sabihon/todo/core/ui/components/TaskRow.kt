@@ -27,7 +27,11 @@ import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableFloatStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -42,17 +46,14 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.sabihon.todo.core.ui.theme.AccentBlue
-import com.sabihon.todo.core.ui.theme.SoftBlue
 import com.sabihon.todo.domain.model.SubTask
 
 /**
- * TaskRow – strong visual hierarchy, only title + short description + percentage + status
- * - Title: bold large, primary
- * - Short description: small gray, 1 line
- * - Percentage: big on right, as big as title+description, 50% + 2/4
- * - Status: chip / color indicator
+ * TaskRow – strong hierarchy, only title + short desc + percentage + status
+ * - Background #c7dcff per request
+ * - Percentage moved to left, big as title+description (56.dp), with animation
  * - Gradient + animation when done
- * - Each task own card 24.dp
+ * - No overlap with swipe actions (percentage left, swipe actions right)
  */
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
@@ -73,31 +74,44 @@ fun TaskRow(
 ) {
     val totalSubs = subTasks.size
     val doneSubs = subTasks.count { it.isDone }
-    val progress = if (totalSubs > 0) doneSubs.toFloat() / totalSubs else if (isCompleted) 1f else 0f
+    val rawProgress = if (totalSubs > 0) doneSubs.toFloat() / totalSubs else if (isCompleted) 1f else 0f
     val hasSubTasks = totalSubs > 0
 
-    // Status logic
+    // Animated percentage – for animation when progress changes
+    var targetProgress by remember { mutableFloatStateOf(0f) }
+    LaunchedEffect(rawProgress) {
+        targetProgress = rawProgress
+    }
+    val animatedProgress by animateFloatAsState(
+        targetValue = targetProgress,
+        animationSpec = tween(durationMillis = 800),
+        label = "progressAnim"
+    )
+
     val statusText = when {
         isCompleted -> "Completed"
-        hasSubTasks && progress > 0f && progress < 1f -> "In Progress"
-        hasSubTasks && progress == 0f -> "Pending"
+        hasSubTasks && animatedProgress > 0f && animatedProgress < 1f -> "In Progress"
+        hasSubTasks && animatedProgress == 0f -> "Pending"
         else -> "Pending"
     }
     val statusColor = when {
         isCompleted -> Color(0xFF4CAF50)
-        hasSubTasks && progress > 0f -> AccentBlue
+        hasSubTasks && animatedProgress > 0f -> AccentBlue
         else -> MaterialTheme.colorScheme.onSurfaceVariant
     }
 
+    // Background #c7dcff per request, with gradient when done
+    val baseBackground = Color(0xFFC7DCFF)
+    val completedBackground = Color(0xFFB3CCFF)
+
     val containerColor by animateColorAsState(
-        targetValue = if (isCompleted) MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.45f)
-        else MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.6f),
+        targetValue = if (isCompleted) completedBackground else baseBackground,
         animationSpec = tween(400),
         label = "containerColor"
     )
 
     val checkScale by animateFloatAsState(
-        targetValue = if (isCompleted) 1.08f else 1f,
+        targetValue = if (isCompleted) 1.1f else 1f,
         animationSpec = spring(
             dampingRatio = Spring.DampingRatioMediumBouncy,
             stiffness = Spring.StiffnessMedium
@@ -108,9 +122,9 @@ fun TaskRow(
     val gradientBrush = if (isCompleted) {
         Brush.linearGradient(
             colors = listOf(
-                AccentBlue.copy(alpha = 0.15f),
-                SoftBlue.copy(alpha = 0.3f),
-                MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.45f)
+                AccentBlue.copy(alpha = 0.2f),
+                Color(0xFFC7DCFF),
+                Color(0xFFA8C0FF)
             )
         )
     } else null
@@ -138,81 +152,7 @@ fun TaskRow(
                     .padding(16.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                // Left: title + short description + status – strong hierarchy
-                Column(
-                    modifier = Modifier.weight(1f),
-                    verticalArrangement = Arrangement.spacedBy(4.dp)
-                ) {
-                    // Title – bold large, strong hierarchy
-                    Text(
-                        text = title,
-                        style = MaterialTheme.typography.titleMedium.copy(
-                            fontWeight = FontWeight.Bold,
-                            fontSize = 16.sp,
-                            lineHeight = 20.sp,
-                            textDecoration = if (isCompleted) TextDecoration.LineThrough else null
-                        ),
-                        color = if (isCompleted) MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f)
-                        else MaterialTheme.colorScheme.onSurface,
-                        maxLines = 1,
-                        overflow = TextOverflow.Ellipsis
-                    )
-
-                    // Short description – 1 line only, like screenshot "Cybersecurity" or "from: ..."
-                    val shortDesc = when {
-                        !categoryLabel.isNullOrBlank() -> categoryLabel
-                        !description.isNullOrBlank() -> description.take(40)
-                        timeLabel.isNotBlank() && timeLabel != "Today" -> timeLabel
-                        else -> null
-                    }
-
-                    if (shortDesc != null) {
-                        Text(
-                            text = shortDesc,
-                            style = MaterialTheme.typography.bodySmall.copy(
-                                fontSize = 13.sp,
-                                fontWeight = FontWeight.Normal
-                            ),
-                            color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.8f),
-                            maxLines = 1,
-                            overflow = TextOverflow.Ellipsis
-                        )
-                    }
-
-                    // Status row – small, subtle but clear hierarchy
-                    Row(
-                        horizontalArrangement = Arrangement.spacedBy(6.dp),
-                        verticalAlignment = Alignment.CenterVertically,
-                        modifier = Modifier.padding(top = 2.dp)
-                    ) {
-                        // Status dot
-                        Box(
-                            modifier = Modifier
-                                .size(6.dp)
-                                .clip(CircleShape)
-                                .background(statusColor)
-                        )
-                        Text(
-                            text = statusText,
-                            style = MaterialTheme.typography.labelSmall.copy(
-                                fontSize = 11.sp,
-                                fontWeight = FontWeight.Medium
-                            ),
-                            color = statusColor
-                        )
-                        if (hasSubTasks) {
-                            Text(
-                                text = "• $doneSubs/$totalSubs",
-                                style = MaterialTheme.typography.labelSmall.copy(fontSize = 11.sp),
-                                color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f)
-                            )
-                        }
-                    }
-                }
-
-                Spacer(Modifier.width(16.dp))
-
-                // Right: percentage – big as title+description, strong visual hierarchy like screenshot 50% 2/4
+                // Left: percentage – big as title+description, moved to left to avoid swipe overlap on right
                 Box(
                     modifier = Modifier
                         .size(56.dp)
@@ -220,27 +160,23 @@ fun TaskRow(
                     contentAlignment = Alignment.Center
                 ) {
                     if (hasSubTasks) {
-                        // Big ring – 56.dp as big as title+desc
                         Canvas(modifier = Modifier.size(56.dp)) {
                             val strokeWidth = 4.dp.toPx()
-                            // Background track
                             drawCircle(
-                                color = Color.Gray.copy(alpha = 0.12f),
+                                color = Color.Gray.copy(alpha = 0.15f),
                                 style = Stroke(width = strokeWidth)
                             )
-                            // Progress
-                            if (progress > 0f) {
+                            if (animatedProgress > 0f) {
                                 drawArc(
                                     color = AccentBlue,
                                     startAngle = -90f,
-                                    sweepAngle = 360f * progress,
+                                    sweepAngle = 360f * animatedProgress,
                                     useCenter = false,
                                     style = Stroke(width = strokeWidth, cap = StrokeCap.Round)
                                 )
                             }
                         }
-                        // Center: 50% + 2/4 like screenshot top right
-                        if (isCompleted || progress >= 1f) {
+                        if (isCompleted || animatedProgress >= 1f) {
                             Box(
                                 modifier = Modifier
                                     .size(40.dp)
@@ -262,22 +198,21 @@ fun TaskRow(
                         } else {
                             Column(horizontalAlignment = Alignment.CenterHorizontally) {
                                 Text(
-                                    text = "${(progress * 100).toInt()}%",
+                                    text = "${(animatedProgress * 100).toInt()}%",
                                     style = MaterialTheme.typography.titleSmall.copy(
                                         fontWeight = FontWeight.Bold,
                                         fontSize = 13.sp
                                     ),
-                                    color = MaterialTheme.colorScheme.onSurface
+                                    color = Color(0xFF101114)
                                 )
                                 Text(
                                     text = "$doneSubs/$totalSubs",
                                     style = MaterialTheme.typography.labelSmall.copy(fontSize = 9.sp),
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                    color = Color(0xFF6B7280)
                                 )
                             }
                         }
                     } else {
-                        // No sub-tasks – show status circle big
                         if (isCompleted) {
                             Box(
                                 modifier = Modifier
@@ -298,14 +233,76 @@ fun TaskRow(
                                 )
                             }
                         } else {
-                            // Pending circle – empty, subtle
                             Canvas(modifier = Modifier.size(48.dp)) {
                                 drawCircle(
-                                    color = Color.Gray.copy(alpha = 0.25f),
+                                    color = Color.Gray.copy(alpha = 0.35f),
                                     style = Stroke(width = 2.dp.toPx())
                                 )
                             }
                         }
+                    }
+                }
+
+                Spacer(Modifier.width(16.dp))
+
+                // Right: title + short desc + status – strong hierarchy, no overlap with swipe right actions
+                Column(
+                    modifier = Modifier.weight(1f),
+                    verticalArrangement = Arrangement.spacedBy(4.dp)
+                ) {
+                    Text(
+                        text = title,
+                        style = MaterialTheme.typography.titleMedium.copy(
+                            fontWeight = FontWeight.Bold,
+                            fontSize = 16.sp,
+                            lineHeight = 20.sp,
+                            textDecoration = if (isCompleted) TextDecoration.LineThrough else null
+                        ),
+                        color = if (isCompleted) Color(0xFF6B7280).copy(alpha = 0.6f)
+                        else Color(0xFF101114),
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis
+                    )
+
+                    val shortDesc = when {
+                        !categoryLabel.isNullOrBlank() -> categoryLabel
+                        !description.isNullOrBlank() -> description.take(40)
+                        timeLabel.isNotBlank() && timeLabel != "Today" -> timeLabel
+                        else -> null
+                    }
+
+                    if (shortDesc != null) {
+                        Text(
+                            text = shortDesc,
+                            style = MaterialTheme.typography.bodySmall.copy(
+                                fontSize = 13.sp,
+                                fontWeight = FontWeight.Normal
+                            ),
+                            color = Color(0xFF6B7280).copy(alpha = 0.9f),
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis
+                        )
+                    }
+
+                    Row(
+                        horizontalArrangement = Arrangement.spacedBy(6.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                        modifier = Modifier.padding(top = 2.dp)
+                    ) {
+                        Box(
+                            modifier = Modifier
+                                .size(6.dp)
+                                .clip(CircleShape)
+                                .background(statusColor)
+                        )
+                        Text(
+                            text = "$statusText • $doneSubs/$totalSubs",
+                            style = MaterialTheme.typography.labelSmall.copy(
+                                fontSize = 11.sp,
+                                fontWeight = FontWeight.Medium
+                            ),
+                            color = statusColor
+                        )
                     }
                 }
             }
