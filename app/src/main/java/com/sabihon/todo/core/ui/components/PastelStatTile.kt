@@ -3,9 +3,7 @@ package com.sabihon.todo.core.ui.components
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
@@ -13,9 +11,9 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.AccessTime
-import androidx.compose.material.icons.filled.CalendarMonth
+import androidx.compose.material.icons.filled.Event
 import androidx.compose.material.icons.filled.Layers
+import androidx.compose.material.icons.filled.Today
 import androidx.compose.material.icons.filled.Warning
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
@@ -103,8 +101,8 @@ fun StatTileByType(
     onClick: (() -> Unit)? = null
 ) {
     val (bg, icon, label) = when (type) {
-        StatType.TODAY -> Triple(SoftBlue, Icons.Filled.AccessTime, "Today")
-        StatType.SCHEDULED -> Triple(SoftYellow, Icons.Filled.CalendarMonth, "Scheduled")
+        StatType.TODAY -> Triple(SoftBlue, Icons.Filled.Today, "Today")
+        StatType.SCHEDULED -> Triple(SoftYellow, Icons.Filled.Event, "Scheduled")
         StatType.ALL -> Triple(SoftMint, Icons.Filled.Layers, "All")
         StatType.OVERDUE -> Triple(SoftPink, Icons.Filled.Warning, "Overdue")
     }

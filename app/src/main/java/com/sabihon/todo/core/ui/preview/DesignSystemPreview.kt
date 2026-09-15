@@ -11,6 +11,9 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Event
+import androidx.compose.material.icons.filled.Today
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
@@ -20,7 +23,6 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.sabihon.todo.core.ui.components.CategoryCard
 import com.sabihon.todo.core.ui.components.CircleCheckbox
-import com.sabihon.todo.core.ui.components.ConfirmDialog
 import com.sabihon.todo.core.ui.components.EmptyState
 import com.sabihon.todo.core.ui.components.LoadingShimmer
 import com.sabihon.todo.core.ui.components.PastelStatTile
@@ -34,9 +36,6 @@ import com.sabihon.todo.core.ui.components.StatTileByType
 import com.sabihon.todo.core.ui.components.TaskRow
 import com.sabihon.todo.core.ui.theme.SabihonTheme
 import com.sabihon.todo.core.ui.theme.SoftBlue
-import com.sabihon.todo.core.ui.theme.SoftLilac
-import com.sabihon.todo.core.ui.theme.SoftMint
-import com.sabihon.todo.core.ui.theme.SoftPink
 import com.sabihon.todo.core.ui.theme.SoftYellow
 import com.sabihon.todo.domain.model.Priority
 import com.sabihon.todo.domain.model.SubTask
@@ -176,8 +175,8 @@ fun StatTilePreview() {
                 .padding(16.dp),
             horizontalArrangement = Arrangement.spacedBy(12.dp)
         ) {
-            PastelStatTile(label = "Today", count = 5, backgroundColor = SoftBlue, icon = androidx.compose.material.icons.Icons.Filled.AccessTime, modifier = Modifier.weight(1f))
-            PastelStatTile(label = "Scheduled", count = 12, backgroundColor = SoftYellow, icon = androidx.compose.material.icons.Icons.Filled.CalendarMonth, modifier = Modifier.weight(1f))
+            PastelStatTile(label = "Today", count = 5, backgroundColor = SoftBlue, icon = Icons.Filled.Today, modifier = Modifier.weight(1f))
+            PastelStatTile(label = "Scheduled", count = 12, backgroundColor = SoftYellow, icon = Icons.Filled.Event, modifier = Modifier.weight(1f))
         }
     }
 }
