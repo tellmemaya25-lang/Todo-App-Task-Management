@@ -289,17 +289,17 @@ fun TaskDetailScreen(
                         }
                     }
 
-                    // Sub-tasks with edit – scrollable within container per request – corner radius 24.dp per request
+                    // Sub-tasks with edit – scrollable within container per request – corner radius 24.dp per request – consistent like All Tasks
                     var editingSubId by remember { mutableStateOf<String?>(null) }
                     var editingSubText by remember { mutableStateOf("") }
                     Card(
                         modifier = Modifier.fillMaxWidth(),
                         shape = RoundedCornerShape(24.dp),
-                        colors = CardDefaults.cardColors(containerColor = Color(0xFFF0EBFF)),
+                        colors = CardDefaults.cardColors(containerColor = Color(0xFFE3F5FF)),
                         elevation = CardDefaults.cardElevation(0.dp)
                     ) {
                         Column {
-                            // Scrollable container for sub-tasks – max height 300dp
+                            // Scrollable container for sub-tasks – max height 320dp – consistent with All Tasks cards #E3F5FF
                             Column(
                                 modifier = Modifier
                                     .fillMaxWidth()
@@ -309,11 +309,12 @@ fun TaskDetailScreen(
                             task.subTasks.forEach { sub ->
                                 Row(
                                     verticalAlignment = Alignment.CenterVertically,
-                                    horizontalArrangement = Arrangement.spacedBy(6.dp),
+                                    horizontalArrangement = Arrangement.spacedBy(12.dp),
                                     modifier = Modifier.fillMaxWidth()
                                         .combinedClickable(onClick = { viewModel.toggleSubTask(sub.id) })
-                                        .padding(horizontal = 12.dp, vertical = 8.dp)
+                                        .padding(horizontal = 16.dp, vertical = 12.dp)
                                 ) {
+                                    // Checkbox – round, same as All Tasks percentage style but checkbox
                                     SubTaskRoundedCheckbox(
                                         checked = sub.isDone,
                                         onCheckedChange = { viewModel.toggleSubTask(sub.id) }
@@ -324,7 +325,7 @@ fun TaskDetailScreen(
                                             onValueChange = { editingSubText = it },
                                             modifier = Modifier.weight(1f),
                                             singleLine = true,
-                                            shape = RoundedCornerShape(10.dp)
+                                            shape = RoundedCornerShape(12.dp)
                                         )
                                         IconButton(onClick = {
                                             viewModel.editSubTask(sub.id, editingSubText)
@@ -336,39 +337,66 @@ fun TaskDetailScreen(
                                             Text("×", fontSize = 14.sp)
                                         }
                                     } else {
-                                        Column(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(1.dp)) {
+                                        // Consistent like All Tasks: title bold 16sp + short desc 13sp + status dot 6dp
+                                        Column(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(4.dp)) {
                                             Text(
                                                 text = sub.title,
-                                                style = MaterialTheme.typography.bodyMedium.copy(
-                                                    textDecoration = if (sub.isDone) TextDecoration.LineThrough else null,
-                                                    fontSize = 13.sp
+                                                style = MaterialTheme.typography.titleMedium.copy(
+                                                    fontWeight = FontWeight.Bold,
+                                                    fontSize = 15.sp,
+                                                    lineHeight = 18.sp,
+                                                    textDecoration = if (sub.isDone) TextDecoration.LineThrough else null
                                                 ),
-                                                color = if (sub.isDone) Color.Gray.copy(alpha = 0.5f) else Color(0xFF101114),
+                                                color = if (sub.isDone) Color(0xFF6B7280).copy(alpha = 0.6f) else Color(0xFF101114),
                                                 maxLines = 1,
                                                 overflow = TextOverflow.Ellipsis
                                             )
                                             Text(
                                                 text = "from: ${task.title}",
-                                                style = MaterialTheme.typography.labelSmall.copy(fontSize = 10.sp),
-                                                color = Color.Gray.copy(alpha = 0.7f),
-                                                maxLines = 1
+                                                style = MaterialTheme.typography.bodySmall.copy(
+                                                    fontSize = 12.sp,
+                                                    lineHeight = 14.sp
+                                                ),
+                                                color = Color(0xFF6B7280).copy(alpha = 0.9f),
+                                                maxLines = 1,
+                                                overflow = TextOverflow.Ellipsis
                                             )
+                                            Row(
+                                                horizontalArrangement = Arrangement.spacedBy(6.dp),
+                                                verticalAlignment = Alignment.CenterVertically,
+                                                modifier = Modifier.padding(top = 2.dp)
+                                            ) {
+                                                Box(
+                                                    modifier = Modifier
+                                                        .size(6.dp)
+                                                        .clip(CircleShape)
+                                                        .background(if (sub.isDone) Color(0xFF4CAF50) else Color(0xFF9CA3AF))
+                                                )
+                                                Text(
+                                                    text = if (sub.isDone) "Completed" else "Pending",
+                                                    style = MaterialTheme.typography.labelSmall.copy(
+                                                        fontSize = 10.sp,
+                                                        fontWeight = FontWeight.Medium
+                                                    ),
+                                                    color = if (sub.isDone) Color(0xFF4CAF50) else Color(0xFF6B7280)
+                                                )
+                                            }
                                         }
                                         IconButton(onClick = {
                                             editingSubId = sub.id
                                             editingSubText = sub.title
                                         }, modifier = Modifier.size(28.dp)) {
-                                            Icon(Icons.Filled.Edit, null, modifier = Modifier.size(12.dp), tint = Color.Gray)
+                                            Icon(Icons.Filled.Edit, null, modifier = Modifier.size(14.dp), tint = Color(0xFF6B7280))
                                         }
                                         IconButton(onClick = { viewModel.deleteSubTask(sub.id) }, modifier = Modifier.size(28.dp)) {
-                                            Text("×", color = Color.Gray, fontSize = 12.sp)
+                                            Text("×", color = Color(0xFF6B7280), fontSize = 14.sp)
                                         }
                                     }
                                 }
                                 HorizontalDivider(
-                                    modifier = Modifier.padding(horizontal = 12.dp),
+                                    modifier = Modifier.padding(horizontal = 16.dp),
                                     thickness = 0.5.dp,
-                                    color = Color(0xFFE5E7EB)
+                                    color = Color.Gray.copy(alpha = 0.12f)
                                 )
                             }
                             }
