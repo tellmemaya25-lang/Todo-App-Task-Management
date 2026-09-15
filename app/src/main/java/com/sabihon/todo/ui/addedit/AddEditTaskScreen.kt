@@ -202,19 +202,50 @@ fun AddEditTaskScreen(
             }
 
             Text("Sub-tasks", style = MaterialTheme.typography.titleMedium)
+            var editingSubId by remember { mutableStateOf<String?>(null) }
+            var editingSubText by remember { mutableStateOf("") }
             uiState.subTasks.forEach { sub ->
                 Row(
                     verticalAlignment = Alignment.CenterVertically,
                     modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(12.dp)
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
                     SubTaskRoundedCheckbox(
                         checked = sub.isDone,
                         onCheckedChange = { viewModel.toggleSubTask(sub.id) }
                     )
-                    Text(text = sub.title, modifier = Modifier.weight(1f), style = MaterialTheme.typography.bodyMedium)
-                    IconButton(onClick = { viewModel.removeSubTask(sub.id) }) {
-                        Text("×", style = MaterialTheme.typography.titleMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    if (editingSubId == sub.id) {
+                        OutlinedTextField(
+                            value = editingSubText,
+                            onValueChange = { editingSubText = it },
+                            modifier = Modifier.weight(1f),
+                            singleLine = true,
+                            shape = RoundedCornerShape(12.dp)
+                        )
+                        IconButton(onClick = {
+                            viewModel.editSubTask(sub.id, editingSubText)
+                            editingSubId = null
+                        }) {
+                            Text("✓", style = MaterialTheme.typography.titleMedium, color = MaterialTheme.colorScheme.primary)
+                        }
+                        IconButton(onClick = { editingSubId = null }) {
+                            Text("×", style = MaterialTheme.typography.titleMedium)
+                        }
+                    } else {
+                        Text(
+                            text = sub.title,
+                            modifier = Modifier.weight(1f).padding(vertical = 4.dp),
+                            style = MaterialTheme.typography.bodyMedium
+                        )
+                        IconButton(onClick = {
+                            editingSubId = sub.id
+                            editingSubText = sub.title
+                        }) {
+                            Text("✎", style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                        }
+                        IconButton(onClick = { viewModel.removeSubTask(sub.id) }) {
+                            Text("×", style = MaterialTheme.typography.titleMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                        }
                     }
                 }
             }

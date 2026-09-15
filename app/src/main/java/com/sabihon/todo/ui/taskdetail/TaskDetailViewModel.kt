@@ -89,4 +89,28 @@ class TaskDetailViewModel @Inject constructor(
             updateTaskUseCase(updatedTask)
         }
     }
+
+    fun editSubTask(subTaskId: String, newTitle: String) {
+        if (newTitle.isBlank()) return
+        viewModelScope.launch {
+            val currentTask = _uiState.value.task ?: return@launch
+            val updatedSubs = currentTask.subTasks.map {
+                if (it.id == subTaskId) it.copy(title = newTitle.trim()) else it
+            }
+            val updatedTask = currentTask.copy(subTasks = updatedSubs)
+            updateTaskUseCase(updatedTask)
+        }
+    }
+
+    fun deleteSubTask(subTaskId: String) {
+        viewModelScope.launch {
+            val currentTask = _uiState.value.task ?: return@launch
+            val updatedSubs = currentTask.subTasks.filter { it.id != subTaskId }
+            // If all remaining done, mark complete else not
+            val allDone = updatedSubs.isNotEmpty() && updatedSubs.all { it.isDone }
+            val shouldBeCompleted = if (updatedSubs.isEmpty()) currentTask.isCompleted else allDone
+            val updatedTask = currentTask.copy(subTasks = updatedSubs, isCompleted = shouldBeCompleted)
+            updateTaskUseCase(updatedTask)
+        }
+    }
 }

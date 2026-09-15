@@ -205,6 +205,14 @@ class AddEditViewModel @Inject constructor(
         }
     }
 
+    fun editSubTask(subTaskId: String, newTitle: String) {
+        if (newTitle.isBlank()) return
+        _uiState.update { current ->
+            val updated = current.subTasks.map { if (it.id == subTaskId) it.copy(title = newTitle.trim()) else it }
+            current.copy(subTasks = updated)
+        }
+    }
+
     fun saveTask(onSuccess: () -> Unit) {
         val currentUser = auth.currentUser
         if (currentUser == null) {

@@ -338,7 +338,9 @@ fun TaskDetailScreen(
                         }
                     }
 
-                    // Sub-tasks with dividers
+                    // Sub-tasks with dividers + edit capability per request
+                    var editingSubId by remember { mutableStateOf<String?>(null) }
+                    var editingSubText by remember { mutableStateOf("") }
                     Card(
                         modifier = Modifier.fillMaxWidth(),
                         shape = RoundedCornerShape(20.dp),
@@ -349,7 +351,7 @@ fun TaskDetailScreen(
                             task.subTasks.forEach { sub ->
                                 Row(
                                     verticalAlignment = Alignment.CenterVertically,
-                                    horizontalArrangement = Arrangement.spacedBy(12.dp),
+                                    horizontalArrangement = Arrangement.spacedBy(8.dp),
                                     modifier = Modifier.fillMaxWidth()
                                         .combinedClickable(onClick = { viewModel.toggleSubTask(sub.id) })
                                         .padding(horizontal = 16.dp, vertical = 14.dp)
@@ -358,22 +360,50 @@ fun TaskDetailScreen(
                                         checked = sub.isDone,
                                         onCheckedChange = { viewModel.toggleSubTask(sub.id) }
                                     )
-                                    Column(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
-                                        Text(
-                                            text = sub.title,
-                                            style = MaterialTheme.typography.bodyMedium.copy(
-                                                textDecoration = if (sub.isDone) TextDecoration.LineThrough else null
-                                            ),
-                                            color = if (sub.isDone) Color.Gray.copy(alpha = 0.5f) else Color(0xFF101114),
-                                            maxLines = 1,
-                                            overflow = TextOverflow.Ellipsis
+                                    if (editingSubId == sub.id) {
+                                        OutlinedTextField(
+                                            value = editingSubText,
+                                            onValueChange = { editingSubText = it },
+                                            modifier = Modifier.weight(1f),
+                                            singleLine = true,
+                                            shape = RoundedCornerShape(12.dp)
                                         )
-                                        Text(
-                                            text = "from: ${task.title}",
-                                            style = MaterialTheme.typography.labelSmall,
-                                            color = Color.Gray.copy(alpha = 0.7f),
-                                            maxLines = 1
-                                        )
+                                        IconButton(onClick = {
+                                            viewModel.editSubTask(sub.id, editingSubText)
+                                            editingSubId = null
+                                        }) {
+                                            Text("✓", color = AccentBlue, fontWeight = FontWeight.Bold)
+                                        }
+                                        IconButton(onClick = { editingSubId = null }) {
+                                            Text("×")
+                                        }
+                                    } else {
+                                        Column(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
+                                            Text(
+                                                text = sub.title,
+                                                style = MaterialTheme.typography.bodyMedium.copy(
+                                                    textDecoration = if (sub.isDone) TextDecoration.LineThrough else null
+                                                ),
+                                                color = if (sub.isDone) Color.Gray.copy(alpha = 0.5f) else Color(0xFF101114),
+                                                maxLines = 1,
+                                                overflow = TextOverflow.Ellipsis
+                                            )
+                                            Text(
+                                                text = "from: ${task.title}",
+                                                style = MaterialTheme.typography.labelSmall,
+                                                color = Color.Gray.copy(alpha = 0.7f),
+                                                maxLines = 1
+                                            )
+                                        }
+                                        IconButton(onClick = {
+                                            editingSubId = sub.id
+                                            editingSubText = sub.title
+                                        }) {
+                                            Icon(Icons.Filled.Edit, null, modifier = Modifier.size(16.dp), tint = Color.Gray)
+                                        }
+                                        IconButton(onClick = { viewModel.deleteSubTask(sub.id) }) {
+                                            Text("×", color = Color.Gray)
+                                        }
                                     }
                                 }
                                 HorizontalDivider(
