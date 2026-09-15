@@ -41,11 +41,12 @@ import kotlinx.coroutines.launch
 import kotlin.math.roundToInt
 
 /**
- * Swipeable task row – fix swipe right missing edit/delete + corner radius 24.dp
- * - Allow both swipe left and right to reveal edit/delete centered (was only left)
- * - Remove mark done swipe per earlier request, now both directions show edit/delete
- * - Background icons centered, fill vertical height, no bg/corner radius
- * - Outer clip 24.dp per request
+ * Swipeable task row – home page swipe right to edit/delete
+ * - Supports BOTH swipe left and swipe right to reveal edit/delete per request
+ * - Gesture: draggable horizontal, thresholds ±80dp, reveal 160dp
+ * - Icons centered vertically fill height 56dp, no bg, AccentBlue / #E57373, 24.dp clip outer
+ * - Background aligned to revealed side so icons are visible (fix center not visible with 140dp)
+ * - Tap to close when opened, click closes then triggers action
  */
 @Composable
 fun SwipeableTaskRow(
@@ -68,8 +69,8 @@ fun SwipeableTaskRow(
     val density = LocalDensity.current
     val startThreshold = with(density) { 80.dp.toPx() }
     val endThreshold = with(density) { -80.dp.toPx() }
-    val maxStart = with(density) { 140.dp.toPx() }
-    val maxEnd = with(density) { -140.dp.toPx() }
+    val maxStart = with(density) { 160.dp.toPx() }
+    val maxEnd = with(density) { -160.dp.toPx() }
 
     val offsetX = remember { Animatable(0f) }
     val scope = rememberCoroutineScope()
@@ -90,18 +91,23 @@ fun SwipeableTaskRow(
             .clip(RoundedCornerShape(24.dp))
             .background(Color(0xFFE3F5FF))
     ) {
-        // Background – centered edit/delete for both swipe directions, corner radius 24.dp
-        Row(
+        // Background – edit/delete, visible on swipe right (left side) and swipe left (right side)
+        // Aligned to revealed edge so icons are visible even with 160dp offset, centered vertically 56dp
+        val bgAlignment = when {
+            offsetX.value > 10f -> Alignment.CenterStart
+            offsetX.value < -10f -> Alignment.CenterEnd
+            else -> Alignment.Center
+        }
+        Box(
             modifier = Modifier
                 .fillMaxSize()
                 .clip(RoundedCornerShape(24.dp))
                 .background(Color(0xFFE3F5FF))
-                .padding(horizontal = 24.dp, vertical = 8.dp),
-            horizontalArrangement = Arrangement.Center,
-            verticalAlignment = Alignment.CenterVertically
+                .padding(horizontal = 20.dp, vertical = 4.dp),
+            contentAlignment = bgAlignment
         ) {
             Row(
-                horizontalArrangement = Arrangement.spacedBy(24.dp),
+                horizontalArrangement = Arrangement.spacedBy(16.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 IconButton(
@@ -111,7 +117,7 @@ fun SwipeableTaskRow(
                         }
                         onEdit?.invoke()
                     },
-                    modifier = Modifier.size(48.dp)
+                    modifier = Modifier.size(56.dp)
                 ) {
                     Icon(
                         Icons.Filled.Edit,
@@ -127,7 +133,7 @@ fun SwipeableTaskRow(
                         }
                         onDelete?.invoke()
                     },
-                    modifier = Modifier.size(48.dp)
+                    modifier = Modifier.size(56.dp)
                 ) {
                     Icon(
                         Icons.Filled.Delete,
