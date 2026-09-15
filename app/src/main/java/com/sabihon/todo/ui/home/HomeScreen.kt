@@ -62,7 +62,7 @@ import com.sabihon.todo.core.ui.components.FilterEmptyState
 import com.sabihon.todo.core.ui.components.LoadingShimmer
 import com.sabihon.todo.core.ui.components.NotelyEmptyState
 import com.sabihon.todo.core.ui.components.SectionHeader
-import com.sabihon.todo.core.ui.components.TaskRow
+import com.sabihon.todo.core.ui.components.SwipeableTaskRow
 import com.sabihon.todo.domain.model.Task
 import java.text.SimpleDateFormat
 import java.util.Date
@@ -207,7 +207,7 @@ fun HomeScreen(
                     }
                 } else {
                     items(uiState.filteredTasks, key = { it.id }) { task ->
-                        TaskRow(
+                        SwipeableTaskRow(
                             title = task.title,
                             isCompleted = task.isCompleted,
                             timeLabel = formatTimeLabel(task.dueAt),
@@ -229,6 +229,11 @@ fun HomeScreen(
                             onLongClick = {
                                 selectedTask = task
                                 showActionSheet = true
+                            },
+                            onEdit = { onNavigateToTaskDetail(task.id) },
+                            onDelete = { viewModel.onAction(HomeAction.DeleteTask(task)) },
+                            onToggleComplete = { checked ->
+                                viewModel.onAction(HomeAction.ToggleComplete(task.id, checked))
                             }
                         )
                     }
