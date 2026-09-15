@@ -15,6 +15,7 @@ import com.sabihon.todo.domain.model.TaskFilter
 import com.sabihon.todo.domain.model.TaskStatusFilter
 import com.sabihon.todo.domain.repository.TaskRepository
 import com.google.firebase.Timestamp
+import com.sabihon.todo.notifications.ReminderScheduler
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.channels.awaitClose
 import kotlinx.coroutines.flow.Flow
@@ -27,12 +28,13 @@ import javax.inject.Inject
 import javax.inject.Singleton
 
 /**
- * Firestore implementation of TaskRepository with snapshot listeners.
+ * Firestore implementation of TaskRepository with snapshot listeners and reminder scheduling.
  */
 @Singleton
 class TaskRepositoryImpl @Inject constructor(
     private val firestore: FirebaseFirestore,
     private val auth: FirebaseAuth,
+    private val reminderScheduler: ReminderScheduler,
     @IoDispatcher private val ioDispatcher: CoroutineDispatcher
 ) : TaskRepository {
 
@@ -65,7 +67,6 @@ class TaskRepositoryImpl @Inject constructor(
                 query = query.whereEqualTo("categoryId", it)
             }
 
-            // Sorting – we order by dueAt; for more complex sorting we sort in memory
             query = query.orderBy("dueAt", Query.Direction.ASCENDING)
 
             val listener = query.addSnapshotListener { snapshot, error ->
@@ -81,7 +82,6 @@ class TaskRepositoryImpl @Inject constructor(
                             null
                         }
                     }.let { list ->
-                        // Apply additional in-memory filtering for dueDateRange if needed
                         applyInMemoryFilters(list, filter)
                     }
                     trySend(Result.Success(tasks))
@@ -115,7 +115,6 @@ class TaskRepositoryImpl @Inject constructor(
                 result = result.filter { it.title.lowercase().contains(lower) || it.description.lowercase().contains(lower) }
             }
         }
-        // Sort
         result = when (filter.sortBy) {
             com.sabihon.todo.domain.model.SortBy.PRIORITY -> result.sortedBy { it.priority.ordinal }
             com.sabihon.todo.domain.model.SortBy.CREATED_AT -> result.sortedBy { it.createdAt }
@@ -150,7 +149,6 @@ class TaskRepositoryImpl @Inject constructor(
 
     override suspend fun addTask(task: Task): Result<String> = withContext(ioDispatcher) {
         try {
-            val uid = userIdOrThrow()
             val dto = task.copy(
                 searchKeywords = if (task.searchKeywords.isEmpty()) generateSearchKeywords(task.title) else task.searchKeywords,
                 createdAt = System.currentTimeMillis(),
@@ -159,8 +157,11 @@ class TaskRepositoryImpl @Inject constructor(
             val docRef = if (task.id.isBlank()) tasksCollection().document() else tasksCollection().document(task.id)
             val finalDto = dto.copy(id = docRef.id)
             docRef.set(finalDto).await()
-            // Activity log
             logActivity(taskId = docRef.id, taskTitle = task.title, action = "CREATED")
+            // Schedule reminder if needed
+            task.reminderAt?.let {
+                reminderScheduler.scheduleReminder(docRef.id, task.title, task.description, it)
+            }
             Result.Success(docRef.id)
         } catch (e: Exception) {
             Result.Error(e)
@@ -175,6 +176,12 @@ class TaskRepositoryImpl @Inject constructor(
             ).toDto()
             tasksCollection().document(task.id).set(dto).await()
             logActivity(taskId = task.id, taskTitle = task.title, action = "UPDATED")
+            // Reschedule reminder
+            if (task.reminderAt != null) {
+                reminderScheduler.scheduleReminder(task.id, task.title, task.description, task.reminderAt)
+            } else {
+                reminderScheduler.cancelReminder(task.id)
+            }
             Result.Success(Unit)
         } catch (e: Exception) {
             Result.Error(e)
@@ -194,6 +201,7 @@ class TaskRepositoryImpl @Inject constructor(
                 tasksCollection().document(taskId).delete().await()
             }
             logActivity(taskId = taskId, taskTitle = "", action = "DELETED")
+            reminderScheduler.cancelReminder(taskId)
             Result.Success(Unit)
         } catch (e: Exception) {
             Result.Error(e)
@@ -231,6 +239,9 @@ class TaskRepositoryImpl @Inject constructor(
                 taskTitle = "",
                 action = if (isCompleted) "COMPLETED" else "REOPENED"
             )
+            if (isCompleted) {
+                reminderScheduler.cancelReminder(taskId)
+            }
             Result.Success(Unit)
         } catch (e: Exception) {
             Result.Error(e)
@@ -245,7 +256,6 @@ class TaskRepositoryImpl @Inject constructor(
                 return@flow
             }
             val lower = query.lowercase()
-            // Firestore prefix search using searchKeywords array-contains
             val snapshot = tasksCollection()
                 .whereEqualTo("isDeleted", false)
                 .whereArrayContains("searchKeywords", lower)
@@ -267,9 +277,7 @@ class TaskRepositoryImpl @Inject constructor(
                 timestamp = Timestamp(Date())
             )
             activityCollection().add(dto).await()
-        } catch (_: Exception) {
-            // Ignore activity log failures
-        }
+        } catch (_: Exception) {}
     }
 
     private fun getStartOfDay(timeMillis: Long): Long {

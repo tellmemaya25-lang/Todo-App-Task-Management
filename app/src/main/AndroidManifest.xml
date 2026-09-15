@@ -40,6 +40,10 @@
                 android:value="androidx.startup" />
         </provider>
 
+        <receiver
+            android:name=".notifications.ReminderActionReceiver"
+            android:exported="false" />
+
     </application>
 
 </manifest>
