@@ -44,7 +44,7 @@ fun SplashScreen(
         contentAlignment = Alignment.Center
     ) {
         Text(
-            text = "Sabihon",
+            text = "Just Todo-it",
             style = MaterialTheme.typography.headlineLarge,
             color = MaterialTheme.colorScheme.primary
         )

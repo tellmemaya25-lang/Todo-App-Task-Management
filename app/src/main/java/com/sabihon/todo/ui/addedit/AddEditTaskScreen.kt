@@ -1,6 +1,5 @@
 package com.sabihon.todo.ui.addedit
 
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
@@ -15,7 +14,6 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material3.Button
@@ -33,7 +31,6 @@ import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TimePicker
-import androidx.compose.material3.TimePickerState
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.rememberDatePickerState
 import androidx.compose.material3.rememberTimePickerState
@@ -52,11 +49,12 @@ import com.sabihon.todo.core.ui.components.ConfirmDialog
 import com.sabihon.todo.core.ui.components.PriorityChip
 import com.sabihon.todo.domain.model.Priority
 import java.text.SimpleDateFormat
+import java.util.Calendar
 import java.util.Date
 import java.util.Locale
 
 /**
- * Add/Edit Task – full screen with all fields.
+ * Add/Edit Task – full screen with all fields. Crash-hardened.
  */
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
 @Composable
@@ -72,6 +70,13 @@ fun AddEditTaskScreen(
 
     LaunchedEffect(taskId) {
         viewModel.loadTask(taskId)
+    }
+
+    // Prepare initial time picker values from existing dueAt
+    val initialCal = remember(uiState.dueAt) {
+        Calendar.getInstance().apply {
+            if (uiState.dueAt != null) timeInMillis = uiState.dueAt!!
+        }
     }
 
     Scaffold(
@@ -149,14 +154,21 @@ fun AddEditTaskScreen(
             Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                 TextButton(onClick = { showDatePicker = true }) {
                     Text(
-                        text = uiState.dueAt?.let { formatDate(it) } ?: "Select Date"
+                        text = uiState.dueAt?.let { safeFormatDate(it) } ?: "Select Date"
                     )
                 }
-                TextButton(onClick = { showTimePicker = true }, enabled = uiState.dueAt != null || uiState.dueDateMillis != null) {
+                TextButton(onClick = { showTimePicker = true }) {
                     Text(
-                        text = uiState.dueAt?.let { formatTime(it) } ?: "Select Time"
+                        text = if (uiState.dueAt != null) safeFormatTime(uiState.dueAt!!) else "Select Time"
                     )
                 }
+            }
+            if (uiState.dueAt != null) {
+                Text(
+                    text = "Selected: ${safeFormatDate(uiState.dueAt!!)} • ${safeFormatTime(uiState.dueAt!!)}",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
             }
 
             // Reminder toggle
@@ -212,7 +224,9 @@ fun AddEditTaskScreen(
         }
 
         if (showDatePicker) {
-            val datePickerState = rememberDatePickerState(initialSelectedDateMillis = uiState.dueAt ?: System.currentTimeMillis())
+            val datePickerState = rememberDatePickerState(
+                initialSelectedDateMillis = uiState.dueDateMillis ?: uiState.dueAt ?: System.currentTimeMillis()
+            )
             DatePickerDialog(
                 onDismissRequest = { showDatePicker = false },
                 confirmButton = {
@@ -230,12 +244,17 @@ fun AddEditTaskScreen(
         }
 
         if (showTimePicker) {
-            var timeState = rememberTimePickerState(is24Hour = false)
+            // Remember time picker state outside dialog recomposition
+            val timePickerState = rememberTimePickerState(
+                initialHour = initialCal.get(Calendar.HOUR_OF_DAY),
+                initialMinute = initialCal.get(Calendar.MINUTE),
+                is24Hour = false
+            )
             androidx.compose.material3.AlertDialog(
                 onDismissRequest = { showTimePicker = false },
                 confirmButton = {
                     TextButton(onClick = {
-                        viewModel.onDueTimeSelected(timeState.hour, timeState.minute)
+                        viewModel.onDueTimeSelected(timePickerState.hour, timePickerState.minute)
                         showTimePicker = false
                     }) { Text("OK") }
                 },
@@ -243,7 +262,7 @@ fun AddEditTaskScreen(
                     TextButton(onClick = { showTimePicker = false }) { Text("Cancel") }
                 },
                 text = {
-                    TimePicker(state = timeState)
+                    TimePicker(state = timePickerState)
                 }
             )
         }
@@ -263,12 +282,20 @@ fun AddEditTaskScreen(
     }
 }
 
-private fun formatDate(millis: Long): String {
-    val fmt = SimpleDateFormat("MMM d, yyyy", Locale.getDefault())
-    return fmt.format(Date(millis))
+private fun safeFormatDate(millis: Long): String {
+    return try {
+        val fmt = SimpleDateFormat("MMM d, yyyy", Locale.getDefault())
+        fmt.format(Date(millis))
+    } catch (e: Exception) {
+        "Invalid date"
+    }
 }
 
-private fun formatTime(millis: Long): String {
-    val fmt = SimpleDateFormat("h:mm a", Locale.getDefault())
-    return fmt.format(Date(millis))
+private fun safeFormatTime(millis: Long): String {
+    return try {
+        val fmt = SimpleDateFormat("h:mm a", Locale.getDefault())
+        fmt.format(Date(millis))
+    } catch (e: Exception) {
+        "Invalid time"
+    }
 }

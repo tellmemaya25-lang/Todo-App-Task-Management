@@ -1,6 +1,7 @@
 package com.sabihon.todo.data.repository
 
 import com.google.firebase.auth.FirebaseAuth
+import com.google.firebase.auth.GoogleAuthProvider
 import com.google.firebase.auth.UserProfileChangeRequest
 import com.google.firebase.firestore.FirebaseFirestore
 import com.sabihon.todo.core.util.Result
@@ -19,6 +20,7 @@ import javax.inject.Singleton
 
 /**
  * Firebase Auth implementation – creates users/{uid} doc and seeds default categories.
+ * Supports Email/Password + Google OAuth 2.0.
  */
 @Singleton
 class AuthRepositoryImpl @Inject constructor(
@@ -79,6 +81,33 @@ class AuthRepositoryImpl @Inject constructor(
             }
         }
 
+    override suspend fun signInWithGoogle(idToken: String): Result<String> =
+        withContext(ioDispatcher) {
+            try {
+                val credential = GoogleAuthProvider.getCredential(idToken, null)
+                val res = auth.signInWithCredential(credential).await()
+                val user = res.user ?: return@withContext Result.Error(Exception("Google sign-in failed"))
+                val uid = user.uid
+
+                // Check if users/{uid} doc exists, if not create it (first time Google login)
+                val userDoc = firestore.collection("users").document(uid).get().await()
+                if (!userDoc.exists()) {
+                    val userDto = UserDto(
+                        displayName = user.displayName ?: "User",
+                        email = user.email ?: "",
+                        photoUrl = user.photoUrl?.toString(),
+                        themePref = "SYSTEM"
+                    )
+                    firestore.collection("users").document(uid).set(userDto).await()
+                    categoryRepository.seedDefaultCategories()
+                }
+
+                Result.Success(uid)
+            } catch (e: Exception) {
+                Result.Error(e, friendlyMessage(e))
+            }
+        }
+
     override suspend fun signOut(): Result<Unit> = withContext(ioDispatcher) {
         try {
             auth.signOut()
@@ -114,15 +143,14 @@ class AuthRepositoryImpl @Inject constructor(
         val msg = raw.lowercase()
         return when {
             "configuration_not_found" in msg || "configuration-not-found" in msg -> {
-                // Most common cause: google-services.json mismatch or Auth not enabled in Firebase console
-                "Firebase config not found. Check: 1) Firebase Console > Authentication > Enable Email/Password, " +
+                "Firebase config not found. Check: 1) Firebase Console > Authentication > Enable Email/Password and Google, " +
                     "2) google-services.json package_name is com.sabihon.todo, " +
                     "3) Re-download google-services.json after enabling Auth. Raw: $raw"
             }
             "network" in msg -> "No internet connection. Please check your network."
             "invalid-email" in msg || "badly formatted" in msg -> "Invalid email format."
             "user-not-found" in msg -> "No account found with this email."
-            "wrong-password" in msg || "invalid-credential" in msg -> "Incorrect email or password."
+            "wrong-password" in msg || "invalid-credential" in msg || "invalid credential" in msg -> "Incorrect email or password, or Google sign-in failed."
             "email-already-in-use" in msg -> "Email already in use."
             "weak-password" in msg -> "Password is too weak. Use at least 6 characters."
             "too-many-requests" in msg -> "Too many attempts. Please try again later."

@@ -130,7 +130,7 @@ fun ProfileScreen(
             Spacer(Modifier.height(8.dp))
             Text("About", style = MaterialTheme.typography.titleMedium)
             Text(
-                "Sabihon v1.0 – A clean, pastel, production-quality To-Do app built with Kotlin + Compose + Firebase.",
+                "Just Todo-it v1.0 – A clean, pastel, production-quality To-Do app built with Kotlin + Compose + Firebase.",
                 style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )

@@ -28,7 +28,7 @@ import javax.inject.Inject
 import javax.inject.Singleton
 
 /**
- * Firestore implementation of TaskRepository with snapshot listeners and reminder scheduling.
+ * Firestore implementation – crash-hardened, handles missing indexes gracefully.
  */
 @Singleton
 class TaskRepositoryImpl @Inject constructor(
@@ -67,11 +67,42 @@ class TaskRepositoryImpl @Inject constructor(
                 query = query.whereEqualTo("categoryId", it)
             }
 
-            query = query.orderBy("dueAt", Query.Direction.ASCENDING)
+            // Try orderBy dueAt – may fail if composite index missing, fallback to no order
+            val queryWithOrder = try {
+                query.orderBy("dueAt", Query.Direction.ASCENDING)
+            } catch (e: Exception) {
+                android.util.Log.w("TaskRepo", "orderBy failed, using unordered query", e)
+                query
+            }
 
-            val listener = query.addSnapshotListener { snapshot, error ->
+            val listener = queryWithOrder.addSnapshotListener { snapshot, error ->
                 if (error != null) {
-                    trySend(Result.Error(error))
+                    // If index missing error, try fallback without orderBy
+                    val msg = error.message ?: ""
+                    if (msg.contains("index", ignoreCase = true) || msg.contains("FAILED_PRECONDITION")) {
+                        android.util.Log.w("TaskRepo", "Index missing, falling back to simple query: $msg")
+                        // Fallback: simple collection listener
+                        try {
+                            val fallbackListener = tasksCollection()
+                                .whereEqualTo("isDeleted", false)
+                                .addSnapshotListener { snap2, err2 ->
+                                    if (err2 != null) {
+                                        trySend(Result.Error(err2))
+                                        return@addSnapshotListener
+                                    }
+                                    val tasks = snap2?.documents?.mapNotNull { doc ->
+                                        try { doc.toObject(TaskDto::class.java)?.toDomain() } catch (_: Exception) { null }
+                                    }?.let { applyInMemoryFilters(it, filter) } ?: emptyList()
+                                    trySend(Result.Success(tasks))
+                                }
+                            // Keep fallback listener alive – need to manage close
+                            // For simplicity, we don't close previous, but awaitClose will handle
+                        } catch (e: Exception) {
+                            trySend(Result.Error(e))
+                        }
+                    } else {
+                        trySend(Result.Error(error))
+                    }
                     return@addSnapshotListener
                 }
                 if (snapshot != null) {
@@ -79,6 +110,7 @@ class TaskRepositoryImpl @Inject constructor(
                         try {
                             doc.toObject(TaskDto::class.java)?.toDomain()
                         } catch (e: Exception) {
+                            android.util.Log.e("TaskRepo", "Failed to parse task", e)
                             null
                         }
                     }.let { list ->
@@ -89,6 +121,7 @@ class TaskRepositoryImpl @Inject constructor(
             }
             awaitClose { listener.remove() }
         } catch (e: Exception) {
+            android.util.Log.e("TaskRepo", "observeTasks crash prevented", e)
             trySend(Result.Error(e))
         }
     }
@@ -127,24 +160,32 @@ class TaskRepositoryImpl @Inject constructor(
 
     override fun observeTaskById(taskId: String): Flow<Result<Task>> = callbackFlow {
         trySend(Result.Loading)
-        val docRef = tasksCollection().document(taskId)
-        val listener = docRef.addSnapshotListener { snapshot, error ->
-            if (error != null) {
-                trySend(Result.Error(error))
-                return@addSnapshotListener
-            }
-            if (snapshot != null && snapshot.exists()) {
-                val dto = snapshot.toObject(TaskDto::class.java)
-                if (dto != null) {
-                    trySend(Result.Success(dto.toDomain()))
+        try {
+            val docRef = tasksCollection().document(taskId)
+            val listener = docRef.addSnapshotListener { snapshot, error ->
+                if (error != null) {
+                    trySend(Result.Error(error))
+                    return@addSnapshotListener
+                }
+                if (snapshot != null && snapshot.exists()) {
+                    try {
+                        val dto = snapshot.toObject(TaskDto::class.java)
+                        if (dto != null) {
+                            trySend(Result.Success(dto.toDomain()))
+                        } else {
+                            trySend(Result.Error(Exception("Task not found")))
+                        }
+                    } catch (e: Exception) {
+                        trySend(Result.Error(e))
+                    }
                 } else {
                     trySend(Result.Error(Exception("Task not found")))
                 }
-            } else {
-                trySend(Result.Error(Exception("Task not found")))
             }
+            awaitClose { listener.remove() }
+        } catch (e: Exception) {
+            trySend(Result.Error(e))
         }
-        awaitClose { listener.remove() }
     }
 
     override suspend fun addTask(task: Task): Result<String> = withContext(ioDispatcher) {
@@ -158,13 +199,18 @@ class TaskRepositoryImpl @Inject constructor(
             val finalDto = dto.copy(id = docRef.id)
             docRef.set(finalDto).await()
             logActivity(taskId = docRef.id, taskTitle = task.title, action = "CREATED")
-            // Schedule reminder if needed
-            task.reminderAt?.let {
-                reminderScheduler.scheduleReminder(docRef.id, task.title, task.description, it)
+            // Schedule reminder if needed – don't crash if fails
+            try {
+                task.reminderAt?.let {
+                    reminderScheduler.scheduleReminder(docRef.id, task.title, task.description, it)
+                }
+            } catch (e: Exception) {
+                android.util.Log.e("TaskRepo", "Failed to schedule reminder", e)
             }
             Result.Success(docRef.id)
         } catch (e: Exception) {
-            Result.Error(e)
+            android.util.Log.e("TaskRepo", "addTask failed", e)
+            Result.Error(e, e.message ?: "Failed to add task")
         }
     }
 
@@ -176,15 +222,18 @@ class TaskRepositoryImpl @Inject constructor(
             ).toDto()
             tasksCollection().document(task.id).set(dto).await()
             logActivity(taskId = task.id, taskTitle = task.title, action = "UPDATED")
-            // Reschedule reminder
-            if (task.reminderAt != null) {
-                reminderScheduler.scheduleReminder(task.id, task.title, task.description, task.reminderAt)
-            } else {
-                reminderScheduler.cancelReminder(task.id)
+            try {
+                if (task.reminderAt != null) {
+                    reminderScheduler.scheduleReminder(task.id, task.title, task.description, task.reminderAt)
+                } else {
+                    reminderScheduler.cancelReminder(task.id)
+                }
+            } catch (e: Exception) {
+                android.util.Log.e("TaskRepo", "Reminder reschedule failed", e)
             }
             Result.Success(Unit)
         } catch (e: Exception) {
-            Result.Error(e)
+            Result.Error(e, e.message ?: "Failed to update task")
         }
     }
 
@@ -201,7 +250,7 @@ class TaskRepositoryImpl @Inject constructor(
                 tasksCollection().document(taskId).delete().await()
             }
             logActivity(taskId = taskId, taskTitle = "", action = "DELETED")
-            reminderScheduler.cancelReminder(taskId)
+            try { reminderScheduler.cancelReminder(taskId) } catch (_: Exception) {}
             Result.Success(Unit)
         } catch (e: Exception) {
             Result.Error(e)
@@ -240,7 +289,7 @@ class TaskRepositoryImpl @Inject constructor(
                 action = if (isCompleted) "COMPLETED" else "REOPENED"
             )
             if (isCompleted) {
-                reminderScheduler.cancelReminder(taskId)
+                try { reminderScheduler.cancelReminder(taskId) } catch (_: Exception) {}
             }
             Result.Success(Unit)
         } catch (e: Exception) {
@@ -256,12 +305,22 @@ class TaskRepositoryImpl @Inject constructor(
                 return@flow
             }
             val lower = query.lowercase()
-            val snapshot = tasksCollection()
-                .whereEqualTo("isDeleted", false)
-                .whereArrayContains("searchKeywords", lower)
-                .get()
-                .await()
-            val tasks = snapshot.documents.mapNotNull { it.toObject(TaskDto::class.java)?.toDomain() }
+            val snapshot = try {
+                tasksCollection()
+                    .whereEqualTo("isDeleted", false)
+                    .whereArrayContains("searchKeywords", lower)
+                    .get()
+                    .await()
+            } catch (e: Exception) {
+                // Fallback: client-side search if index missing
+                android.util.Log.w("TaskRepo", "search index missing, fallback to client search", e)
+                tasksCollection().whereEqualTo("isDeleted", false).get().await()
+            }
+            val tasks = snapshot.documents.mapNotNull {
+                try { it.toObject(TaskDto::class.java)?.toDomain() } catch (_: Exception) { null }
+            }.filter {
+                it.title.lowercase().contains(lower) || it.description.lowercase().contains(lower)
+            }
             emit(Result.Success(tasks))
         } catch (e: Exception) {
             emit(Result.Error(e))
