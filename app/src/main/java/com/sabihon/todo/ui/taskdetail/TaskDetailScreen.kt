@@ -321,7 +321,7 @@ fun TaskDetailScreen(
                                 }
                             }
 
-                            // Divider before Add task
+                            // Divider before Add task CTA
                             if (task.subTasks.isNotEmpty()) {
                                 HorizontalDivider(
                                     modifier = Modifier.padding(horizontal = 16.dp),
@@ -330,26 +330,34 @@ fun TaskDetailScreen(
                                 )
                             }
 
-                            // Add task row
-                            Row(
-                                verticalAlignment = Alignment.CenterVertically,
-                                horizontalArrangement = Arrangement.spacedBy(12.dp),
+                            // Add task as CTA – blue, rounded bottom, divider above already
+                            Box(
                                 modifier = Modifier
                                     .fillMaxWidth()
+                                    .clip(RoundedCornerShape(bottomStart = 20.dp, bottomEnd = 20.dp))
+                                    .background(AccentBlue)
                                     .clickable { showAddSheet = true }
-                                    .padding(horizontal = 16.dp, vertical = 14.dp)
+                                    .padding(horizontal = 16.dp, vertical = 14.dp),
+                                contentAlignment = Alignment.Center
                             ) {
-                                Canvas(modifier = Modifier.size(20.dp)) {
-                                    drawCircle(
-                                        color = Color.Gray.copy(alpha = 0.3f),
-                                        style = Stroke(width = 1.2.dp.toPx())
+                                Row(
+                                    verticalAlignment = Alignment.CenterVertically,
+                                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                                ) {
+                                    Icon(
+                                        imageVector = Icons.Filled.Edit,
+                                        contentDescription = null,
+                                        tint = Color.White,
+                                        modifier = Modifier.size(18.dp)
+                                    )
+                                    Text(
+                                        text = "Add task",
+                                        style = MaterialTheme.typography.titleSmall.copy(
+                                            fontWeight = FontWeight.Bold,
+                                            color = Color.White
+                                        )
                                     )
                                 }
-                                Text(
-                                    text = "Add task",
-                                    style = MaterialTheme.typography.bodyMedium,
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f)
-                                )
                             }
                         }
                     }
