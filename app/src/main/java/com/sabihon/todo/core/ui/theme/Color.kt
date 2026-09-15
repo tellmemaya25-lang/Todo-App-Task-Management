@@ -21,14 +21,14 @@ val SurfaceVariantLight = Color(0xFFF5F6FA)
 val TextPrimaryLight = Color(0xFF101114)
 val TextSecondaryLight = Color(0xFF6B7280)
 
-// Dark adjustments
-val SoftBlueDark = Color(0xFF3A4A6B)
-val SoftYellowDark = Color(0xFF6B642E)
-val SoftMintDark = Color(0xFF2E5A4A)
-val SoftPinkDark = Color(0xFF6B4A5A)
-val SoftLilacDark = Color(0xFF4A3A6B)
+// Dark adjustments – tonally adjusted pastels (less saturated, darker)
+val SoftBlueDark = Color(0xFF2D3D5E)
+val SoftYellowDark = Color(0xFF5A5428)
+val SoftMintDark = Color(0xFF244A3C)
+val SoftPinkDark = Color(0xFF5A3A4A)
+val SoftLilacDark = Color(0xFF3D2E5E)
 val DeepGreenDark = Color(0xFF1E4A35)
-val BgDark = Color(0xFF121212)
+val BgDark = Color(0xFF121214)
 val SurfaceVariantDark = Color(0xFF1E1F25)
 val TextPrimaryDark = Color(0xFFF5F5F5)
 val TextSecondaryDark = Color(0xFF9CA3AF)
@@ -38,3 +38,34 @@ val PriorityLow = Color(0xFF8BC48A)
 val PriorityMedium = Color(0xFFF2C94C)
 val PriorityHigh = Color(0xFFF2994A)
 val PriorityUrgent = Color(0xFFEB5757)
+
+// Priority background tints
+val PriorityLowBg = Color(0xFFE8F5E9)
+val PriorityMediumBg = Color(0xFFFFF8E1)
+val PriorityHighBg = Color(0xFFFFF3E0)
+val PriorityUrgentBg = Color(0xFFFFEBEE)
+
+// Category palette list for reuse
+val CategoryPalette = listOf(
+    SoftBlue, SoftYellow, SoftMint, SoftPink, SoftLilac, DeepGreen
+)
+
+val CategoryPaletteHex = listOf(
+    "#D6E4FF", "#FDF3A0", "#CFF5E7", "#FBD7EA", "#E5DBFF", "#2F6B4F"
+)
+
+// Additional semantic colors
+val DividerLight = Color(0xFFE5E7EB)
+val DividerDark = Color(0xFF2E2F38)
+val Scrim = Color(0x80000000)
+
+/**
+ * Helper to parse hex color string.
+ */
+fun parseColorHex(hex: String): Color {
+    return try {
+        Color(android.graphics.Color.parseColor(hex))
+    } catch (e: Exception) {
+        SoftBlue
+    }
+}
