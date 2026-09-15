@@ -189,47 +189,79 @@ fun SearchScreen(
             }
             Spacer(Modifier.height(12.dp))
 
-            // Recent searches – dark mode adapted
-            if (uiState.query.isBlank() && uiState.recentSearches.isNotEmpty()) {
-                Text(
-                    "Recent searches",
-                    style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.Medium),
-                    color = MaterialTheme.colorScheme.onBackground
-                )
-                Spacer(Modifier.height(8.dp))
-                Card(
-                    modifier = Modifier.fillMaxWidth(),
-                    shape = RoundedCornerShape(16.dp),
-                    colors = CardDefaults.cardColors(
-                        containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = if (isDark) 0.6f else 0.5f)
+            // DONT SHOW ANY SEARCHES FIRST AND SHOW RECENT SEARCHES per request – image shows 4 results with empty query, should be 0 results first
+            // When query blank, show only recent searches, no task results
+            if (uiState.query.isBlank()) {
+                // Recent searches – dark mode adapted – show when query blank
+                if (uiState.recentSearches.isNotEmpty()) {
+                    Text(
+                        "Recent searches",
+                        style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.Medium),
+                        color = MaterialTheme.colorScheme.onBackground
                     )
-                ) {
-                    Column {
-                        uiState.recentSearches.take(2).forEach { recent ->
-                            ListItem(
-                                headlineContent = {
-                                    Text(recent, color = MaterialTheme.colorScheme.onSurface)
-                                },
-                                leadingContent = {
-                                    Icon(
-                                        Icons.Filled.History,
-                                        contentDescription = null,
-                                        tint = MaterialTheme.colorScheme.onSurfaceVariant
-                                    )
-                                },
-                                colors = androidx.compose.material3.ListItemDefaults.colors(
-                                    containerColor = Color.Transparent
-                                ),
-                                modifier = Modifier.clickable {
-                                    viewModel.onQueryChange(recent)
-                                    viewModel.saveRecentSearch(recent)
-                                }
-                            )
+                    Spacer(Modifier.height(8.dp))
+                    Card(
+                        modifier = Modifier.fillMaxWidth(),
+                        shape = RoundedCornerShape(16.dp),
+                        colors = CardDefaults.cardColors(
+                            containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = if (isDark) 0.6f else 0.5f)
+                        )
+                    ) {
+                        Column {
+                            uiState.recentSearches.take(5).forEach { recent ->
+                                ListItem(
+                                    headlineContent = {
+                                        Text(recent, color = MaterialTheme.colorScheme.onSurface)
+                                    },
+                                    leadingContent = {
+                                        Icon(
+                                            Icons.Filled.History,
+                                            contentDescription = null,
+                                            tint = MaterialTheme.colorScheme.onSurfaceVariant
+                                        )
+                                    },
+                                    colors = androidx.compose.material3.ListItemDefaults.colors(
+                                        containerColor = Color.Transparent
+                                    ),
+                                    modifier = Modifier.clickable {
+                                        viewModel.onQueryChange(recent)
+                                        viewModel.saveRecentSearch(recent)
+                                    }
+                                )
+                            }
                         }
                     }
+                    Spacer(Modifier.height(12.dp))
+                } else {
+                    // No recent searches yet – show empty placeholder
+                    Column(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(top = 32.dp),
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        verticalArrangement = Arrangement.spacedBy(12.dp)
+                    ) {
+                        Icon(
+                            Icons.Filled.History,
+                            contentDescription = null,
+                            tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f),
+                            modifier = Modifier.size(48.dp)
+                        )
+                        Text(
+                            "No recent searches",
+                            style = MaterialTheme.typography.titleSmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                        Text(
+                            "Your recent searches will appear here",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f),
+                            textAlign = TextAlign.Center
+                        )
+                    }
                 }
-                Spacer(Modifier.height(12.dp))
-            } else if (uiState.query.isNotBlank() && uiState.recentSearches.isNotEmpty()) {
+            } else {
+                // When query not blank, show suggestions filtered + results
                 val suggestions = uiState.recentSearches.filter { it.contains(uiState.query, ignoreCase = true) }.take(2)
                 if (suggestions.isNotEmpty()) {
                     Text(
@@ -263,72 +295,72 @@ fun SearchScreen(
                     }
                     Spacer(Modifier.height(12.dp))
                 }
-            }
 
-            Text(
-                "${uiState.tasks.size} results",
-                style = MaterialTheme.typography.labelMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
-            )
-            Spacer(Modifier.height(8.dp))
+                Text(
+                    "${uiState.tasks.size} results",
+                    style = MaterialTheme.typography.labelMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+                Spacer(Modifier.height(8.dp))
 
-            LazyColumn(modifier = Modifier.fillMaxSize()) {
-                if (uiState.tasks.isEmpty() && uiState.query.isNotBlank()) {
-                    item {
-                        Column(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(top = 32.dp, bottom = 16.dp),
-                            horizontalAlignment = Alignment.CenterHorizontally,
-                            verticalArrangement = Arrangement.spacedBy(16.dp)
-                        ) {
-                            Image(
-                                painter = painterResource(id = R.drawable.no_search_illustration),
-                                contentDescription = "No results",
+                LazyColumn(modifier = Modifier.fillMaxSize()) {
+                    if (uiState.tasks.isEmpty()) {
+                        item {
+                            Column(
                                 modifier = Modifier
                                     .fillMaxWidth()
-                                    .height(260.dp)
-                                    .padding(horizontal = 16.dp)
-                            )
-                            Text(
-                                text = "No results found",
-                                style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold),
-                                color = MaterialTheme.colorScheme.onBackground,
-                                textAlign = TextAlign.Center
-                            )
-                            Text(
-                                text = "Try adjusting your search or filters\nWe couldn't find any tasks matching '${uiState.query}'",
-                                style = MaterialTheme.typography.bodyMedium,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                textAlign = TextAlign.Center,
-                                modifier = Modifier.padding(horizontal = 24.dp)
-                            )
-                            Spacer(Modifier.height(8.dp))
-                            TextButton(
-                                onClick = {
-                                    viewModel.onQueryChange("")
-                                    viewModel.clearFilters()
-                                },
-                                shape = RoundedCornerShape(16.dp)
+                                    .padding(top = 32.dp, bottom = 16.dp),
+                                horizontalAlignment = Alignment.CenterHorizontally,
+                                verticalArrangement = Arrangement.spacedBy(16.dp)
                             ) {
-                                Text("Clear search", color = AccentBlue)
+                                Image(
+                                    painter = painterResource(id = R.drawable.no_search_illustration),
+                                    contentDescription = "No results",
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .height(260.dp)
+                                        .padding(horizontal = 16.dp)
+                                )
+                                Text(
+                                    text = "No results found",
+                                    style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold),
+                                    color = MaterialTheme.colorScheme.onBackground,
+                                    textAlign = TextAlign.Center
+                                )
+                                Text(
+                                    text = "Try adjusting your search or filters\nWe couldn't find any tasks matching '${uiState.query}'",
+                                    style = MaterialTheme.typography.bodyMedium,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                    textAlign = TextAlign.Center,
+                                    modifier = Modifier.padding(horizontal = 24.dp)
+                                )
+                                Spacer(Modifier.height(8.dp))
+                                TextButton(
+                                    onClick = {
+                                        viewModel.onQueryChange("")
+                                        viewModel.clearFilters()
+                                    },
+                                    shape = RoundedCornerShape(16.dp)
+                                ) {
+                                    Text("Clear search", color = AccentBlue)
+                                }
                             }
                         }
-                    }
-                } else {
-                    items(uiState.tasks, key = { it.id }) { task ->
-                        TaskRow(
-                            title = task.title,
-                            isCompleted = task.isCompleted,
-                            timeLabel = task.dueAt?.let {
-                                java.text.SimpleDateFormat("MMM d • h:mm a").format(java.util.Date(it))
-                            } ?: "No date",
-                            description = task.description,
-                            onClick = {
-                                viewModel.saveRecentSearch(task.title)
-                                onTaskClick(task.id)
-                            }
-                        )
+                    } else {
+                        items(uiState.tasks, key = { it.id }) { task ->
+                            TaskRow(
+                                title = task.title,
+                                isCompleted = task.isCompleted,
+                                timeLabel = task.dueAt?.let {
+                                    java.text.SimpleDateFormat("MMM d • h:mm a").format(java.util.Date(it))
+                                } ?: "No date",
+                                description = task.description,
+                                onClick = {
+                                    viewModel.saveRecentSearch(task.title)
+                                    onTaskClick(task.id)
+                                }
+                            )
+                        }
                     }
                 }
             }
