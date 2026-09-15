@@ -119,7 +119,7 @@ fun SettingsScreen(
                                 onClick = { viewModel.setTheme(ThemePref.SYSTEM) },
                                 modifier = Modifier.weight(1f),
                                 previewLight = false,
-                                previewDark = false,
+                                isDarkPreview = false,
                                 isSystem = true
                             )
                             ThemeOptionCard(

@@ -201,16 +201,15 @@ fun NotelyEmptyState(
         Spacer(Modifier.height(24.dp))
 
         // Curved arrow pointing to + button (center bottom nav)
+        val arrowColor = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f)
         Canvas(
             modifier = Modifier
                 .fillMaxWidth()
                 .height(120.dp)
         ) {
-            val strokeColor = AccentBlue.copy(alpha = 0.6f)
             // Curved path from top center to bottom center-right (where + is)
             val path = Path().apply {
                 moveTo(size.width * 0.5f, 0f)
-                // Curve down then to right then down to +
                 cubicTo(
                     size.width * 0.45f, size.height * 0.3f,
                     size.width * 0.7f, size.height * 0.4f,
@@ -219,8 +218,8 @@ fun NotelyEmptyState(
             }
             drawPath(
                 path = path,
-                color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f),
-                style = Stroke(width = 1.5.dp.toPx())
+                color = arrowColor,
+                style = Stroke(width = 2f)
             )
 
             // Arrow head at end
@@ -228,14 +227,14 @@ fun NotelyEmptyState(
             val arrowEndY = size.height * 0.8f
             val arrowPath = Path().apply {
                 moveTo(arrowEndX, arrowEndY)
-                lineTo(arrowEndX - 8.dp.toPx(), arrowEndY - 2.dp.toPx())
+                lineTo(arrowEndX - 12f, arrowEndY - 3f)
                 moveTo(arrowEndX, arrowEndY)
-                lineTo(arrowEndX - 2.dp.toPx(), arrowEndY - 8.dp.toPx())
+                lineTo(arrowEndX - 3f, arrowEndY - 12f)
             }
             drawPath(
                 path = arrowPath,
-                color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f),
-                style = Stroke(width = 1.5.dp.toPx())
+                color = arrowColor,
+                style = Stroke(width = 2f)
             )
         }
 
