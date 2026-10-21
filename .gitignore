@@ -1,0 +1,45 @@
+# Gradle
+.gradle/
+build/
+**/build/
+local.properties
+*.ap_
+*.aab
+
+# Android Studio
+.idea/
+*.iml
+*.jks
+*.keystore
+.navigation/
+captures/
+.externalNativeBuild/
+.cxx/
+*.hprof
+
+# Kotlin
+.kotlin/
+
+# Firebase
+app/google-services.json
+app/src/**/google-services.json
+# Keep a sample for CI placeholder if needed:
+# !app/google-services.json.sample
+
+# Local env
+.env
+*.env
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Arena / sandbox
+.arena/
+node_modules/
+dist/
+out/
+
+# Secrets
+secrets.properties
+keystore.properties
