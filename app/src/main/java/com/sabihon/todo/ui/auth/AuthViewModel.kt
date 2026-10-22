@@ -13,7 +13,7 @@ import kotlinx.coroutines.launch
 import javax.inject.Inject
 
 /**
- * ViewModel for Login, SignUp, ForgotPassword.
+ * ViewModel for Login, SignUp, ForgotPassword – now with Google OAuth 2.0 support.
  */
 @HiltViewModel
 class AuthViewModel @Inject constructor(
@@ -111,6 +111,22 @@ class AuthViewModel @Inject constructor(
         }
     }
 
+    fun signInWithGoogle(idToken: String, onSuccess: () -> Unit) {
+        viewModelScope.launch {
+            _uiState.update { it.copy(isLoading = true, errorMessage = null) }
+            when (val result = authRepository.signInWithGoogle(idToken)) {
+                is Result.Success -> {
+                    _uiState.update { it.copy(isLoading = false, isLoggedIn = true) }
+                    onSuccess()
+                }
+                is Result.Error -> {
+                    _uiState.update { it.copy(isLoading = false, errorMessage = result.message ?: "Google sign-in failed") }
+                }
+                else -> _uiState.update { it.copy(isLoading = false) }
+            }
+        }
+    }
+
     fun sendPasswordReset() {
         if (_uiState.value.email.isBlank()) {
             _uiState.update { it.copy(emailError = "Enter your email") }
@@ -135,6 +151,10 @@ class AuthViewModel @Inject constructor(
             authRepository.signOut()
             onDone()
         }
+    }
+
+    fun setError(message: String) {
+        _uiState.update { it.copy(errorMessage = message, isLoading = false) }
     }
 
     fun clearError() {

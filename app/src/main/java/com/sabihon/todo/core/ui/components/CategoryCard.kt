@@ -15,6 +15,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowOutward
 import androidx.compose.material.ripple.ripple
+import androidx.compose.material.icons.filled.ArrowUpward
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -118,7 +119,7 @@ fun CategoryCard(
                     )
             ) {
                 Icon(
-                    imageVector = Icons.Default.ArrowOutward,
+                    imageVector = Icons.Filled.ArrowUpward,
                     contentDescription = "Open category",
                     tint = contentColor,
                     modifier = Modifier.size(18.dp)

@@ -28,8 +28,8 @@ import androidx.compose.ui.unit.dp
 import com.sabihon.todo.core.ui.theme.AccentBlue
 
 /**
- * Circular checkbox – outlined → filled accent with check on complete,
- * animated with spring.
+ * Fixed circular checkbox – 48dp touch target, 28dp visual, spring animation,
+ * accessible role, consistent with pastel design.
  */
 @Composable
 fun CircleCheckbox(
@@ -43,7 +43,7 @@ fun CircleCheckbox(
         label = "checkboxBg"
     )
     val borderColor by animateColorAsState(
-        targetValue = if (checked) AccentBlue else MaterialTheme.colorScheme.outline.copy(alpha = 0.4f),
+        targetValue = if (checked) AccentBlue else MaterialTheme.colorScheme.outline.copy(alpha = 0.5f),
         label = "checkboxBorder"
     )
     val isReducedMotion = LocalConfiguration.current.animationDurationScale == 0f
@@ -56,16 +56,18 @@ fun CircleCheckbox(
                 dampingRatio = Spring.DampingRatioNoBouncy,
                 stiffness = Spring.StiffnessLow
             ),
+        targetValue = if (checked) 1.05f else 1f,
+        animationSpec = spring(
+            dampingRatio = Spring.DampingRatioMediumBouncy,
+            stiffness = Spring.StiffnessMedium
+        ),
         label = "checkboxScale"
     )
 
+    // 48dp touch target for accessibility, 28dp visual circle
     Box(
         modifier = modifier
-            .size(28.dp)
-            .scale(scale)
-            .clip(CircleShape)
-            .background(backgroundColor)
-            .border(2.dp, borderColor, CircleShape)
+            .size(48.dp)
             .clickable(
                 enabled = enabled,
                 role = Role.Checkbox,
@@ -73,13 +75,23 @@ fun CircleCheckbox(
             ),
         contentAlignment = Alignment.Center
     ) {
-        if (checked) {
-            Icon(
-                imageVector = Icons.Default.Check,
-                contentDescription = null,
-                tint = Color.White,
-                modifier = Modifier.size(16.dp)
-            )
+        Box(
+            modifier = Modifier
+                .size(28.dp)
+                .scale(scale)
+                .clip(CircleShape)
+                .background(backgroundColor)
+                .border(2.dp, borderColor, CircleShape),
+            contentAlignment = Alignment.Center
+        ) {
+            if (checked) {
+                Icon(
+                    imageVector = Icons.Filled.Check,
+                    contentDescription = if (checked) "Completed" else "Mark complete",
+                    tint = Color.White,
+                    modifier = Modifier.size(16.dp)
+                )
+            }
         }
     }
 }

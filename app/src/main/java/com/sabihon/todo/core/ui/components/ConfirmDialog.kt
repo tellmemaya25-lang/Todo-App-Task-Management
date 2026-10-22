@@ -1,12 +1,14 @@
 package com.sabihon.todo.core.ui.components
 
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.unit.dp
 
 /**
- * Confirmation dialog.
+ * Confirmation dialog – corner radius 24.dp per request
  */
 @Composable
 fun ConfirmDialog(
@@ -30,6 +32,7 @@ fun ConfirmDialog(
             TextButton(onClick = onDismiss) {
                 Text(dismissText)
             }
-        }
+        },
+        shape = RoundedCornerShape(24.dp)
     )
 }

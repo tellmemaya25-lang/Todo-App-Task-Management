@@ -2,10 +2,16 @@ package com.sabihon.todo.data.remote.dto
 
 import com.google.firebase.Timestamp
 import com.google.firebase.firestore.DocumentId
+import com.google.firebase.firestore.PropertyName
 import com.google.firebase.firestore.ServerTimestamp
 
 /**
  * Firestore DTO for Task – mirrors users/{uid}/tasks/{taskId}
+ * 
+ * IMPORTANT: Firestore SDK strips "is" prefix from boolean fields by default,
+ * so `isCompleted` is stored as `completed` in Firestore.
+ * We use @PropertyName to explicitly map to `completed`/`deleted` to match
+ * actual Firestore data (see screenshot where fields are `completed` and `deleted`).
  */
 data class TaskDto(
     @DocumentId
@@ -13,22 +19,37 @@ data class TaskDto(
     val title: String = "",
     val description: String = "",
     val categoryId: String? = null,
-    val priority: String = "MEDIUM", // LOW | MEDIUM | HIGH | URGENT
+    val priority: String = "MEDIUM",
     val dueAt: Timestamp? = null,
     val reminderAt: Timestamp? = null,
-    val isCompleted: Boolean = false,
+
+    @get:PropertyName("completed")
+    @set:PropertyName("completed")
+    @PropertyName("completed")
+    var isCompleted: Boolean = false,
+
     val completedAt: Timestamp? = null,
     val subTasks: List<SubTaskDto> = emptyList(),
+
     @ServerTimestamp
     val createdAt: Timestamp? = null,
+
     @ServerTimestamp
     val updatedAt: Timestamp? = null,
-    val isDeleted: Boolean = false,
+
+    @get:PropertyName("deleted")
+    @set:PropertyName("deleted")
+    @PropertyName("deleted")
+    var isDeleted: Boolean = false,
+
     val searchKeywords: List<String> = emptyList()
 )
 
 data class SubTaskDto(
     val id: String = "",
     val title: String = "",
-    val isDone: Boolean = false
+    @get:PropertyName("done")
+    @set:PropertyName("done")
+    @PropertyName("done")
+    var isDone: Boolean = false
 )

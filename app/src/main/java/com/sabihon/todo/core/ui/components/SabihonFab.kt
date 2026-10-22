@@ -81,7 +81,7 @@ fun SabihonFab(
         interactionSource = interactionSource
     ) {
         Icon(
-            imageVector = Icons.Default.Add,
+            imageVector = Icons.Filled.Add,
             contentDescription = contentDescription
         )
     }

@@ -12,6 +12,7 @@ import javax.inject.Singleton
 
 /**
  * Provides Firebase instances. Firestore offline persistence enabled.
+ * Handles case where Firestore already initialized to avoid IllegalStateException.
  */
 @Module
 @InstallIn(SingletonComponent::class)
@@ -25,12 +26,19 @@ object FirebaseModule {
     @Singleton
     fun provideFirestore(): FirebaseFirestore {
         val firestore = FirebaseFirestore.getInstance()
-        // Enable offline persistence + cache size unlimited
-        val settings = FirebaseFirestoreSettings.Builder()
-            .setPersistenceEnabled(true)
-            .setCacheSizeBytes(FirebaseFirestoreSettings.CACHE_SIZE_UNLIMITED)
-            .build()
-        firestore.firestoreSettings = settings
+        try {
+            // Only set if not already set – otherwise throws IllegalStateException
+            if (!firestore.firestoreSettings.isPersistenceEnabled) {
+                val settings = FirebaseFirestoreSettings.Builder()
+                    .setPersistenceEnabled(true)
+                    .setCacheSizeBytes(FirebaseFirestoreSettings.CACHE_SIZE_UNLIMITED)
+                    .build()
+                firestore.firestoreSettings = settings
+            }
+        } catch (e: Exception) {
+            // Settings already set or Firestore already used – ignore, log
+            android.util.Log.w("FirebaseModule", "Firestore settings already set, skipping: ${e.message}")
+        }
         return firestore
     }
 

@@ -8,14 +8,20 @@ import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.foundation.isSystemInDarkTheme
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
 import androidx.core.content.ContextCompat
+import androidx.hilt.navigation.compose.hiltViewModel
+import com.sabihon.todo.core.datastore.ThemePref
+import com.sabihon.todo.core.ui.theme.AppThemeViewModel
 import com.sabihon.todo.core.ui.theme.SabihonTheme
 import com.sabihon.todo.ui.navigation.SabihonNavHost
 import dagger.hilt.android.AndroidEntryPoint
 
 /**
  * Main launcher activity – hosts Compose NavHost.
- * Handles POST_NOTIFICATIONS permission for API 33+.
+ * Handles POST_NOTIFICATIONS permission for API 33+ and dynamic light/dark theme.
  */
 @AndroidEntryPoint
 class MainActivity : ComponentActivity() {
@@ -39,15 +45,18 @@ class MainActivity : ComponentActivity() {
             }
         }
 
-        // Handle deep link from notification
-        val taskIdFromNotification = intent.getStringExtra("taskId")
-
         setContent {
-            SabihonTheme {
-                SabihonNavHost(
-                    // If notification opened, start destination could be task detail
-                    // For simplicity, we pass via intent handling inside NavHost if needed
-                )
+            val themeViewModel: AppThemeViewModel = hiltViewModel()
+            val themePref by themeViewModel.theme.collectAsState()
+            val systemDark = isSystemInDarkTheme()
+            val darkTheme = when (themePref) {
+                ThemePref.LIGHT -> false
+                ThemePref.DARK -> true
+                ThemePref.SYSTEM -> systemDark
+            }
+
+            SabihonTheme(darkTheme = darkTheme) {
+                SabihonNavHost()
             }
         }
     }

@@ -3,8 +3,10 @@ package com.sabihon.todo.ui.taskdetail
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.sabihon.todo.core.util.Result
+import com.sabihon.todo.domain.model.SubTask
 import com.sabihon.todo.domain.model.Task
 import com.sabihon.todo.domain.repository.TaskRepository
+import com.sabihon.todo.domain.usecase.UpdateTaskUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -22,7 +24,8 @@ data class TaskDetailUiState(
 
 @HiltViewModel
 class TaskDetailViewModel @Inject constructor(
-    private val repository: TaskRepository
+    private val repository: TaskRepository,
+    private val updateTaskUseCase: UpdateTaskUseCase
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(TaskDetailUiState())
@@ -37,6 +40,77 @@ class TaskDetailViewModel @Inject constructor(
                     is Result.Loading -> _uiState.update { it.copy(isLoading = true) }
                 }
             }
+        }
+    }
+
+    fun toggleSubTask(subTaskId: String) {
+        viewModelScope.launch {
+            val currentTask = _uiState.value.task ?: return@launch
+            val updatedSubs = currentTask.subTasks.map {
+                if (it.id == subTaskId) it.copy(isDone = !it.isDone) else it
+            }
+            // Dont mark as complete when all task are not done – only complete if all sub-tasks done
+            val allDone = updatedSubs.isNotEmpty() && updatedSubs.all { it.isDone }
+            val shouldBeCompleted = if (updatedSubs.isEmpty()) currentTask.isCompleted else allDone
+            val updatedTask = currentTask.copy(subTasks = updatedSubs, isCompleted = shouldBeCompleted)
+            updateTaskUseCase(updatedTask)
+        }
+    }
+
+    fun addSubTask(title: String) {
+        if (title.isBlank()) return
+        viewModelScope.launch {
+            val currentTask = _uiState.value.task ?: return@launch
+            val newSub = SubTask(
+                id = System.currentTimeMillis().toString(),
+                title = title,
+                isDone = false
+            )
+            val updatedTask = currentTask.copy(subTasks = currentTask.subTasks + newSub)
+            updateTaskUseCase(updatedTask)
+        }
+    }
+
+    fun updateDescription(newDesc: String) {
+        viewModelScope.launch {
+            val currentTask = _uiState.value.task ?: return@launch
+            if (currentTask.description == newDesc) return@launch
+            val updatedTask = currentTask.copy(description = newDesc)
+            updateTaskUseCase(updatedTask)
+        }
+    }
+
+    fun updateTitle(newTitle: String) {
+        if (newTitle.isBlank()) return
+        viewModelScope.launch {
+            val currentTask = _uiState.value.task ?: return@launch
+            if (currentTask.title == newTitle) return@launch
+            val updatedTask = currentTask.copy(title = newTitle)
+            updateTaskUseCase(updatedTask)
+        }
+    }
+
+    fun editSubTask(subTaskId: String, newTitle: String) {
+        if (newTitle.isBlank()) return
+        viewModelScope.launch {
+            val currentTask = _uiState.value.task ?: return@launch
+            val updatedSubs = currentTask.subTasks.map {
+                if (it.id == subTaskId) it.copy(title = newTitle.trim()) else it
+            }
+            val updatedTask = currentTask.copy(subTasks = updatedSubs)
+            updateTaskUseCase(updatedTask)
+        }
+    }
+
+    fun deleteSubTask(subTaskId: String) {
+        viewModelScope.launch {
+            val currentTask = _uiState.value.task ?: return@launch
+            val updatedSubs = currentTask.subTasks.filter { it.id != subTaskId }
+            // If all remaining done, mark complete else not
+            val allDone = updatedSubs.isNotEmpty() && updatedSubs.all { it.isDone }
+            val shouldBeCompleted = if (updatedSubs.isEmpty()) currentTask.isCompleted else allDone
+            val updatedTask = currentTask.copy(subTasks = updatedSubs, isCompleted = shouldBeCompleted)
+            updateTaskUseCase(updatedTask)
         }
     }
 }
