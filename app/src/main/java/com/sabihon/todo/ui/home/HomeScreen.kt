@@ -10,14 +10,12 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.CheckCircle
@@ -57,28 +55,14 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.semantics.Role
-import androidx.compose.ui.semantics.contentDescription
-import androidx.compose.ui.semantics.role
-import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
-import com.sabihon.todo.core.ui.components.ErrorStateScreen
 import com.sabihon.todo.core.ui.components.FilterEmptyState
 import com.sabihon.todo.core.ui.components.LoadingShimmer
 import com.sabihon.todo.core.ui.components.NotelyEmptyState
-import com.sabihon.todo.core.ui.components.OfflineStateBanner
 import com.sabihon.todo.core.ui.components.SectionHeader
-import com.sabihon.todo.core.ui.components.TaskRow
-import com.sabihon.todo.core.ui.components.AnimatedTaskListItem
-import com.sabihon.todo.core.ui.components.AnimatedEmptyState
-import com.sabihon.todo.core.ui.components.AnimatedLoadingTransition
-import com.sabihon.todo.core.ui.extensions.useReducedMotion
 import com.sabihon.todo.core.ui.components.SwipeableTaskRow
-import com.sabihon.todo.core.ui.theme.Spacing
-import com.sabihon.todo.core.ui.theme.TouchTargets
-import com.sabihon.todo.core.ui.animation.shouldReduceMotion
 import com.sabihon.todo.domain.model.Task
 import java.text.SimpleDateFormat
 import java.util.Date
@@ -101,7 +85,6 @@ fun HomeScreen(
 ) {
     val uiState by viewModel.uiState.collectAsState()
     val snackbarHostState = remember { SnackbarHostState() }
-    val isReducedMotion = useReducedMotion()
     var selectedTask by remember { mutableStateOf<Task?>(null) }
     var showActionSheet by remember { mutableStateOf(false) }
     var showAddSubTaskSheet by remember { mutableStateOf(false) }
@@ -132,8 +115,7 @@ fun HomeScreen(
                     Column {
                         Text(
                             text = "Hello, ${uiState.greetingName},",
-                            style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold),
-                            color = MaterialTheme.colorScheme.onSurface
+                            style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold)
                         )
                         Text(
                             text = "You have work today",
@@ -143,29 +125,11 @@ fun HomeScreen(
                     }
                 },
                 actions = {
-                    IconButton(
-                        onClick = onNavigateToSearch,
-                        modifier = Modifier.semantics {
-                            contentDescription = "Search tasks"
-                        }
-                    ) {
-                        Icon(
-                            Icons.Filled.Search, 
-                            contentDescription = null,
-                            modifier = Modifier.size(24.dp)
-                        )
+                    IconButton(onClick = onNavigateToSearch) {
+                        Icon(Icons.Filled.Search, contentDescription = "Search")
                     }
-                    IconButton(
-                        onClick = onNavigateToSettings,
-                        modifier = Modifier.semantics {
-                            contentDescription = "Settings"
-                        }
-                    ) {
-                        Icon(
-                            Icons.Filled.Settings, 
-                            contentDescription = null,
-                            modifier = Modifier.size(24.dp)
-                        )
+                    IconButton(onClick = onNavigateToSettings) {
+                        Icon(Icons.Filled.Settings, contentDescription = "Settings")
                     }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(containerColor = MaterialTheme.colorScheme.background)
@@ -174,147 +138,116 @@ fun HomeScreen(
         snackbarHost = { SnackbarHost(snackbarHostState) },
         containerColor = MaterialTheme.colorScheme.background
     ) { innerPadding ->
-        // Tier 2: Handle all 7 UI states
-        when {
-            uiState.isLoading -> {
-                LoadingShimmer(modifier = Modifier.padding(innerPadding))
-            }
-            uiState.hasError && uiState.errorMessage != null -> {
-                // Error state with retry
-                ErrorStateScreen(
-                    errorMessage = uiState.errorMessage,
-                    onRetry = { viewModel.onAction(HomeAction.RetryLoadTasks) },
-                    modifier = Modifier.padding(innerPadding)
-                )
-            }
-            else -> {
-                Column(modifier = Modifier.fillMaxSize()) {
-                    // Show offline banner if no network (but data exists)
-                    if (uiState.isOffline && uiState.filteredTasks.isNotEmpty()) {
-                        OfflineStateBanner()
-                    }
-
-                    LazyColumn(
+        if (uiState.isLoading) {
+            LoadingShimmer(modifier = Modifier.padding(innerPadding))
+        } else {
+            LazyColumn(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(innerPadding),
+                verticalArrangement = Arrangement.spacedBy(0.dp)
+            ) {
+                // 5 Chips: All first as default
+                item {
+                    LazyRow(
                         modifier = Modifier
-                            .fillMaxSize()
-                            .padding(innerPadding)
-                            .weight(1f),
-                        verticalArrangement = Arrangement.spacedBy(0.dp)
+                            .fillMaxWidth()
+                            .padding(horizontal = 16.dp, vertical = 12.dp),
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
                     ) {
-                        // Filter chips with consistent spacing
-                        item {
-                            LazyRow(
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .padding(horizontal = Spacing.standard, vertical = Spacing.compact),
-                                horizontalArrangement = Arrangement.spacedBy(Spacing.compact)
-                            ) {
-                                val chips = listOf(
-                                    HomeFilter.ALL to "All",
-                                    HomeFilter.TODAY to "Today",
-                                    HomeFilter.PENDING to "Pending",
-                                    HomeFilter.COMPLETED to "Completed",
-                                    HomeFilter.OVERDUE to "Overdue"
+                        val chips = listOf(
+                            HomeFilter.ALL to "All",
+                            HomeFilter.TODAY to "Today",
+                            HomeFilter.PENDING to "Pending",
+                            HomeFilter.COMPLETED to "Completed",
+                            HomeFilter.OVERDUE to "Overdue"
+                        )
+                        items(chips) { (filter, label) ->
+                            FilterChip(
+                                selected = uiState.selectedFilter == filter,
+                                onClick = { viewModel.onAction(HomeAction.SetFilter(filter)) },
+                                label = { Text(label) },
+                                colors = FilterChipDefaults.filterChipColors(
+                                    selectedContainerColor = MaterialTheme.colorScheme.primaryContainer,
+                                    selectedLabelColor = MaterialTheme.colorScheme.onPrimaryContainer
                                 )
-                                items(chips) { (filter, label) ->
-                                    FilterChip(
-                                        selected = uiState.selectedFilter == filter,
-                                        onClick = { 
-                                            viewModel.onAction(HomeAction.SetFilter(filter)) 
-                                        },
-                                        label = { Text(label) },
-                                        modifier = Modifier.heightIn(min = TouchTargets.chip),
-                                        colors = FilterChipDefaults.filterChipColors(
-                                            selectedContainerColor = MaterialTheme.colorScheme.primaryContainer,
-                                            selectedLabelColor = MaterialTheme.colorScheme.onPrimaryContainer
-                                        )
-                                    )
-                                }
-                            }
-                        }
-
-                        item {
-                            SectionHeader(
-                                title = when (uiState.selectedFilter) {
-                                    HomeFilter.TODAY -> "Today's Tasks"
-                                    HomeFilter.PENDING -> "Pending Tasks"
-                                    HomeFilter.COMPLETED -> "Completed Tasks"
-                                    HomeFilter.ALL -> "All Tasks"
-                                    HomeFilter.OVERDUE -> "Overdue Tasks"
-                                },
-                                modifier = Modifier.padding(horizontal = Spacing.standard, vertical = Spacing.compact)
                             )
                         }
-
-                        // Tier 2: Better empty state handling
-                        if (uiState.filteredTasks.isEmpty()) {
-                            item {
-                                AnimatedEmptyState(
-                                    isEmpty = true,
-                                    modifier = Modifier.fillMaxWidth()
-                                ) {
-                                    when (uiState.selectedFilter) {
-                                        HomeFilter.ALL -> {
-                                            NotelyEmptyState(
-                                                title = "Get started with Notely",
-                                                subtitle = "Add notes, calendar events, tasks files and more with the action bar"
-                                            )
-                                        }
-                                        HomeFilter.TODAY -> FilterEmptyState(filterName = "Today")
-                                        HomeFilter.PENDING -> FilterEmptyState(filterName = "Pending")
-                                        HomeFilter.COMPLETED -> FilterEmptyState(filterName = "Completed")
-                                        HomeFilter.OVERDUE -> FilterEmptyState(filterName = "Overdue")
-                                    }
-                                }
-                            }
-                        } else {
-                            itemsIndexed(uiState.filteredTasks, key = { _, it -> it.id }) { index, task ->
-                                AnimatedTaskListItem(
-                                    index = index,
-                                    task = task,
-                                    isVisible = true,
-                                    modifier = Modifier.fillMaxWidth()
-                                ) {
-                                    SwipeableTaskRow(
-                                        title = task.title,
-                                        isCompleted = task.isCompleted,
-                                        timeLabel = formatTimeLabel(task.dueAt),
-                                        description = task.description.takeIf { it.isNotBlank() },
-                                        subTasks = task.subTasks,
-                                        categoryLabel = null,
-                                        onCheckedChange = { checked ->
-                                            viewModel.onAction(HomeAction.ToggleComplete(task.id, checked))
-                                        },
-                                        onAddSubTask = {
-                                            // Existing sub-task logic
-                                        },
-                                        onSubTaskChecked = { subId, done ->
-                                            viewModel.onAction(HomeAction.ToggleSubTask(task.id, subId, done))
-                                        },
-                                        onClick = { onNavigateToTaskDetail(task.id) },
-                                        onLongClick = {
-                                            selectedTask = task
-                                            showActionSheet = true
-                                        },
-                                        onEdit = {
-                                            onNavigateToEditTask(task.id)
-                                        },
-                                        onDelete = { viewModel.onAction(HomeAction.DeleteTask(task)) },
-                                        onToggleComplete = { checked ->
-                                            viewModel.onAction(HomeAction.ToggleComplete(task.id, checked))
-                                        }
-                                    )
-                                }
-                            }
-                        }
-
-                        item { Spacer(Modifier.height(100.dp)) }
                     }
                 }
+
+                item {
+                    Spacer(Modifier.height(8.dp))
+                    SectionHeader(
+                        title = when (uiState.selectedFilter) {
+                            HomeFilter.TODAY -> "Today's Task"
+                            HomeFilter.PENDING -> "Pending Tasks"
+                            HomeFilter.COMPLETED -> "Completed Tasks"
+                            HomeFilter.ALL -> "All Tasks"
+                            HomeFilter.OVERDUE -> "Overdue Tasks"
+                        },
+                        modifier = Modifier.padding(horizontal = 20.dp)
+                    )
+                    Spacer(Modifier.height(8.dp))
+                }
+
+                if (uiState.filteredTasks.isEmpty()) {
+                    item {
+                        when (uiState.selectedFilter) {
+                            HomeFilter.ALL -> {
+                                NotelyEmptyState(
+                                    title = "Get started with Notely",
+                                    subtitle = "Add notes, calendar events, tasks files and more with the action bar"
+                                )
+                            }
+                            HomeFilter.TODAY -> FilterEmptyState(filterName = "Today")
+                            HomeFilter.PENDING -> FilterEmptyState(filterName = "Pending")
+                            HomeFilter.COMPLETED -> FilterEmptyState(filterName = "Completed")
+                            HomeFilter.OVERDUE -> FilterEmptyState(filterName = "Overdue")
+                        }
+                    }
+                } else {
+                    items(uiState.filteredTasks, key = { it.id }) { task ->
+                        SwipeableTaskRow(
+                            title = task.title,
+                            isCompleted = task.isCompleted,
+                            timeLabel = formatTimeLabel(task.dueAt),
+                            description = task.description.takeIf { it.isNotBlank() },
+                            subTasks = task.subTasks,
+                            categoryLabel = null,
+                            onCheckedChange = { checked ->
+                                viewModel.onAction(HomeAction.ToggleComplete(task.id, checked))
+                            },
+                            onAddSubTask = {
+                                taskForNewSubTask = task
+                                newSubTaskTitle = ""
+                                showAddSubTaskSheet = true
+                            },
+                            onSubTaskChecked = { subId, done ->
+                                viewModel.onAction(HomeAction.ToggleSubTask(task.id, subId, done))
+                            },
+                            onClick = { onNavigateToTaskDetail(task.id) },
+                            onLongClick = {
+                                selectedTask = task
+                                showActionSheet = true
+                            },
+                            onEdit = {
+                                // Edit should go to edit tasks per request – image pencil blue + trash red
+                                if (onNavigateToEditTask != {}) onNavigateToEditTask(task.id) else onNavigateToTaskDetail(task.id)
+                            },
+                            onDelete = { viewModel.onAction(HomeAction.DeleteTask(task)) },
+                            onToggleComplete = { checked ->
+                                viewModel.onAction(HomeAction.ToggleComplete(task.id, checked))
+                            }
+                        )
+                    }
+                }
+
+                item { Spacer(Modifier.height(100.dp)) }
             }
         }
 
-        // Bottom sheet – Edit / Mark as Done / Delete
+        // Bottom sheet – Edit / Mark as Done / Delete – matches screenshot Webinar bottom sheet
         if (showActionSheet && selectedTask != null) {
             ModalBottomSheet(
                 onDismissRequest = { showActionSheet = false },
@@ -327,32 +260,41 @@ fun HomeScreen(
                 Column(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(bottom = Spacing.large)
+                        .padding(bottom = 32.dp)
                 ) {
-                    // Handle indicator
-                    Box(
+                    // Double handle like screenshot – dark + light gray
+                    Column(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .padding(top = Spacing.compact, bottom = Spacing.standard),
-                        contentAlignment = Alignment.Center
+                            .padding(top = 12.dp, bottom = 8.dp),
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        verticalArrangement = Arrangement.spacedBy(8.dp)
                     ) {
                         Box(
                             modifier = Modifier
                                 .width(40.dp)
                                 .height(4.dp)
                                 .background(
-                                    MaterialTheme.colorScheme.outlineVariant,
+                                    Color.Gray.copy(alpha = 0.4f),
+                                    RoundedCornerShape(100.dp)
+                                )
+                        )
+                        Box(
+                            modifier = Modifier
+                                .width(32.dp)
+                                .height(3.dp)
+                                .background(
+                                    Color.Gray.copy(alpha = 0.2f),
                                     RoundedCornerShape(100.dp)
                                 )
                         )
                     }
 
                     Text(
-                        text = selectedTask?.title ?: "Task",
+                        text = selectedTask?.title ?: "Webinar",
                         style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
-                        modifier = Modifier.padding(horizontal = Spacing.standard, vertical = Spacing.compact),
-                        maxLines = 2,
-                        color = MaterialTheme.colorScheme.onSurface
+                        modifier = Modifier.padding(horizontal = 20.dp, vertical = 12.dp),
+                        maxLines = 2
                     )
 
                     HorizontalDivider(
@@ -360,59 +302,47 @@ fun HomeScreen(
                         thickness = 0.5.dp
                     )
 
+                    // Edit – pencil icon – should go to edit tasks per request
                     Row(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .heightIn(min = TouchTargets.button)
                             .clickable {
                                 showActionSheet = false
                                 selectedTask?.let {
-                                    onNavigateToEditTask(it.id)
+                                    if (onNavigateToEditTask != {}) onNavigateToEditTask(it.id) else onNavigateToTaskDetail(it.id)
                                 }
                             }
-                            .semantics {
-                                contentDescription = "Edit task"
-                                role = Role.Button
-                            }
-                            .padding(horizontal = Spacing.standard, vertical = Spacing.compact),
+                            .padding(horizontal = 20.dp, vertical = 16.dp),
                         verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(Spacing.standard)
+                        horizontalArrangement = Arrangement.spacedBy(16.dp)
                     ) {
                         Icon(
                             Icons.Filled.Edit,
                             contentDescription = null,
-                            modifier = Modifier.size(24.dp),
+                            modifier = Modifier.size(22.dp),
                             tint = MaterialTheme.colorScheme.onSurface
                         )
                         Text("Edit", style = MaterialTheme.typography.bodyLarge)
                     }
 
-                    // Mark as Done button (accessible touch target)
+                    // Mark as Done – check icon
                     Row(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .heightIn(min = TouchTargets.button)
                             .clickable {
                                 showActionSheet = false
                                 selectedTask?.let {
                                     viewModel.onAction(HomeAction.ToggleComplete(it.id, !it.isCompleted))
                                 }
                             }
-                            .semantics {
-                                contentDescription = if (selectedTask?.isCompleted == true) 
-                                    "Mark task as pending" 
-                                else 
-                                    "Mark task as done"
-                                role = Role.Button
-                            }
-                            .padding(horizontal = Spacing.standard, vertical = Spacing.compact),
+                            .padding(horizontal = 20.dp, vertical = 16.dp),
                         verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(Spacing.standard)
+                        horizontalArrangement = Arrangement.spacedBy(16.dp)
                     ) {
                         Icon(
                             Icons.Filled.CheckCircle,
                             contentDescription = null,
-                            modifier = Modifier.size(24.dp),
+                            modifier = Modifier.size(22.dp),
                             tint = MaterialTheme.colorScheme.onSurface
                         )
                         Text(
@@ -421,44 +351,57 @@ fun HomeScreen(
                         )
                     }
 
-                    // Delete button (accessible touch target)
+                    // Delete – trash red like screenshot
                     Row(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .heightIn(min = TouchTargets.button)
                             .clickable {
                                 showActionSheet = false
                                 selectedTask?.let {
                                     viewModel.onAction(HomeAction.DeleteTask(it))
                                 }
                             }
-                            .semantics {
-                                contentDescription = "Delete task"
-                                role = Role.Button
-                            }
-                            .padding(horizontal = Spacing.standard, vertical = Spacing.compact),
+                            .padding(horizontal = 20.dp, vertical = 16.dp),
                         verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(Spacing.standard)
+                        horizontalArrangement = Arrangement.spacedBy(16.dp)
                     ) {
                         Icon(
                             Icons.Filled.Delete,
                             contentDescription = null,
-                            tint = MaterialTheme.colorScheme.error,
-                            modifier = Modifier.size(24.dp)
+                            tint = Color(0xFFE57373),
+                            modifier = Modifier.size(22.dp)
                         )
                         Text(
                             "Delete",
-                            color = MaterialTheme.colorScheme.error,
+                            color = Color(0xFFE57373),
                             style = MaterialTheme.typography.bodyLarge
                         )
                     }
 
-                    Spacer(Modifier.height(8.dp))
+                    Spacer(Modifier.height(24.dp))
+
+                    // Bottom handle like iOS
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(bottom = 8.dp),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Box(
+                            modifier = Modifier
+                                .width(120.dp)
+                                .height(4.dp)
+                                .background(
+                                    MaterialTheme.colorScheme.onSurface.copy(alpha = 0.2f),
+                                    RoundedCornerShape(100.dp)
+                                )
+                        )
+                    }
                 }
             }
         }
 
-        // Bottom sheet – Add new sub-task
+        // Bottom sheet – Add new task / Rename – like image bottom edit, for sub-task
         if (showAddSubTaskSheet && taskForNewSubTask != null) {
             ModalBottomSheet(
                 onDismissRequest = { showAddSubTaskSheet = false },
@@ -471,15 +414,15 @@ fun HomeScreen(
                 Column(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(horizontal = Spacing.standard)
-                        .padding(bottom = Spacing.large),
-                    verticalArrangement = Arrangement.spacedBy(Spacing.standard)
+                        .padding(horizontal = 20.dp)
+                        .padding(bottom = 32.dp),
+                    verticalArrangement = Arrangement.spacedBy(16.dp)
                 ) {
                     // Handle
                     Box(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .padding(top = Spacing.compact, bottom = Spacing.compact),
+                            .padding(top = 4.dp, bottom = 8.dp),
                         contentAlignment = Alignment.Center
                     ) {
                         Box(
@@ -487,7 +430,7 @@ fun HomeScreen(
                                 .width(40.dp)
                                 .height(4.dp)
                                 .background(
-                                    MaterialTheme.colorScheme.outlineVariant,
+                                    Color.Gray.copy(alpha = 0.4f),
                                     RoundedCornerShape(100.dp)
                                 )
                         )
@@ -495,8 +438,7 @@ fun HomeScreen(
 
                     Text(
                         text = "Add new task",
-                        style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold),
-                        color = MaterialTheme.colorScheme.onSurface
+                        style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold)
                     )
 
                     Text(
@@ -517,13 +459,11 @@ fun HomeScreen(
 
                     Row(
                         modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.spacedBy(Spacing.compact)
+                        horizontalArrangement = Arrangement.spacedBy(12.dp)
                     ) {
                         TextButton(
                             onClick = { showAddSubTaskSheet = false },
-                            modifier = Modifier
-                                .weight(1f)
-                                .heightIn(min = TouchTargets.button),
+                            modifier = Modifier.weight(1f),
                             shape = RoundedCornerShape(16.dp)
                         ) {
                             Text("Cancel")
@@ -541,20 +481,15 @@ fun HomeScreen(
                                 newSubTaskTitle = ""
                             },
                             enabled = newSubTaskTitle.isNotBlank(),
-                            modifier = Modifier
-                                .weight(1f)
-                                .heightIn(min = TouchTargets.button),
+                            modifier = Modifier.weight(1f),
                             shape = RoundedCornerShape(16.dp),
-                            colors = ButtonDefaults.buttonColors(
-                                containerColor = MaterialTheme.colorScheme.primary,
-                                contentColor = MaterialTheme.colorScheme.onPrimary
-                            )
+                            colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary)
                         ) {
                             Text("Add")
                         }
                     }
 
-                    Spacer(Modifier.height(Spacing.standard))
+                    Spacer(Modifier.height(16.dp))
                 }
             }
         }

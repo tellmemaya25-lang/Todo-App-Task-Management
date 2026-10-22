@@ -1,12 +1,5 @@
 package com.sabihon.todo.ui.navigation
 
-import androidx.compose.animation.AnimatedContentTransitionScope
-import androidx.compose.animation.core.CubicOut
-import androidx.compose.animation.core.tween
-import androidx.compose.animation.fadeIn
-import androidx.compose.animation.fadeOut
-import androidx.compose.animation.slideInHorizontally
-import androidx.compose.animation.slideOutHorizontally
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.navigation.NavHostController
@@ -14,7 +7,6 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.toRoute
-import com.sabihon.todo.core.ui.extensions.useReducedMotion
 import com.sabihon.todo.ui.auth.ForgotPasswordScreen
 import com.sabihon.todo.ui.auth.LoginScreen
 import com.sabihon.todo.ui.auth.SignUpScreen
@@ -35,21 +27,12 @@ fun SabihonNavHost(
     navController: NavHostController = rememberNavController(),
     startDestination: Route = Route.Splash
 ) {
-    val isReducedMotion = useReducedMotion()
-
     NavHost(
         navController = navController,
         startDestination = startDestination,
         modifier = modifier
     ) {
-        composable<Route.Splash>(
-            enterTransition = {
-                fadeIn(animationSpec = tween(if (isReducedMotion) 0 else 300))
-            },
-            exitTransition = {
-                fadeOut(animationSpec = tween(if (isReducedMotion) 0 else 200))
-            }
-        ) {
+        composable<Route.Splash> {
             SplashScreen(
                 onNavigateToLogin = {
                     navController.navigate(Route.Login) {
@@ -63,32 +46,7 @@ fun SabihonNavHost(
                 }
             )
         }
-        composable<Route.Login>(
-            enterTransition = {
-                slideInHorizontally(
-                    initialOffsetX = { it },
-                    animationSpec = tween(if (isReducedMotion) 0 else 300, easing = CubicOut)
-                ) + fadeIn(animationSpec = tween(if (isReducedMotion) 0 else 200))
-            },
-            exitTransition = {
-                slideOutHorizontally(
-                    targetOffsetX = { -it },
-                    animationSpec = tween(if (isReducedMotion) 0 else 200, easing = CubicOut)
-                ) + fadeOut(animationSpec = tween(if (isReducedMotion) 0 else 100))
-            },
-            popEnterTransition = {
-                slideInHorizontally(
-                    initialOffsetX = { -it },
-                    animationSpec = tween(if (isReducedMotion) 0 else 300, easing = CubicOut)
-                ) + fadeIn(animationSpec = tween(if (isReducedMotion) 0 else 200))
-            },
-            popExitTransition = {
-                slideOutHorizontally(
-                    targetOffsetX = { it },
-                    animationSpec = tween(if (isReducedMotion) 0 else 200, easing = CubicOut)
-                ) + fadeOut(animationSpec = tween(if (isReducedMotion) 0 else 100))
-            }
-        ) {
+        composable<Route.Login> {
             LoginScreen(
                 onNavigateToSignUp = { navController.navigate(Route.SignUp) },
                 onNavigateToForgot = { navController.navigate(Route.ForgotPassword) },
@@ -99,32 +57,7 @@ fun SabihonNavHost(
                 }
             )
         }
-        composable<Route.SignUp>(
-            enterTransition = {
-                slideInHorizontally(
-                    initialOffsetX = { it },
-                    animationSpec = tween(if (isReducedMotion) 0 else 300, easing = CubicOut)
-                ) + fadeIn(animationSpec = tween(if (isReducedMotion) 0 else 200))
-            },
-            exitTransition = {
-                slideOutHorizontally(
-                    targetOffsetX = { -it },
-                    animationSpec = tween(if (isReducedMotion) 0 else 200, easing = CubicOut)
-                ) + fadeOut(animationSpec = tween(if (isReducedMotion) 0 else 100))
-            },
-            popEnterTransition = {
-                slideInHorizontally(
-                    initialOffsetX = { -it },
-                    animationSpec = tween(if (isReducedMotion) 0 else 300, easing = CubicOut)
-                ) + fadeIn(animationSpec = tween(if (isReducedMotion) 0 else 200))
-            },
-            popExitTransition = {
-                slideOutHorizontally(
-                    targetOffsetX = { it },
-                    animationSpec = tween(if (isReducedMotion) 0 else 200, easing = CubicOut)
-                ) + fadeOut(animationSpec = tween(if (isReducedMotion) 0 else 100))
-            }
-        ) {
+        composable<Route.SignUp> {
             SignUpScreen(
                 onNavigateBack = { navController.popBackStack() },
                 onSignUpSuccess = {
@@ -134,116 +67,11 @@ fun SabihonNavHost(
                 }
             )
         }
-        composable<Route.ForgotPassword>(
-            enterTransition = {
-                slideInHorizontally(
-                    initialOffsetX = { it },
-                    animationSpec = tween(if (isReducedMotion) 0 else 300, easing = CubicOut)
-                ) + fadeIn(animationSpec = tween(if (isReducedMotion) 0 else 200))
-            },
-            exitTransition = {
-                slideOutHorizontally(
-                    targetOffsetX = { -it },
-                    animationSpec = tween(if (isReducedMotion) 0 else 200, easing = CubicOut)
-                ) + fadeOut(animationSpec = tween(if (isReducedMotion) 0 else 100))
-            },
-            popEnterTransition = {
-                slideInHorizontally(
-                    initialOffsetX = { -it },
-                    animationSpec = tween(if (isReducedMotion) 0 else 300, easing = CubicOut)
-                ) + fadeIn(animationSpec = tween(if (isReducedMotion) 0 else 200))
-            },
-            popExitTransition = {
-                slideOutHorizontally(
-                    targetOffsetX = { it },
-                    animationSpec = tween(if (isReducedMotion) 0 else 200, easing = CubicOut)
-                ) + fadeOut(animationSpec = tween(if (isReducedMotion) 0 else 100))
-            }
-        ) {
+        composable<Route.ForgotPassword> {
             ForgotPasswordScreen(
                 onNavigateBack = { navController.popBackStack() }
             )
         }
-        composable<Route.Home>(
-            enterTransition = {
-                fadeIn(animationSpec = tween(300))
-            },
-            exitTransition = {
-                fadeOut(animationSpec = tween(if (isReducedMotion) 0 else 200))
-            }
-        ) {
-            HomeScreen(
-                onNavigateToAllTasks = { navController.navigate(Route.AllTasks) },
-                onNavigateToCategories = { navController.navigate(Route.Categories) },
-                onNavigateToTaskDetail = { taskId -> navController.navigate(Route.TaskDetail(taskId)) },
-                onNavigateToAddTask = { navController.navigate(Route.AddEditTask()) },
-                onNavigateToSearch = { navController.navigate(Route.Search) },
-                onNavigateToHistory = { navController.navigate(Route.History) },
-                onNavigateToProfile = { navController.navigate(Route.Profile) },
-                onNavigateToCategory = { catId -> navController.navigate(Route.CategoryDetail(catId)) }
-            )
-        }
-        composable<Route.Categories>(
-            enterTransition = {
-                slideInHorizontally(
-                    initialOffsetX = { it },
-                    animationSpec = tween(if (isReducedMotion) 0 else 300, easing = CubicOut)
-                ) + fadeIn(animationSpec = tween(if (isReducedMotion) 0 else 200))
-            },
-            exitTransition = {
-                slideOutHorizontally(
-                    targetOffsetX = { -it },
-                    animationSpec = tween(if (isReducedMotion) 0 else 200, easing = CubicOut)
-                ) + fadeOut(animationSpec = tween(if (isReducedMotion) 0 else 100))
-            },
-            popEnterTransition = {
-                slideInHorizontally(
-                    initialOffsetX = { -it },
-                    animationSpec = tween(if (isReducedMotion) 0 else 300, easing = CubicOut)
-                ) + fadeIn(animationSpec = tween(if (isReducedMotion) 0 else 200))
-            },
-            popExitTransition = {
-                slideOutHorizontally(
-                    targetOffsetX = { it },
-                    animationSpec = tween(if (isReducedMotion) 0 else 200, easing = CubicOut)
-                ) + fadeOut(animationSpec = tween(if (isReducedMotion) 0 else 100))
-            }
-        ) {
-            CategoriesScreen(
-                onBack = { navController.popBackStack() },
-                onCategoryClick = { catId -> navController.navigate(Route.CategoryDetail(catId)) }
-            )
-        }
-        composable<Route.AllTasks>(
-            enterTransition = {
-                slideInHorizontally(
-                    initialOffsetX = { it },
-                    animationSpec = tween(if (isReducedMotion) 0 else 300, easing = CubicOut)
-                ) + fadeIn(animationSpec = tween(if (isReducedMotion) 0 else 200))
-            },
-            exitTransition = {
-                slideOutHorizontally(
-                    targetOffsetX = { -it },
-                    animationSpec = tween(if (isReducedMotion) 0 else 200, easing = CubicOut)
-                ) + fadeOut(animationSpec = tween(if (isReducedMotion) 0 else 100))
-            },
-            popEnterTransition = {
-                slideInHorizontally(
-                    initialOffsetX = { -it },
-                    animationSpec = tween(if (isReducedMotion) 0 else 300, easing = CubicOut)
-                ) + fadeIn(animationSpec = tween(if (isReducedMotion) 0 else 200))
-            },
-            popExitTransition = {
-                slideOutHorizontally(
-                    targetOffsetX = { it },
-                    animationSpec = tween(if (isReducedMotion) 0 else 200, easing = CubicOut)
-                ) + fadeOut(animationSpec = tween(if (isReducedMotion) 0 else 100))
-            }
-        ) {
-            CategoriesScreen(
-                onBack = { navController.popBackStack() },
-                onCategoryClick = { catId -> navController.navigate(Route.CategoryDetail(catId)) }
-            )
         // Main screens with bottom navigation
         composable<Route.Home> {
             MainScaffold(navController = navController) { _ ->
@@ -277,32 +105,7 @@ fun SabihonNavHost(
                 )
             }
         }
-        composable<Route.CategoryDetail>(
-            enterTransition = {
-                slideInHorizontally(
-                    initialOffsetX = { it },
-                    animationSpec = tween(if (isReducedMotion) 0 else 300, easing = CubicOut)
-                ) + fadeIn(animationSpec = tween(if (isReducedMotion) 0 else 200))
-            },
-            exitTransition = {
-                slideOutHorizontally(
-                    targetOffsetX = { -it },
-                    animationSpec = tween(if (isReducedMotion) 0 else 200, easing = CubicOut)
-                ) + fadeOut(animationSpec = tween(if (isReducedMotion) 0 else 100))
-            },
-            popEnterTransition = {
-                slideInHorizontally(
-                    initialOffsetX = { -it },
-                    animationSpec = tween(if (isReducedMotion) 0 else 300, easing = CubicOut)
-                ) + fadeIn(animationSpec = tween(if (isReducedMotion) 0 else 200))
-            },
-            popExitTransition = {
-                slideOutHorizontally(
-                    targetOffsetX = { it },
-                    animationSpec = tween(if (isReducedMotion) 0 else 200, easing = CubicOut)
-                ) + fadeOut(animationSpec = tween(if (isReducedMotion) 0 else 100))
-            }
-        ) { backStackEntry ->
+        composable<Route.CategoryDetail> { backStackEntry ->
             val args = backStackEntry.toRoute<Route.CategoryDetail>()
             CategoryDetailScreen(
                 categoryId = args.categoryId,
@@ -311,32 +114,7 @@ fun SabihonNavHost(
                 onAddTask = { navController.navigate(Route.AddEditTask()) }
             )
         }
-        composable<Route.TaskDetail>(
-            enterTransition = {
-                slideInHorizontally(
-                    initialOffsetX = { it },
-                    animationSpec = tween(if (isReducedMotion) 0 else 300, easing = CubicOut)
-                ) + fadeIn(animationSpec = tween(if (isReducedMotion) 0 else 200))
-            },
-            exitTransition = {
-                slideOutHorizontally(
-                    targetOffsetX = { -it },
-                    animationSpec = tween(if (isReducedMotion) 0 else 200, easing = CubicOut)
-                ) + fadeOut(animationSpec = tween(if (isReducedMotion) 0 else 100))
-            },
-            popEnterTransition = {
-                slideInHorizontally(
-                    initialOffsetX = { -it },
-                    animationSpec = tween(if (isReducedMotion) 0 else 300, easing = CubicOut)
-                ) + fadeIn(animationSpec = tween(if (isReducedMotion) 0 else 200))
-            },
-            popExitTransition = {
-                slideOutHorizontally(
-                    targetOffsetX = { it },
-                    animationSpec = tween(if (isReducedMotion) 0 else 200, easing = CubicOut)
-                ) + fadeOut(animationSpec = tween(if (isReducedMotion) 0 else 100))
-            }
-        ) { backStackEntry ->
+        composable<Route.TaskDetail> { backStackEntry ->
             val args = backStackEntry.toRoute<Route.TaskDetail>()
             TaskDetailScreen(
                 taskId = args.taskId,
@@ -344,68 +122,12 @@ fun SabihonNavHost(
                 onEdit = { taskId -> navController.navigate(Route.AddEditTask(taskId)) }
             )
         }
-        composable<Route.AddEditTask>(
-            enterTransition = {
-                slideInHorizontally(
-                    initialOffsetX = { it },
-                    animationSpec = tween(if (isReducedMotion) 0 else 300, easing = CubicOut)
-                ) + fadeIn(animationSpec = tween(if (isReducedMotion) 0 else 200))
-            },
-            exitTransition = {
-                slideOutHorizontally(
-                    targetOffsetX = { -it },
-                    animationSpec = tween(if (isReducedMotion) 0 else 200, easing = CubicOut)
-                ) + fadeOut(animationSpec = tween(if (isReducedMotion) 0 else 100))
-            },
-            popEnterTransition = {
-                slideInHorizontally(
-                    initialOffsetX = { -it },
-                    animationSpec = tween(if (isReducedMotion) 0 else 300, easing = CubicOut)
-                ) + fadeIn(animationSpec = tween(if (isReducedMotion) 0 else 200))
-            },
-            popExitTransition = {
-                slideOutHorizontally(
-                    targetOffsetX = { it },
-                    animationSpec = tween(if (isReducedMotion) 0 else 200, easing = CubicOut)
-                ) + fadeOut(animationSpec = tween(if (isReducedMotion) 0 else 100))
-            }
-        ) { backStackEntry ->
+        composable<Route.AddEditTask> { backStackEntry ->
             val args = backStackEntry.toRoute<Route.AddEditTask>()
             AddEditTaskScreen(
                 taskId = args.taskId,
                 onBack = { navController.popBackStack() },
                 onSaved = { navController.popBackStack() }
-            )
-        }
-        composable<Route.Search>(
-            enterTransition = {
-                slideInHorizontally(
-                    initialOffsetX = { it },
-                    animationSpec = tween(if (isReducedMotion) 0 else 300, easing = CubicOut)
-                ) + fadeIn(animationSpec = tween(if (isReducedMotion) 0 else 200))
-            },
-            exitTransition = {
-                slideOutHorizontally(
-                    targetOffsetX = { -it },
-                    animationSpec = tween(if (isReducedMotion) 0 else 200, easing = CubicOut)
-                ) + fadeOut(animationSpec = tween(if (isReducedMotion) 0 else 100))
-            },
-            popEnterTransition = {
-                slideInHorizontally(
-                    initialOffsetX = { -it },
-                    animationSpec = tween(if (isReducedMotion) 0 else 300, easing = CubicOut)
-                ) + fadeIn(animationSpec = tween(if (isReducedMotion) 0 else 200))
-            },
-            popExitTransition = {
-                slideOutHorizontally(
-                    targetOffsetX = { it },
-                    animationSpec = tween(if (isReducedMotion) 0 else 200, easing = CubicOut)
-                ) + fadeOut(animationSpec = tween(if (isReducedMotion) 0 else 100))
-            }
-        ) {
-            SearchScreen(
-                onBack = { navController.popBackStack() },
-                onTaskClick = { taskId -> navController.navigate(Route.TaskDetail(taskId)) }
             )
         }
         composable<Route.Search> {

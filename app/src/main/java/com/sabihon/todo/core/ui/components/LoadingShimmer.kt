@@ -22,7 +22,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Brush
-import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.unit.dp
 
 /**
@@ -32,7 +31,6 @@ import androidx.compose.ui.unit.dp
 fun LoadingShimmer(
     modifier: Modifier = Modifier
 ) {
-    val isReducedMotion = LocalConfiguration.current.animationDurationScale == 0f
     val shimmerColors = listOf(
         MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.6f),
         MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.2f),
@@ -43,7 +41,7 @@ fun LoadingShimmer(
         initialValue = 0f,
         targetValue = 1000f,
         animationSpec = infiniteRepeatable(
-            animation = tween(durationMillis = if (isReducedMotion) 0 else 1200),
+            animation = tween(durationMillis = 1200),
             repeatMode = RepeatMode.Restart
         ),
         label = "shimmerTranslate"
