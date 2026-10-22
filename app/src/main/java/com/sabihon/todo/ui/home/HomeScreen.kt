@@ -58,9 +58,11 @@ import com.sabihon.todo.core.ui.components.SectionHeader
 import com.sabihon.todo.core.ui.components.StatTileByType
 import com.sabihon.todo.core.ui.components.StatType
 import com.sabihon.todo.core.ui.components.TaskRow
+import com.sabihon.todo.core.ui.extensions.useReducedMotion
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
+import kotlin.math.abs
 
 /**
  * Home / Dashboard – Screen 1 from spec.
@@ -81,6 +83,7 @@ fun HomeScreen(
     val uiState by viewModel.uiState.collectAsState()
     val snackbarHostState = remember { SnackbarHostState() }
     val haptic = LocalHapticFeedback.current
+    val isReducedMotion = useReducedMotion()
 
     LaunchedEffect(uiState.showUndo) {
         if (uiState.showUndo) {
@@ -221,8 +224,19 @@ fun HomeScreen(
                                         false // Don't dismiss, just toggle
                                     }
                                     SwipeToDismissBoxValue.EndToStart -> {
-                                        viewModel.onAction(HomeAction.DeleteTask(task))
-                                        true
+                                        // Swipe to delete – check velocity or reduced motion
+                                        val shouldDismiss = if (isReducedMotion) {
+                                            true // Instant dismiss for accessibility
+                                        } else {
+                                            // Dismiss if swipe was far enough (velocity-aware threshold)
+                                            abs(dismissState.offset.value) > 100f
+                                        }
+                                        if (shouldDismiss) {
+                                            viewModel.onAction(HomeAction.DeleteTask(task))
+                                            true // Dismiss
+                                        } else {
+                                            false // Snap back
+                                        }
                                     }
                                     else -> false
                                 }

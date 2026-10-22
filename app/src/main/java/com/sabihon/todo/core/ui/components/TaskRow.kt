@@ -2,6 +2,7 @@ package com.sabihon.todo.core.ui.components
 
 import androidx.compose.animation.animateContentSize
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -13,6 +14,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.MoreHoriz
+import androidx.compose.material.ripple.ripple
 import androidx.compose.material3.Checkbox
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -20,12 +22,14 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import com.sabihon.todo.core.ui.extensions.scaleOnPress
 import com.sabihon.todo.core.ui.theme.AccentBlue
 import com.sabihon.todo.domain.model.SubTask
 
@@ -48,10 +52,17 @@ fun TaskRow(
     onMoreClick: (() -> Unit)? = null,
     onClick: (() -> Unit)? = null
 ) {
+    val interactionSource = remember { MutableInteractionSource() }
+
     Row(
         modifier = modifier
             .fillMaxWidth()
-            .clickable(enabled = onClick != null) { onClick?.invoke() }
+            .scaleOnPress(scale = 0.97f, interactionSource = interactionSource)
+            .clickable(
+                enabled = onClick != null,
+                interactionSource = interactionSource,
+                indication = ripple()
+            ) { onClick?.invoke() }
             .padding(horizontal = 20.dp, vertical = 12.dp)
             .animateContentSize(),
         verticalAlignment = Alignment.Top

@@ -4,6 +4,7 @@ import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.spring
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -21,6 +22,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.scale
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.unit.dp
 import com.sabihon.todo.core.ui.theme.AccentBlue
@@ -44,12 +46,16 @@ fun CircleCheckbox(
         targetValue = if (checked) AccentBlue else MaterialTheme.colorScheme.outline.copy(alpha = 0.4f),
         label = "checkboxBorder"
     )
+    val isReducedMotion = LocalConfiguration.current.animationDurationScale == 0f
     val scale by animateFloatAsState(
         targetValue = if (checked) 1.1f else 1f,
-        animationSpec = spring(
-            dampingRatio = Spring.DampingRatioMediumBouncy,
-            stiffness = Spring.StiffnessLow
-        ),
+        animationSpec = if (isReducedMotion)
+            tween(0)
+        else
+            spring(
+                dampingRatio = Spring.DampingRatioNoBouncy,
+                stiffness = Spring.StiffnessLow
+            ),
         label = "checkboxScale"
     )
 

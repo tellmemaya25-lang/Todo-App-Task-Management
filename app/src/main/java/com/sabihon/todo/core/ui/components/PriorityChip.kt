@@ -3,16 +3,20 @@ package com.sabihon.todo.core.ui.components
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.ripple.ripple
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
+import com.sabihon.todo.core.ui.extensions.scaleOnPress
 import com.sabihon.todo.core.ui.theme.PriorityHigh
 import com.sabihon.todo.core.ui.theme.PriorityHighBg
 import com.sabihon.todo.core.ui.theme.PriorityLow
@@ -48,6 +52,8 @@ fun PriorityChip(
     }
 
     val shape = RoundedCornerShape(100.dp)
+    val interactionSource = remember { MutableInteractionSource() }
+
     Box(
         modifier = modifier
             .clip(shape)
@@ -56,8 +62,12 @@ fun PriorityChip(
                 if (selected) Modifier.border(0.dp, Color.Transparent, shape)
                 else Modifier.border(1.dp, fg.copy(alpha = 0.3f), shape)
             )
+            .scaleOnPress(scale = 0.97f, interactionSource = interactionSource)
             .then(
-                if (onClick != null) Modifier.clickable { onClick() } else Modifier
+                if (onClick != null) Modifier.clickable(
+                    interactionSource = interactionSource,
+                    indication = ripple()
+                ) { onClick() } else Modifier
             )
             .padding(horizontal = 12.dp, vertical = 6.dp)
     ) {
