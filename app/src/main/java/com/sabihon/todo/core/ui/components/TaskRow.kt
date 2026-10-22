@@ -58,6 +58,8 @@ import com.sabihon.todo.core.ui.extensions.scaleOnPress
 import androidx.compose.ui.unit.sp
 import com.sabihon.todo.core.ui.theme.AccentBlue
 import com.sabihon.todo.domain.model.SubTask
+import androidx.compose.material3.HorizontalDivider
+
 
 /**
  * TaskRow – strong hierarchy, only title + short desc + percentage + status
@@ -85,20 +87,6 @@ fun TaskRow(
     onClick: (() -> Unit)? = null,
     onLongClick: (() -> Unit)? = null
 ) {
-    val interactionSource = remember { MutableInteractionSource() }
-
-    Row(
-        modifier = modifier
-            .fillMaxWidth()
-            .scaleOnPress(scale = 0.97f, interactionSource = interactionSource)
-            .clickable(
-                enabled = onClick != null,
-                interactionSource = interactionSource,
-                indication = ripple()
-            ) { onClick?.invoke() }
-            .padding(horizontal = 20.dp, vertical = 12.dp)
-            .animateContentSize(),
-        verticalAlignment = Alignment.Top
     val totalSubs = subTasks.size
     val doneSubs = subTasks.count { it.isDone }
     val rawProgress = if (totalSubs > 0) doneSubs.toFloat() / totalSubs else if (isCompleted) 1f else 0f
@@ -130,10 +118,10 @@ fun TaskRow(
     }
 
     // Background – use color combo from setting for overall dark mode theme, leave light mode as is per request
-    // Light mode #E3F5FF as in image-1, dark mode uses Settings dark combo #1E2A44 for contrast
+    // Light mode #E3F5FF as in image-1, dark mode uses Notely dark combo #252525 (surface) for contrast
     val isDark = isSystemInDarkTheme()
-    val baseBackground = if (isDark) Color(0xFF1E2A44) else Color(0xFFE3F5FF)
-    val completedBackground = if (isDark) Color(0xFF24324F) else Color(0xFFE3F5FF)
+    val baseBackground = if (isDark) Color(0xFF252525) else Color(0xFFE3F5FF)
+    val completedBackground = if (isDark) Color(0xFF2F2F2F) else Color(0xFFE3F5FF)
 
     val containerColor by animateColorAsState(
         targetValue = if (effectiveCompleted) completedBackground else baseBackground,
@@ -344,7 +332,7 @@ fun TaskRow(
                 }
 
                 // Horizontal divider to task – per request add horizontal dividers to task
-                androidx.compose.material3.HorizontalDivider(
+                HorizontalDivider(
                     thickness = 0.5.dp,
                     color = Color.Gray.copy(alpha = 0.12f)
                 )

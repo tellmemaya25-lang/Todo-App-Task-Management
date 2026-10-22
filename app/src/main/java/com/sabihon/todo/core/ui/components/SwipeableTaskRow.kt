@@ -86,9 +86,9 @@ fun SwipeableTaskRow(
         }
     }
 
-    // Bg of task: light #e3f5ff per image1, dark #1E2A44 per Settings dark combo for overall dark mode theme, leave light mode as is
+    // Bg of task: light #e3f5ff per image1, dark #252525 (Notely Surface) for overall dark mode theme, leave light mode as is
     val isDark = isSystemInDarkTheme()
-    val swipeBg = if (isDark) Color(0xFF1E2A44) else Color(0xFFE3F5FF)
+    val swipeBg = if (isDark) Color(0xFF252525) else Color(0xFFE3F5FF)
     Box(
         modifier = modifier
             .fillMaxWidth()
