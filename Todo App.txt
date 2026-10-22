@@ -1,0 +1,47 @@
+git clone https://github.com/tellmemaya25-lang/Todo-App-Task-Management.git
+cd Todo-App-Task-Management
+cp ~/Downloads/google-services.json app/
+./gradlew assembleDebug
+./gradlew installDebug
+./gradlew test
+./gradlew connectedAndroidTest
+./gradlew assembleRelease
+
+
+
+Topbar
+Filtering Task(top right)
+
+Bottom Menu
+Home | Search |+| History | Profile
+
+Additional features definition
+1. Home
+	4 Chips
+	- Today
+	- Completed
+	- Pending
+	- All 
+-Today's Task
+	1.Submenu
+	-Edit, Delete, Mark Done
+	-fix circle checkbox
+2. Search
+	- make suggestions base on recent searches
+3. Create Task
+	-fix UI in consistency and change corner radius of date and time picker to 24.dp.
+4. Profile
+	-Move Profile icon here
+	- add and edit profile pic
+5. Settings
+	-Migrate History her instead of the top Notification icon
+	-Add an about section
+	-Add Light and Dark Mode Theme toggle
+
+
+for new users
+create your own profile emoji
+hats, sunglasses, male female, skin color, cute cat emojis
+
+
+add interaction when task is complete

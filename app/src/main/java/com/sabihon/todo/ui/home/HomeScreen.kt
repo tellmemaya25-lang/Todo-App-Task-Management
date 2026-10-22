@@ -62,11 +62,16 @@ import com.sabihon.todo.core.ui.components.FilterEmptyState
 import com.sabihon.todo.core.ui.components.LoadingShimmer
 import com.sabihon.todo.core.ui.components.NotelyEmptyState
 import com.sabihon.todo.core.ui.components.SectionHeader
+import com.sabihon.todo.core.ui.components.StatTileByType
+import com.sabihon.todo.core.ui.components.StatType
+import com.sabihon.todo.core.ui.components.TaskRow
+import com.sabihon.todo.core.ui.extensions.useReducedMotion
 import com.sabihon.todo.core.ui.components.SwipeableTaskRow
 import com.sabihon.todo.domain.model.Task
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
+import kotlin.math.abs
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -85,6 +90,8 @@ fun HomeScreen(
 ) {
     val uiState by viewModel.uiState.collectAsState()
     val snackbarHostState = remember { SnackbarHostState() }
+    val haptic = LocalHapticFeedback.current
+    val isReducedMotion = useReducedMotion()
     var selectedTask by remember { mutableStateOf<Task?>(null) }
     var showActionSheet by remember { mutableStateOf(false) }
     var showAddSubTaskSheet by remember { mutableStateOf(false) }
@@ -325,6 +332,30 @@ fun HomeScreen(
                         Text("Edit", style = MaterialTheme.typography.bodyLarge)
                     }
 
+                        val dismissState = rememberSwipeToDismissBoxState(
+                            confirmValueChange = { value ->
+                                when (value) {
+                                    SwipeToDismissBoxValue.StartToEnd -> {
+                                        // Swipe to complete
+                                        viewModel.onAction(HomeAction.ToggleComplete(task.id, !task.isCompleted))
+                                        false // Don't dismiss, just toggle
+                                    }
+                                    SwipeToDismissBoxValue.EndToStart -> {
+                                        // Swipe to delete – check velocity or reduced motion
+                                        val shouldDismiss = if (isReducedMotion) {
+                                            true // Instant dismiss for accessibility
+                                        } else {
+                                            // Dismiss if swipe was far enough (velocity-aware threshold)
+                                            abs(dismissState.offset.value) > 100f
+                                        }
+                                        if (shouldDismiss) {
+                                            viewModel.onAction(HomeAction.DeleteTask(task))
+                                            true // Dismiss
+                                        } else {
+                                            false // Snap back
+                                        }
+                                    }
+                                    else -> false
                     // Mark as Done – check icon
                     Row(
                         modifier = Modifier
